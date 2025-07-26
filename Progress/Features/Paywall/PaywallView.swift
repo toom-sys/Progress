@@ -29,6 +29,11 @@ struct PaywallView: View {
                             sandboxModeIndicator
                         }
                         
+                        // Active Subscription Status
+                        if subscriptionService.hasActiveSubscription {
+                            activeSubscriptionStatus
+                        }
+                        
                         // Subscription Cards
                         subscriptionCards
                         
@@ -71,37 +76,15 @@ struct PaywallView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            if let activeSubscription = subscriptionService.activeSubscription {
-                // Show current subscription status
-                VStack(spacing: 8) {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.success)
-                            .font(.title2)
-                        
-                        Text("Active Subscription")
-                            .font(.titleLarge)
-                            .foregroundColor(.textPrimary)
-                            .fontWeight(.semibold)
-                    }
-                    
-                    Text("You're subscribed to \(activeSubscription.displayName)")
-                        .font(.bodyLarge)
-                        .foregroundColor(.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            } else {
-                // Show signup prompt
-                Text("Unlock Your Progress")
-                    .font(.titleXL)
-                    .foregroundColor(.textPrimary)
-                    .multilineTextAlignment(.center)
-                
-                Text("Choose the plan that fits your fitness journey")
-                    .font(.bodyLarge)
-                    .foregroundColor(.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
+            Text("Unlock Your Progress")
+                .font(.titleXL)
+                .foregroundColor(.textPrimary)
+                .multilineTextAlignment(.center)
+            
+            Text("Choose the plan that fits your fitness journey")
+                .font(.bodyLarge)
+                .foregroundColor(.textSecondary)
+                .multilineTextAlignment(.center)
         }
     }
     
@@ -130,6 +113,38 @@ struct PaywallView: View {
         .cornerRadius(12)
     }
     
+    // MARK: - Active Subscription Status
+    
+    private var activeSubscriptionStatus: some View {
+        HStack {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundColor(.green)
+                .font(.title2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Active Subscription")
+                    .font(.bodyLarge)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.green)
+                
+                if let activeSubscription = subscriptionService.activeSubscription {
+                    Text("\(activeSubscription.displayName) - \(activeSubscription.monthlyPrice)/month")
+                        .font(.body)
+                        .foregroundColor(.textSecondary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(16)
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.green.opacity(0.3), lineWidth: 1)
+        )
+    }
+    
     // MARK: - Subscription Cards
     
     private var subscriptionCards: some View {
@@ -139,7 +154,6 @@ struct PaywallView: View {
                     offering: offering,
                     isSelected: selectedOffering?.productId == offering.productId,
                     isLoading: subscriptionService.isLoading && selectedOffering?.productId == offering.productId,
-                    activeSubscription: subscriptionService.activeSubscription,
                     onSelect: {
                         selectedOffering = offering
                     },
@@ -239,9 +253,6 @@ struct SubscriptionCard: View {
     
     @State private var showAllFeatures = false
     
-    // Active subscription from parent view
-    var activeSubscription: SubscriptionService.SubscriptionTier?
-    
     var body: some View {
         Button(action: onSelect) {
             VStack(spacing: 16) {
@@ -336,8 +347,33 @@ struct SubscriptionCard: View {
                 }
             }
             
-            // Purchase button or status indicator
-            purchaseButtonView
+            // Purchase button
+            Button(action: onPurchase) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        
+                        Text("Processing...")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    } else {
+                        // Check if this is the active subscription
+                        let isCurrentPlan = subscriptionService.isActiveTier(offering.tier)
+                        
+                        Text(isCurrentPlan ? "Current Plan" : "Start \(offering.tier.displayName)")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .foregroundColor(.white)
+                .background(Color.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(isLoading)
         }
         .padding(20)
         .background(Color.surface)
@@ -351,83 +387,6 @@ struct SubscriptionCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
         }
         .buttonStyle(PlainButtonStyle())
-    }
-    
-    // MARK: - Purchase Button View
-    
-    @ViewBuilder
-    private var purchaseButtonView: some View {
-        if activeSubscription == offering.tier {
-            // Current subscription indicator
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.success)
-                
-                Text("Current Plan")
-                    .font(.buttonPrimary)
-                    .fontWeight(.semibold)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 44)
-            .foregroundColor(.success)
-            .background(Color.success.opacity(0.1))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.success, lineWidth: 1)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        } else if let active = activeSubscription {
-            // Upgrade/Downgrade button
-            Button(action: onPurchase) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                        
-                        Text("Processing...")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    } else {
-                        let isUpgrade = offering.tier == .aiNative && active == .standard
-                        Text(isUpgrade ? "Upgrade to \(offering.tier.displayName)" : "Switch to \(offering.tier.displayName)")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .foregroundColor(.white)
-                .background(Color.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .disabled(isLoading)
-        } else {
-            // Initial subscription button
-            Button(action: onPurchase) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                        
-                        Text("Processing...")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    } else {
-                        Text("Start \(offering.tier.displayName)")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .foregroundColor(.white)
-                .background(Color.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .disabled(isLoading)
-        }
     }
 }
 
@@ -451,7 +410,6 @@ struct SubscriptionCard: View {
             ),
             isSelected: false,
             isLoading: false,
-            activeSubscription: .standard,
             onSelect: {},
             onPurchase: {}
         )
@@ -468,7 +426,6 @@ struct SubscriptionCard: View {
             ),
             isSelected: true,
             isLoading: false,
-            activeSubscription: .standard,
             onSelect: {},
             onPurchase: {}
         )

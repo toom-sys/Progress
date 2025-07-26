@@ -345,6 +345,10 @@ class SubscriptionService: ObservableObject {
     var isAIUser: Bool {
         activeSubscription == .aiNative
     }
+    
+    func isActiveTier(_ tier: SubscriptionTier) -> Bool {
+        return activeSubscription == tier
+    }
 }
 
 // MARK: - Errors
