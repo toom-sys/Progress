@@ -8,7 +8,7 @@
 import UIKit
 import SwiftUI
 
-// TODO: Import RevenueCat and Firebase frameworks when added to project
+// TODO: Uncomment when frameworks are added to project
 // import RevenueCat
 // import FirebaseCore
 // import FirebaseCrashlytics
@@ -85,10 +85,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
             return
         }
         
-        // TODO: Uncomment when RevenueCat is added
+        // TODO: Uncomment when RevenueCat is added to project
         /*
+        // Configure RevenueCat
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: apiKey)
+        
+        // Enable StoreKit 2 if specified
+        if let storeKit2Enabled = config["STORE_KIT_2_ENABLED"] as? Bool, storeKit2Enabled {
+            // StoreKit 2 is enabled by default in RevenueCat 4.0+
+        }
         
         // Set attribution if enabled
         if let attributionEnabled = config["ATTRIBUTION_ENABLED"] as? Bool, attributionEnabled {

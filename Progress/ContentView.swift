@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    @State private var showingPaywall = false
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 32) {
@@ -61,16 +63,28 @@ struct ContentView: View {
                 
                 Spacer()
                 
-                // Coming Soon Badge
-                VStack(spacing: 8) {
-                    Text("Coming Soon")
-                        .font(.label)
-                        .foregroundColor(.textSecondary)
+                // Coming Soon Badge & Subscription
+                VStack(spacing: 16) {
+                    Button("View Subscription Plans") {
+                        showingPaywall = true
+                    }
+                    .font(.buttonPrimary)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 32)
+                    .padding(.vertical, 12)
+                    .background(Color.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
                     
-                    Text("Full app launching with iOS 18 support")
-                        .font(.bodySmall)
-                        .foregroundColor(.textTertiary)
-                        .multilineTextAlignment(.center)
+                    VStack(spacing: 8) {
+                        Text("Coming Soon")
+                            .font(.label)
+                            .foregroundColor(.textSecondary)
+                        
+                        Text("Full app launching with iOS 18 support")
+                            .font(.bodySmall)
+                            .foregroundColor(.textTertiary)
+                            .multilineTextAlignment(.center)
+                    }
                 }
                 .padding(.bottom, 32)
             }
@@ -78,6 +92,9 @@ struct ContentView: View {
             .background(Color.background)
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
+            }
         }
     }
 }
