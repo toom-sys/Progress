@@ -8,8 +8,7 @@
 import Foundation
 import Combine
 
-// TODO: Uncomment when RevenueCat is added
-// import RevenueCat
+import RevenueCat
 
 /// Service for managing subscriptions via RevenueCat
 @MainActor
@@ -81,8 +80,7 @@ class SubscriptionService: ObservableObject {
         let pricePerMonth: String
         let isPopular: Bool
         
-        // TODO: Replace with actual RevenueCat Package when added
-        // let package: Package
+        let package: Package?
     }
     
     // MARK: - Initialization
@@ -99,18 +97,19 @@ class SubscriptionService: ObservableObject {
         purchaseError = nil
         
         do {
-            // TODO: Uncomment when RevenueCat is added
-            /*
             let offerings = try await Purchases.shared.offerings()
             
             guard let currentOffering = offerings.current else {
-                throw SubscriptionError.noOfferingsFound
+                print("⚠️ No current offering found, using mock data")
+                setupMockOfferings()
+                return
             }
             
-            let standardPackage = currentOffering.monthly
-            let aiPackage = currentOffering.package(identifier: "ai_native_monthly")
-            
             var newOfferings: [SubscriptionOffering] = []
+            
+            // Look for packages by identifier
+            let standardPackage = currentOffering.package(identifier: "standard_monthly") ?? currentOffering.monthly
+            let aiPackage = currentOffering.package(identifier: "ai_native_monthly")
             
             if let standard = standardPackage {
                 newOfferings.append(SubscriptionOffering(
@@ -118,7 +117,8 @@ class SubscriptionService: ObservableObject {
                     productId: standard.storeProduct.productIdentifier,
                     price: standard.storeProduct.localizedPriceString,
                     pricePerMonth: standard.storeProduct.localizedPriceString,
-                    isPopular: false
+                    isPopular: false,
+                    package: standard
                 ))
             }
             
@@ -128,17 +128,22 @@ class SubscriptionService: ObservableObject {
                     productId: ai.storeProduct.productIdentifier,
                     price: ai.storeProduct.localizedPriceString,
                     pricePerMonth: ai.storeProduct.localizedPriceString,
-                    isPopular: true
+                    isPopular: true,
+                    package: ai
                 ))
             }
             
-            currentOfferings = newOfferings
-            */
-            
-            // Mock implementation for now
-            setupMockOfferings()
+            // If no packages found, use mock data
+            if newOfferings.isEmpty {
+                print("⚠️ No packages found in offering, using mock data")
+                setupMockOfferings()
+            } else {
+                currentOfferings = newOfferings
+                print("✅ Loaded \(newOfferings.count) offerings from RevenueCat")
+            }
             
         } catch {
+            print("❌ Failed to load offerings: \(error.localizedDescription)")
             purchaseError = error.localizedDescription
             setupMockOfferings()
         }
@@ -151,20 +156,23 @@ class SubscriptionService: ObservableObject {
         purchaseError = nil
         
         do {
-            // TODO: Uncomment when RevenueCat is added
-            /*
-            let (transaction, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: offering.package)
+            guard let package = offering.package else {
+                print("❌ No package available for offering")
+                purchaseError = "Package not available"
+                return
+            }
+            
+            let (transaction, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
             
             if !userCancelled {
-                await checkSubscriptionStatus()
+                checkSubscriptionStatus()
+                print("🎉 Purchase successful: \(offering.tier.displayName)")
+            } else {
+                print("🚫 Purchase cancelled by user")
             }
-            */
-            
-            // Mock successful purchase for now
-            activeSubscription = offering.tier
-            print("🎉 Mock purchase successful: \(offering.tier.displayName)")
             
         } catch {
+            print("❌ Purchase failed: \(error.localizedDescription)")
             purchaseError = error.localizedDescription
         }
         
@@ -176,15 +184,12 @@ class SubscriptionService: ObservableObject {
         purchaseError = nil
         
         do {
-            // TODO: Uncomment when RevenueCat is added
-            /*
             let customerInfo = try await Purchases.shared.restorePurchases()
-            await checkSubscriptionStatus()
-            */
-            
-            print("🔄 Mock restore purchases")
+            checkSubscriptionStatus()
+            print("🔄 Purchases restored successfully")
             
         } catch {
+            print("❌ Restore failed: \(error.localizedDescription)")
             purchaseError = error.localizedDescription
         }
         
@@ -192,28 +197,27 @@ class SubscriptionService: ObservableObject {
     }
     
     func checkSubscriptionStatus() {
-        // TODO: Uncomment when RevenueCat is added
-        /*
         Purchases.shared.getCustomerInfo { [weak self] customerInfo, error in
             DispatchQueue.main.async {
                 guard let customerInfo = customerInfo, error == nil else {
+                    print("❌ Failed to get customer info: \(error?.localizedDescription ?? "Unknown error")")
                     self?.activeSubscription = nil
                     return
                 }
                 
+                // Check entitlements for active subscriptions
                 if customerInfo.entitlements.active["standard"]?.isActive == true {
                     self?.activeSubscription = .standard
+                    print("✅ Standard subscription active")
                 } else if customerInfo.entitlements.active["ai_native"]?.isActive == true {
                     self?.activeSubscription = .aiNative
+                    print("✅ AI Native subscription active")
                 } else {
                     self?.activeSubscription = nil
+                    print("ℹ️ No active subscription found")
                 }
             }
         }
-        */
-        
-        // Mock check - no active subscription for now
-        activeSubscription = nil
     }
     
     // MARK: - Helper Methods
@@ -225,16 +229,19 @@ class SubscriptionService: ObservableObject {
                 productId: "com.myname.progress.standard.monthly",
                 price: "£0.99",
                 pricePerMonth: "£0.99",
-                isPopular: false
+                isPopular: false,
+                package: nil
             ),
             SubscriptionOffering(
                 tier: .aiNative,
                 productId: "com.myname.progress.ai_native.monthly",
                 price: "£2.99",
                 pricePerMonth: "£2.99",
-                isPopular: true
+                isPopular: true,
+                package: nil
             )
         ]
+        print("📝 Using mock offerings - configure products in RevenueCat dashboard")
     }
     
     // MARK: - Computed Properties

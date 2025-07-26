@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		E28E2D322E354991005FB680 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E28E2D312E354990005FB680 /* StoreKit.framework */; };
+		E28E2D392E354B82005FB680 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2D382E354B82005FB680 /* RevenueCat */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E28E2D392E354B82005FB680 /* RevenueCat in Frameworks */,
 				E28E2D322E354991005FB680 /* StoreKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -127,6 +129,7 @@
 			);
 			name = Progress;
 			packageProductDependencies = (
+				E28E2D382E354B82005FB680 /* RevenueCat */,
 			);
 			productName = Progress;
 			productReference = E2447FDA2E229AE1002FDA42 /* Progress.app */;
@@ -210,6 +213,9 @@
 			);
 			mainGroup = E2447FD12E229AE1002FDA42;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E2447FDB2E229AE1002FDA42 /* Products */;
 			projectDirPath = "";
@@ -610,6 +616,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.33.1;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E28E2D382E354B82005FB680 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCat;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = E2447FD22E229AE1002FDA42 /* Project object */;
 }

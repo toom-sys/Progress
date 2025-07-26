@@ -9,7 +9,7 @@ import UIKit
 import SwiftUI
 
 // TODO: Uncomment when frameworks are added to project
-// import RevenueCat
+import RevenueCat
 // import FirebaseCore
 // import FirebaseCrashlytics
 // import FirebaseAnalytics
@@ -85,8 +85,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
             return
         }
         
-        // TODO: Uncomment when RevenueCat is added to project
-        /*
         // Configure RevenueCat
         Purchases.logLevel = .debug
         Purchases.configure(withAPIKey: apiKey)
@@ -102,7 +100,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         print("✅ RevenueCat initialized with API key: \(String(apiKey.prefix(8)))...")
-        */
         
         print("💰 RevenueCat configuration found - ready for initialization")
     }
