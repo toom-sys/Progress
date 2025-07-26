@@ -104,7 +104,7 @@ class SubscriptionService: ObservableObject {
         setupMockOfferings()
         isLoading = false
         return
-        #endif
+        #else
         
         // Ensure RevenueCat is configured before making calls
         guard Purchases.isConfigured else {
@@ -113,6 +113,7 @@ class SubscriptionService: ObservableObject {
             isLoading = false
             return
         }
+        #endif
         
         do {
             let offerings = try await Purchases.shared.offerings()

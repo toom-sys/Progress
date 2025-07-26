@@ -115,35 +115,34 @@ struct PaywallView: View {
     
     // MARK: - Active Subscription Status
     
-    @ViewBuilder
     private var activeSubscriptionStatus: some View {
-        if let activeSubscription = subscriptionService.activeSubscription {
-            HStack {
-                Image(systemName: "checkmark.seal.fill")
+        HStack {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundColor(.green)
+                .font(.title2)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Active Subscription")
+                    .font(.bodyLarge)
+                    .fontWeight(.semibold)
                     .foregroundColor(.green)
-                    .font(.title2)
                 
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Active Subscription")
-                        .font(.bodyLarge)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.green)
-                    
+                if let activeSubscription = subscriptionService.activeSubscription {
                     Text("\(activeSubscription.displayName) - \(activeSubscription.monthlyPrice)/month")
                         .font(.body)
                         .foregroundColor(.textSecondary)
                 }
-                
-                Spacer()
             }
-            .padding(16)
-            .background(Color.green.opacity(0.1))
-            .cornerRadius(12)
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.green.opacity(0.3), lineWidth: 1)
-            )
+            
+            Spacer()
         }
+        .padding(16)
+        .background(Color.green.opacity(0.1))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.green.opacity(0.3), lineWidth: 1)
+        )
     }
     
     // MARK: - Subscription Cards
