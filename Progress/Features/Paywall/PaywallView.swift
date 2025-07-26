@@ -8,35 +8,38 @@
 import SwiftUI
 
 struct PaywallView: View {
-    @StateObject private var subscriptionService = SubscriptionService()
     @Environment(\.dismiss) private var dismiss
-    
-    @State private var selectedOffering: SubscriptionService.SubscriptionOffering?
-    @State private var showingPurchaseSheet = false
+    @StateObject private var subscriptionService = SubscriptionService()
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 32) {
-                    // Header Section
-                    headerSection
-                    
-                    // Subscription Tiers
-                    subscriptionTiersSection
-                    
-                    // Features Comparison
-                    featuresSection
-                    
-                    // Purchase Button
-                    purchaseSection
-                    
-                    // Footer
-                    footerSection
+            ZStack {
+                Color.background
+                    .ignoresSafeArea()
+                
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Header
+                        headerSection
+                        
+                        // Sandbox Mode Indicator
+                        if subscriptionService.isSandboxMode {
+                            sandboxModeIndicator
+                        }
+                        
+                        // Subscription Cards
+                        subscriptionCards
+                        
+                        // Features Comparison
+                        featuresSection
+                        
+                        // Footer
+                        footerSection
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 24)
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 40)
             }
-            .background(Color.background)
             .navigationTitle("Choose Your Plan")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -44,13 +47,13 @@ struct PaywallView: View {
                     Button("Close") {
                         dismiss()
                     }
-                    .foregroundColor(Color.textSecondary)
+                    .foregroundColor(.textSecondary)
                 }
             }
         }
         .task {
             // Small delay to ensure RevenueCat is configured
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
             await subscriptionService.loadOfferings()
             subscriptionService.checkSubscriptionStatus()
         }
@@ -60,33 +63,57 @@ struct PaywallView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Image(systemName: "star.circle.fill")
-                .font(.system(size: 60))
-                .foregroundColor(Color.primary)
-            
-            Text("Unlock Progress Premium")
-                .font(.titleLarge)
-                .foregroundColor(Color.textPrimary)
+            Text("Unlock Your Progress")
+                .font(.titleXL)
+                .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
             
             Text("Choose the plan that fits your fitness journey")
                 .font(.bodyLarge)
-                .foregroundColor(Color.textSecondary)
+                .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
     }
     
-    // MARK: - Subscription Tiers
+    // MARK: - Sandbox Mode Indicator
     
-    private var subscriptionTiersSection: some View {
+    private var sandboxModeIndicator: some View {
+        HStack {
+            Image(systemName: "flask.fill")
+                .foregroundColor(.orange)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Sandbox Mode")
+                    .font(.bodyMedium)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.orange)
+                
+                Text("Mock purchases enabled for testing")
+                    .font(.bodySmall)
+                    .foregroundColor(.textSecondary)
+            }
+            
+            Spacer()
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    // MARK: - Subscription Cards
+    
+    private var subscriptionCards: some View {
         VStack(spacing: 16) {
             ForEach(subscriptionService.currentOfferings, id: \.productId) { offering in
-                SubscriptionTierCard(
+                SubscriptionCard(
                     offering: offering,
-                    isSelected: selectedOffering?.productId == offering.productId
-                ) {
-                    selectedOffering = offering
-                }
+                    isLoading: subscriptionService.isLoading,
+                    onPurchase: {
+                        Task {
+                            await subscriptionService.purchase(offering)
+                        }
+                    }
+                )
             }
         }
     }

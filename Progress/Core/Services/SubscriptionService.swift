@@ -20,6 +20,7 @@ class SubscriptionService: ObservableObject {
     @Published var activeSubscription: SubscriptionTier? = nil
     @Published var isLoading = false
     @Published var purchaseError: String? = nil
+    @Published var isSandboxMode = true // Enable sandbox testing mode
     
     // MARK: - Subscription Tiers
     
@@ -79,6 +80,7 @@ class SubscriptionService: ObservableObject {
         let price: String
         let pricePerMonth: String
         let isPopular: Bool
+        let isMockOffering: Bool
         
         let package: Package?
     }
@@ -110,6 +112,7 @@ class SubscriptionService: ObservableObject {
             guard let currentOffering = offerings.current else {
                 print("⚠️ No current offering found, using mock data")
                 setupMockOfferings()
+                isLoading = false
                 return
             }
             
@@ -126,6 +129,7 @@ class SubscriptionService: ObservableObject {
                     price: standard.storeProduct.localizedPriceString,
                     pricePerMonth: standard.storeProduct.localizedPriceString,
                     isPopular: false,
+                    isMockOffering: false,
                     package: standard
                 ))
             }
@@ -137,6 +141,7 @@ class SubscriptionService: ObservableObject {
                     price: ai.storeProduct.localizedPriceString,
                     pricePerMonth: ai.storeProduct.localizedPriceString,
                     isPopular: true,
+                    isMockOffering: false,
                     package: ai
                 ))
             }
@@ -147,7 +152,8 @@ class SubscriptionService: ObservableObject {
                 setupMockOfferings()
             } else {
                 currentOfferings = newOfferings
-                print("✅ Loaded \(newOfferings.count) offerings from RevenueCat")
+                isSandboxMode = false
+                print("✅ Loaded \(newOfferings.count) real offerings from RevenueCat")
             }
             
         } catch {
@@ -163,6 +169,24 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
         
+        // Handle mock offerings in sandbox mode
+        if offering.isMockOffering && isSandboxMode {
+            print("🧪 Simulating sandbox purchase for \(offering.tier.displayName)")
+            
+            // Simulate purchase delay
+            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+            
+            // Simulate successful purchase
+            activeSubscription = offering.tier
+            print("🎉 Mock purchase successful: \(offering.tier.displayName)")
+            
+            // Store the mock subscription locally for this session
+            UserDefaults.standard.set(offering.tier.rawValue, forKey: "mock_subscription")
+            
+            isLoading = false
+            return
+        }
+        
         guard Purchases.isConfigured else {
             print("⚠️ RevenueCat not configured yet, cannot purchase")
             purchaseError = "RevenueCat not configured"
@@ -173,7 +197,8 @@ class SubscriptionService: ObservableObject {
         do {
             guard let package = offering.package else {
                 print("❌ No package available for offering")
-                purchaseError = "Package not available"
+                purchaseError = "This is a demo offering. Configure products in RevenueCat dashboard to enable real purchases."
+                isLoading = false
                 return
             }
             
@@ -198,6 +223,17 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
         
+        // Check for mock subscription first
+        if isSandboxMode {
+            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
+               let tier = SubscriptionTier(rawValue: mockSub) {
+                activeSubscription = tier
+                print("🔄 Restored mock subscription: \(tier.displayName)")
+                isLoading = false
+                return
+            }
+        }
+        
         guard Purchases.isConfigured else {
             print("⚠️ RevenueCat not configured yet, cannot restore")
             purchaseError = "RevenueCat not configured"
@@ -219,6 +255,16 @@ class SubscriptionService: ObservableObject {
     }
     
     func checkSubscriptionStatus() {
+        // Check for mock subscription first
+        if isSandboxMode {
+            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
+               let tier = SubscriptionTier(rawValue: mockSub) {
+                activeSubscription = tier
+                print("ℹ️ Mock subscription active: \(tier.displayName)")
+                return
+            }
+        }
+        
         guard Purchases.isConfigured else {
             print("⚠️ RevenueCat not configured yet, skipping subscription status check")
             activeSubscription = nil
@@ -258,6 +304,7 @@ class SubscriptionService: ObservableObject {
                 price: "£0.99",
                 pricePerMonth: "£0.99",
                 isPopular: false,
+                isMockOffering: true,
                 package: nil
             ),
             SubscriptionOffering(
@@ -266,10 +313,12 @@ class SubscriptionService: ObservableObject {
                 price: "£2.99",
                 pricePerMonth: "£2.99",
                 isPopular: true,
+                isMockOffering: true,
                 package: nil
             )
         ]
-        print("📝 Using mock offerings - configure products in RevenueCat dashboard")
+        print("📝 Using mock offerings - configure products in RevenueCat dashboard for real purchases")
+        isSandboxMode = true
     }
     
     // MARK: - Computed Properties
