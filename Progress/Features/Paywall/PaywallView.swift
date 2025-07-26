@@ -223,92 +223,126 @@ struct PaywallView: View {
     }
 }
 
-// MARK: - Subscription Tier Card
+// MARK: - Subscription Card
 
-struct SubscriptionTierCard: View {
+struct SubscriptionCard: View {
     let offering: SubscriptionService.SubscriptionOffering
-    let isSelected: Bool
-    let onTap: () -> Void
+    let isLoading: Bool
+    let onPurchase: () -> Void
     
     var body: some View {
-        Button(action: onTap) {
-            VStack(spacing: 16) {
-                // Header with popular badge
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(offering.tier.displayName)
-                            .font(.titleMedium)
-                            .foregroundColor(Color.textPrimary)
-                        
-                        Text(offering.tier.tagline)
-                            .font(.bodySmall)
-                            .foregroundColor(Color.textSecondary)
-                    }
-                    
-                    Spacer()
-                    
-                    if offering.isPopular {
-                        Text("POPULAR")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.primary)
-                            .clipShape(Capsule())
-                    }
-                }
-                
-                // Price
-                HStack(alignment: .bottom) {
-                    Text(offering.pricePerMonth)
-                        .font(.titleLarge)
-                        .fontWeight(.bold)
+        VStack(spacing: 16) {
+            // Header with popular badge
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(offering.tier.displayName)
+                        .font(.titleMedium)
                         .foregroundColor(Color.textPrimary)
                     
-                    Text("/month")
-                        .font(.body)
+                    Text(offering.tier.tagline)
+                        .font(.bodySmall)
                         .foregroundColor(Color.textSecondary)
-                    
-                    Spacer()
                 }
                 
-                // Key features preview
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(Array(offering.tier.features.prefix(3)), id: \.self) { feature in
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark")
-                                .font(.caption)
-                                .foregroundColor(Color.success)
-                            
-                            Text(feature)
-                                .font(.bodySmall)
-                                .foregroundColor(Color.textSecondary)
-                            
-                            Spacer()
-                        }
-                    }
-                    
-                    if offering.tier.features.count > 3 {
-                        Text("+ \(offering.tier.features.count - 3) more features")
-                            .font(.caption)
-                            .foregroundColor(Color.textTertiary)
-                            .padding(.leading, 16)
-                    }
+                Spacer()
+                
+                if offering.isPopular {
+                    Text("POPULAR")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.primary)
+                        .clipShape(Capsule())
                 }
             }
-            .padding(20)
-            .background(isSelected ? Color.primary.opacity(0.1) : Color.surface)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(
-                        isSelected ? Color.primary : Color.border,
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            
+            // Price
+            HStack(alignment: .bottom) {
+                Text(offering.pricePerMonth)
+                    .font(.titleLarge)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color.textPrimary)
+                
+                Text("/month")
+                    .font(.body)
+                    .foregroundColor(Color.textSecondary)
+                
+                Spacer()
+                
+                // Mock indicator
+                if offering.isMockOffering {
+                    Text("DEMO")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.2))
+                        .clipShape(Capsule())
+                }
+            }
+            
+            // Key features preview
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(Array(offering.tier.features.prefix(3)), id: \.self) { feature in
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark")
+                            .font(.caption)
+                            .foregroundColor(Color.success)
+                        
+                        Text(feature)
+                            .font(.bodySmall)
+                            .foregroundColor(Color.textSecondary)
+                        
+                        Spacer()
+                    }
+                }
+                
+                if offering.tier.features.count > 3 {
+                    Text("+ \(offering.tier.features.count - 3) more features")
+                        .font(.caption)
+                        .foregroundColor(Color.textTertiary)
+                        .padding(.leading, 16)
+                }
+            }
+            
+            // Purchase button
+            Button(action: onPurchase) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        
+                        Text("Processing...")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    } else {
+                        Text("Start \(offering.tier.displayName)")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .foregroundColor(.white)
+                .background(Color.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(isLoading)
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding(20)
+        .background(Color.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    offering.isPopular ? Color.primary : Color.border,
+                    lineWidth: offering.isPopular ? 2 : 1
+                )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }
 
@@ -320,28 +354,30 @@ struct SubscriptionTierCard: View {
 
 #Preview("Subscription Card") {
     VStack(spacing: 16) {
-        SubscriptionTierCard(
+        SubscriptionCard(
             offering: SubscriptionService.SubscriptionOffering(
                 tier: .standard,
                 productId: "standard",
                 price: "£0.99",
                 pricePerMonth: "£0.99",
                 isPopular: false,
+                isMockOffering: true,
                 package: nil
             ),
-            isSelected: false
+            isLoading: false
         ) {}
         
-        SubscriptionTierCard(
+        SubscriptionCard(
             offering: SubscriptionService.SubscriptionOffering(
                 tier: .aiNative,
                 productId: "ai_native",
                 price: "£2.99",
                 pricePerMonth: "£2.99",
                 isPopular: true,
+                isMockOffering: true,
                 package: nil
             ),
-            isSelected: true
+            isLoading: false
         ) {}
     }
     .padding()
