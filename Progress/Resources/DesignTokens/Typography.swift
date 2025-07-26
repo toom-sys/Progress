@@ -108,6 +108,48 @@ public extension Text {
     }
 }
 
+// MARK: - Button Style Extensions
+
+public extension Button {
+    /// Applies primary button styling
+    func primaryButtonStyle() -> some View {
+        self
+            .font(.buttonPrimary)
+            .foregroundColor(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(.primary)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+    
+    /// Applies secondary button styling  
+    func secondaryButtonStyle() -> some View {
+        self
+            .font(.buttonSecondary)
+            .foregroundColor(.primary)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(.primary, lineWidth: 1)
+            )
+    }
+}
+
+// MARK: - Layout Extensions
+
+public extension View {
+    /// Standard horizontal layout
+    var horizontal: some View {
+        HStack { self }
+    }
+    
+    /// Standard vertical layout
+    var vertical: some View {
+        VStack { self }
+    }
+}
+
 // MARK: - Typography Helpers
 
 public struct ProgressTypography {
@@ -259,19 +301,9 @@ public struct ProgressTypography {
                     HStack(spacing: 16) {
                         Button("Primary Button") {}
                             .primaryButtonStyle()
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         
                         Button("Secondary Button") {}
                             .secondaryButtonStyle()
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(.primary, lineWidth: 1)
-                            )
                     }
                     
                     // Status Examples

@@ -10,51 +10,51 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         NavigationStack {
-            VStack(spacing: ProgressSpacing.paragraphSpacingLarge) {
+            VStack(spacing: 32) {
                 // Hero Section
-                VStack(spacing: ProgressSpacing.paragraphSpacingMedium) {
+                VStack(spacing: 16) {
                     Text("Progress")
-                        .font(ProgressTypography.displayLarge)
-                        .foregroundColor(ProgressColors.textPrimary)
+                        .font(.titleXL)
+                        .foregroundColor(.textPrimary)
                     
                     Text("Track workouts, log nutrition and visualise progress")
-                        .font(ProgressTypography.bodyLarge)
-                        .foregroundColor(ProgressColors.textSecondary)
+                        .font(.bodyLarge)
+                        .foregroundColor(.textSecondary)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.top, ProgressSpacing.paragraphSpacingLarge)
+                .padding(.top, 32)
                 
                 // Feature Cards
                 LazyVGrid(columns: [
                     GridItem(.flexible()),
                     GridItem(.flexible())
-                ], spacing: ProgressSpacing.paragraphSpacingMedium) {
+                ], spacing: 16) {
                     FeatureCard(
                         title: "Workouts",
                         subtitle: "Plan & track",
                         icon: "figure.strengthtraining.traditional",
-                        color: ProgressColors.primaryBlue
+                        color: .primary
                     )
                     
                     FeatureCard(
                         title: "Nutrition",
                         subtitle: "Log meals",
                         icon: "leaf.fill",
-                        color: ProgressColors.accentGreen
+                        color: .accent
                     )
                     
                     FeatureCard(
                         title: "Progress",
                         subtitle: "View insights",
                         icon: "chart.line.uptrend.xyaxis",
-                        color: ProgressColors.secondaryBlue
+                        color: .primary
                     )
                     
                     FeatureCard(
                         title: "Rest Timer",
                         subtitle: "Time breaks",
                         icon: "timer",
-                        color: ProgressColors.timerProgress
+                        color: .warning
                     )
                 }
                 .padding(.horizontal)
@@ -62,20 +62,20 @@ struct ContentView: View {
                 Spacer()
                 
                 // Coming Soon Badge
-                VStack(spacing: ProgressSpacing.paragraphSpacingSmall) {
+                VStack(spacing: 8) {
                     Text("Coming Soon")
-                        .font(ProgressTypography.labelLarge)
-                        .foregroundColor(ProgressColors.textSecondary)
+                        .font(.label)
+                        .foregroundColor(.textSecondary)
                     
                     Text("Full app launching with iOS 18 support")
-                        .font(ProgressTypography.bodySmall)
-                        .foregroundColor(ProgressColors.textTertiary)
+                        .font(.bodySmall)
+                        .foregroundColor(.textTertiary)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.bottom, ProgressSpacing.paragraphSpacingLarge)
+                .padding(.bottom, 32)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(ProgressColors.backgroundPrimary)
+            .background(.background)
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -89,27 +89,27 @@ struct FeatureCard: View {
     let color: Color
     
     var body: some View {
-        VStack(spacing: ProgressSpacing.paragraphSpacingSmall) {
+        VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(ProgressTypography.displaySmall)
+                .font(.titleLarge)
                 .foregroundColor(color)
             
             VStack(spacing: 2) {
                 Text(title)
-                    .font(ProgressTypography.titleMedium)
-                    .foregroundColor(ProgressColors.textPrimary)
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
                 
                 Text(subtitle)
-                    .font(ProgressTypography.bodySmall)
-                    .foregroundColor(ProgressColors.textSecondary)
+                    .font(.bodySmall)
+                    .foregroundColor(.textSecondary)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(ProgressSpacing.paragraphSpacingMedium)
-        .background(ProgressColors.surfaceCard)
+        .padding(16)
+        .background(.surface)
         .cornerRadius(12)
         .shadow(
-            color: ProgressColors.textPrimary.opacity(0.1),
+            color: .textPrimary.opacity(0.1),
             radius: 8,
             x: 0,
             y: 2
