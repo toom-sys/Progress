@@ -116,11 +116,12 @@ struct PaywallView: View {
                 SubscriptionCard(
                     offering: offering,
                     isSelected: selectedOffering?.productId == offering.productId,
-                    isLoading: subscriptionService.isLoading,
+                    isLoading: subscriptionService.isLoading && selectedOffering?.productId == offering.productId,
                     onSelect: {
                         selectedOffering = offering
                     },
                     onPurchase: {
+                        selectedOffering = offering  // Ensure this card is selected when purchasing
                         Task {
                             await subscriptionService.purchase(offering)
                             if subscriptionService.activeSubscription != nil {
