@@ -360,19 +360,26 @@ struct SubscriptionCard: View {
                         Text("Processing...")
                             .font(.buttonPrimary)
                             .fontWeight(.semibold)
+                    } else if isCurrentPlan {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title3)
+                        
+                        Text("Current Plan")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
                     } else {
-                        Text(isCurrentPlan ? "Current Plan" : "Start \(offering.tier.displayName)")
+                        Text("Start \(offering.tier.displayName)")
                             .font(.buttonPrimary)
                             .fontWeight(.semibold)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
-                .foregroundColor(.white)
-                .background(Color.primary)
+                .foregroundColor(isCurrentPlan ? Color.textSecondary : .white)
+                .background(isCurrentPlan ? Color.backgroundSecondary : Color.primary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(isLoading)
+            .disabled(isLoading || isCurrentPlan)
         }
         .padding(20)
         .background(Color.surface)
