@@ -21,6 +21,10 @@ platform :ios do
     # Pre-flight checks
     ensure_git_status_clean(show_uncommitted_changes: true)
     
+    # Inject secrets into configuration files
+    UI.message "🔐 Injecting secrets into configuration files..."
+    sh("../Scripts/inject-secrets.sh inject")
+    
     # Increment build number based on git commits
     increment_build_number(
       xcodeproj: PROJECT,
@@ -60,6 +64,10 @@ platform :ios do
       distribute_external: false
     )
     
+    # Clean up configuration files
+    UI.message "🧹 Cleaning up configuration files..."
+    sh("../Scripts/inject-secrets.sh restore")
+    
     # Clean up
     clean_build_artifacts
     
@@ -75,6 +83,10 @@ platform :ios do
   desc "Run SwiftLint and unit tests"
   lane :lint do
     UI.header "🧪 Running Progress iOS Lint & Test Suite"
+    
+    # Inject secrets for testing (using test/development values)
+    UI.message "🔐 Injecting secrets for testing..."
+    sh("../Scripts/inject-secrets.sh inject")
     
     # Run SwiftLint
     UI.message "🔍 Running SwiftLint analysis..."
@@ -127,6 +139,10 @@ platform :ios do
       UI.important "⚠️ Found #{todo_count} TODO/FIXME comments. Consider addressing these before release."
     end
     
+    # Restore original configuration files
+    UI.message "🔄 Restoring original configuration files..."
+    sh("../Scripts/inject-secrets.sh restore")
+    
     UI.success "✅ All lint checks and tests passed!"
   end
 
@@ -163,11 +179,35 @@ platform :ios do
     clear_derived_data
     clean_build_artifacts
     reset_git_repo(force: true, skip_clean: true)
+    
+    # Clean up any remaining configuration backups
+    sh("../Scripts/inject-secrets.sh cleanup")
+  end
+
+  desc "Inject configuration secrets"
+  lane :inject_secrets do
+    UI.message "🔐 Injecting secrets into configuration files..."
+    sh("../Scripts/inject-secrets.sh inject")
+    UI.success "✅ Secrets injected successfully"
+  end
+
+  desc "Restore configuration files"
+  lane :restore_configs do
+    UI.message "🔄 Restoring original configuration files..."
+    sh("../Scripts/inject-secrets.sh restore")
+    UI.success "✅ Configuration files restored"
   end
 
   # MARK: - Error Handling
   error do |lane, exception|
     UI.error "❌ Lane #{lane} failed with exception: #{exception}"
+    
+    # Always restore configuration files on error
+    begin
+      sh("../Scripts/inject-secrets.sh restore")
+    rescue
+      UI.important "⚠️ Could not restore configuration files"
+    end
     
     # Clean up on error
     clean_build_artifacts
