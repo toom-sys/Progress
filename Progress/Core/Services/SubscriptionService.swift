@@ -46,20 +46,20 @@ class SubscriptionService: ObservableObject {
             switch self {
             case .standard:
                 return [
-                    "✓ Unlimited workout tracking",
-                    "✓ Nutrition logging with search",
-                    "✓ Progress charts and analytics",
-                    "✓ CloudKit sync across devices",
-                    "✓ Export your data anytime"
+                    "Unlimited workout tracking",
+                    "Nutrition logging with search",
+                    "Progress charts and analytics",
+                    "CloudKit sync across devices",
+                    "Export your data anytime"
                 ]
             case .aiNative:
                 return [
-                    "✓ Everything in Standard",
-                    "✓ AI-powered workout generation",
-                    "✓ Smart nutrition recommendations", 
-                    "✓ Camera food logging with AI",
-                    "✓ Personalized insights engine",
-                    "✓ Priority customer support"
+                    "Everything in Standard",
+                    "AI-powered workout generation",
+                    "Smart nutrition recommendations", 
+                    "Camera food logging with AI",
+                    "Personalized insights engine",
+                    "Priority customer support"
                 ]
             }
         }
