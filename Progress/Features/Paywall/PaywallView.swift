@@ -296,7 +296,8 @@ struct SubscriptionTierCard: View {
                 productId: "standard",
                 price: "£0.99",
                 pricePerMonth: "£0.99",
-                isPopular: false
+                isPopular: false,
+                package: nil
             ),
             isSelected: false
         ) {}
@@ -307,7 +308,8 @@ struct SubscriptionTierCard: View {
                 productId: "ai_native",
                 price: "£2.99",
                 pricePerMonth: "£2.99",
-                isPopular: true
+                isPopular: true,
+                package: nil
             ),
             isSelected: true
         ) {}
