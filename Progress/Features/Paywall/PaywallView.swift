@@ -10,7 +10,8 @@ import SwiftUI
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var subscriptionService = SubscriptionService()
-    @State private var loadingOffering: String? = nil // Track which card is loading
+    @State private var selectedOffering: SubscriptionService.SubscriptionOffering?
+    @State private var showingAllFeatures = false
     
     var body: some View {
         NavigationView {
@@ -22,11 +23,6 @@ struct PaywallView: View {
                     VStack(spacing: 24) {
                         // Header
                         headerSection
-                        
-                        // Active Subscription Status
-                        if let activeSubscription = subscriptionService.activeSubscription {
-                            activeSubscriptionSection(activeSubscription)
-                        }
                         
                         // Sandbox Mode Indicator
                         if subscriptionService.isSandboxMode {
@@ -87,31 +83,6 @@ struct PaywallView: View {
         }
     }
     
-    // MARK: - Active Subscription Section
-    
-    private func activeSubscriptionSection(_ subscription: SubscriptionService.SubscriptionTier) -> some View {
-        HStack {
-            Image(systemName: "checkmark.circle.fill")
-                .foregroundColor(.success)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Active Subscription")
-                    .font(.bodyLarge)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.success)
-                
-                Text("\(subscription.displayName) - \(subscription.monthlyPrice)/month")
-                    .font(.body)
-                    .foregroundColor(.textSecondary)
-            }
-            
-            Spacer()
-        }
-        .padding(12)
-        .background(Color.success.opacity(0.1))
-        .cornerRadius(12)
-    }
-    
     // MARK: - Sandbox Mode Indicator
     
     private var sandboxModeIndicator: some View {
@@ -144,16 +115,26 @@ struct PaywallView: View {
             ForEach(subscriptionService.currentOfferings, id: \.productId) { offering in
                 SubscriptionCard(
                     offering: offering,
-                    isLoading: loadingOffering == offering.productId,
-                    isActive: subscriptionService.activeSubscription == offering.tier,
+                    isSelected: selectedOffering?.productId == offering.productId,
+                    isLoading: subscriptionService.isLoading,
+                    onSelect: {
+                        selectedOffering = offering
+                    },
                     onPurchase: {
-                        loadingOffering = offering.productId
                         Task {
                             await subscriptionService.purchase(offering)
-                            loadingOffering = nil
+                            if subscriptionService.activeSubscription != nil {
+                                dismiss()
+                            }
                         }
                     }
                 )
+            }
+        }
+        .onAppear {
+            // Auto-select AI Native tier by default
+            if selectedOffering == nil, let aiOffering = subscriptionService.currentOfferings.first(where: { $0.tier == .aiNative }) {
+                selectedOffering = aiOffering
             }
         }
     }
@@ -170,6 +151,15 @@ struct PaywallView: View {
             .font(.body)
             .foregroundColor(Color.textSecondary)
             .disabled(subscriptionService.isLoading)
+            
+            // Simulator note
+            if subscriptionService.isSandboxMode {
+                Text("📱 Simulator purchases are simulated - real purchases need device + App Store Connect setup")
+                    .font(.caption)
+                    .foregroundColor(.textTertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
             
             // Only show purchase errors, not configuration errors in sandbox mode
             if let error = subscriptionService.purchaseError,
@@ -218,12 +208,14 @@ struct PaywallView: View {
 
 struct SubscriptionCard: View {
     let offering: SubscriptionService.SubscriptionOffering
+    let isSelected: Bool
     let isLoading: Bool
-    let isActive: Bool
+    let onSelect: () -> Void
     let onPurchase: () -> Void
     
     var body: some View {
-        VStack(spacing: 16) {
+        Button(action: onSelect) {
+            VStack(spacing: 16) {
             // Header with popular badge
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
@@ -232,7 +224,7 @@ struct SubscriptionCard: View {
                         .foregroundColor(Color.textPrimary)
                     
                     Text(offering.tier.tagline)
-                        .font(.body)
+                        .font(.bodySmall)
                         .foregroundColor(Color.textSecondary)
                 }
                 
@@ -263,31 +255,16 @@ struct SubscriptionCard: View {
                 
                 Spacer()
                 
-                // Status indicators
-                HStack(spacing: 8) {
-                    // Active indicator
-                    if isActive {
-                        Text("ACTIVE")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.success)
-                            .clipShape(Capsule())
-                    }
-                    
-                    // Mock indicator
-                    if offering.isMockOffering {
-                        Text("DEMO")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundColor(.orange)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .clipShape(Capsule())
-                    }
+                // Mock indicator
+                if offering.isMockOffering {
+                    Text("DEMO")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.2))
+                        .clipShape(Capsule())
                 }
             }
             
@@ -324,36 +301,34 @@ struct SubscriptionCard: View {
                             .scaleEffect(0.8)
                         
                         Text("Processing...")
-                            .font(.body)
-                            .fontWeight(.semibold)
-                    } else if isActive {
-                        Text("Current Plan")
-                            .font(.body)
+                            .font(.buttonPrimary)
                             .fontWeight(.semibold)
                     } else {
                         Text("Start \(offering.tier.displayName)")
-                            .font(.body)
+                            .font(.buttonPrimary)
                             .fontWeight(.semibold)
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .frame(height: 44)
                 .foregroundColor(.white)
-                .background(isActive ? Color.success : Color.primary)
+                .background(Color.primary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(isLoading || isActive)
+            .disabled(isLoading)
         }
         .padding(20)
         .background(Color.surface)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
                 .stroke(
-                    isActive ? Color.success : (offering.isPopular ? Color.primary : Color.border),
-                    lineWidth: isActive ? 2 : (offering.isPopular ? 2 : 1)
+                    isSelected ? Color.primary : Color.border,
+                    lineWidth: isSelected ? 2 : 1
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -375,9 +350,11 @@ struct SubscriptionCard: View {
                 isMockOffering: true,
                 package: nil
             ),
+            isSelected: false,
             isLoading: false,
-            isActive: false
-        ) {}
+            onSelect: {},
+            onPurchase: {}
+        )
         
         SubscriptionCard(
             offering: SubscriptionService.SubscriptionOffering(
@@ -389,9 +366,11 @@ struct SubscriptionCard: View {
                 isMockOffering: true,
                 package: nil
             ),
+            isSelected: true,
             isLoading: false,
-            isActive: true
-        ) {}
+            onSelect: {},
+            onPurchase: {}
+        )
     }
     .padding()
     .background(Color.background)
