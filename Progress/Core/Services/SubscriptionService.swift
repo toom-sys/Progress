@@ -213,7 +213,7 @@ class SubscriptionService: ObservableObject {
                 return
             }
             
-            let (transaction, customerInfo, userCancelled) = try await Purchases.shared.purchase(package: package)
+            let (_, _, userCancelled) = try await Purchases.shared.purchase(package: package)
             
             if !userCancelled {
                 checkSubscriptionStatus()
@@ -253,7 +253,7 @@ class SubscriptionService: ObservableObject {
         }
         
         do {
-            let customerInfo = try await Purchases.shared.restorePurchases()
+            _ = try await Purchases.shared.restorePurchases()
             checkSubscriptionStatus()
             print("🔄 Purchases restored successfully")
             
@@ -284,17 +284,17 @@ class SubscriptionService: ObservableObject {
         
         Purchases.shared.getCustomerInfo { [weak self] customerInfo, error in
             DispatchQueue.main.async {
-                guard let customerInfo = customerInfo, error == nil else {
+                guard let info = customerInfo, error == nil else {
                     print("❌ Failed to get customer info: \(error?.localizedDescription ?? "Unknown error")")
                     self?.activeSubscription = nil
                     return
                 }
                 
                 // Check entitlements for active subscriptions
-                if customerInfo.entitlements.active["standard"]?.isActive == true {
+                if info.entitlements.active["standard"]?.isActive == true {
                     self?.activeSubscription = .standard
                     print("✅ Standard subscription active")
-                } else if customerInfo.entitlements.active["ai_native"]?.isActive == true {
+                } else if info.entitlements.active["ai_native"]?.isActive == true {
                     self?.activeSubscription = .aiNative
                     print("✅ AI Native subscription active")
                 } else {
