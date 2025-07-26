@@ -319,7 +319,7 @@ public struct ProgressTypography {
                     Text("02:45")
                         .timerStyle()
                         .padding(20)
-                        .background(.backgroundSecondary)
+                        .background(Color.backgroundSecondary)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
