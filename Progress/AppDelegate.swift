@@ -88,12 +88,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         // Configure RevenueCat for sandbox testing
         Purchases.logLevel = .debug
         
-        // Enable sandbox mode for development
-        #if DEBUG
-        Purchases.configure(withAPIKey: apiKey, appUserID: nil, observerMode: false, userDefaults: nil, useStoreKit2IfAvailable: true)
-        #else
+        // Configure with the new API
         Purchases.configure(withAPIKey: apiKey)
-        #endif
         
         // Enable StoreKit 2 if specified
         if let storeKit2Enabled = config["STORE_KIT_2_ENABLED"] as? Bool, storeKit2Enabled {

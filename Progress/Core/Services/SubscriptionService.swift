@@ -98,6 +98,14 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
         
+        // For sandbox testing, skip RevenueCat calls and use mock offerings directly
+        #if DEBUG && targetEnvironment(simulator)
+        print("🧪 Simulator mode: Using mock offerings for sandbox testing")
+        setupMockOfferings()
+        isLoading = false
+        return
+        #endif
+        
         // Ensure RevenueCat is configured before making calls
         guard Purchases.isConfigured else {
             print("⚠️ RevenueCat not configured yet, using mock offerings")
@@ -158,7 +166,10 @@ class SubscriptionService: ObservableObject {
             
         } catch {
             print("❌ Failed to load offerings: \(error.localizedDescription)")
-            purchaseError = error.localizedDescription
+            // Don't show configuration errors to users in sandbox mode
+            if !error.localizedDescription.contains("configuration") {
+                purchaseError = error.localizedDescription
+            }
             setupMockOfferings()
         }
         
