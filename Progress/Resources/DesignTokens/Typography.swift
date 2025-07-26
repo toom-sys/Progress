@@ -167,226 +167,28 @@ public struct ProgressTypography {
 
 // MARK: - Preview
 
-#Preview("Progress Typography") {
-    ScrollView {
-        VStack(spacing: 32) {
-            // Title Styles Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Title Styles")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    TypographySample(
-                        text: "Title XL - Hero Header",
-                        font: .titleXL,
-                        description: "34pt Bold"
-                    )
-                    
-                    TypographySample(
-                        text: "Title Large - Page Header",
-                        font: .titleLarge,
-                        description: "28pt Bold"
-                    )
-                    
-                    TypographySample(
-                        text: "Title Medium - Section Header",
-                        font: .titleMedium,
-                        description: "22pt Semibold"
-                    )
-                    
-                    TypographySample(
-                        text: "Title Small - Card Header",
-                        font: .titleSmall,
-                        description: "20pt Semibold"
-                    )
-                }
-            }
-            
-            // Body Styles Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Body Styles")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    TypographySample(
-                        text: "Body Large - Primary content for important information",
-                        font: .bodyLarge,
-                        description: "17pt Regular"
-                    )
-                    
-                    TypographySample(
-                        text: "Body - Standard content for most text in the app",
-                        font: .body,
-                        description: "16pt Regular"
-                    )
-                    
-                    TypographySample(
-                        text: "Body Small - Secondary content and supporting text",
-                        font: .bodySmall,
-                        description: "14pt Regular"
-                    )
-                }
-            }
-            
-            // Supporting Styles Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Supporting Styles")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    TypographySample(
-                        text: "Subheadline - Supporting headers",
-                        font: .subheadline,
-                        description: "15pt Medium"
-                    )
-                    
-                    TypographySample(
-                        text: "Label - Buttons and form labels",
-                        font: .label,
-                        description: "14pt Medium"
-                    )
-                    
-                    TypographySample(
-                        text: "Caption - Hints and metadata",
-                        font: .caption,
-                        description: "12pt Regular"
-                    )
-                }
-            }
-            
-            // Number Styles Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Number Styles")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(alignment: .leading, spacing: 12) {
-                    TypographySample(
-                        text: "12:34",
-                        font: .timerDisplay,
-                        description: "Timer Display - 48pt Bold Rounded"
-                    )
-                    
-                    TypographySample(
-                        text: "1,234",
-                        font: .numberLarge,
-                        description: "Number Large - 32pt Bold Rounded"
-                    )
-                    
-                    TypographySample(
-                        text: "567",
-                        font: .numberMedium,
-                        description: "Number Medium - 20pt Semibold Rounded"
-                    )
-                    
-                    TypographySample(
-                        text: "89",
-                        font: .numberSmall,
-                        description: "Number Small - 16pt Medium Rounded"
-                    )
-                }
-            }
-            
-            // Interactive Examples Section
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Interactive Examples")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(spacing: 16) {
-                    // Button Examples
-                    HStack(spacing: 16) {
-                        Button("Primary Button") {}
-                            .primaryButtonStyle()
-                        
-                        Button("Secondary Button") {}
-                            .secondaryButtonStyle()
-                    }
-                    
-                    // Status Examples
-                    HStack(spacing: 20) {
-                        Text("Success message")
-                            .successStyle()
-                        
-                        Text("Error message")
-                            .errorStyle()
-                    }
-                    
-                    // Timer Example
-                    Text("02:45")
-                        .timerStyle()
-                        .padding(20)
-                        .background(Color.backgroundSecondary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-            
-            // Usage Sample Card
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Sample Workout Card")
-                    .font(.titleMedium)
-                    .foregroundColor(.textPrimary)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Push Day")
-                        .font(.titleSmall)
-                        .foregroundColor(.textPrimary)
-                    
-                    Text("Upper body workout focusing on pushing movements")
-                        .font(.body)
-                        .foregroundColor(.textSecondary)
-                        .lineLimit(2)
-                    
-                    HStack {
-                        Label("45 min", systemImage: "clock")
-                            .font(.caption)
-                            .foregroundColor(.textTertiary)
-                        
-                        Spacer()
-                        
-                        Text("1,250")
-                            .numberStyle(.numberSmall)
-                        
-                        Text("calories")
-                            .font(.caption)
-                            .foregroundColor(.textTertiary)
-                    }
-                }
-                .padding(16)
-                .background(.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(.border, lineWidth: 1)
-                )
-            }
-        }
-        .padding(20)
+#Preview("Typography Samples") {
+    VStack(spacing: 16) {
+        Text("Title XL - Hero Header")
+            .font(.titleXL)
+        
+        Text("Title Large - Page Header")
+            .font(.titleLarge)
+        
+        Text("Body Large - Primary content")
+            .font(.bodyLarge)
+        
+        Text("Body - Standard content")
+            .font(.body)
+        
+        Button("Primary Button") {}
+            .primaryButtonStyle()
+        
+        Text("02:45")
+            .timerStyle()
     }
-    .background(.background)
+    .padding()
+    .background(Color.background)
 }
 
-// MARK: - Helper Views
-
-private struct TypographySample: View {
-    let text: String
-    let font: Font
-    let description: String
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(text)
-                .font(font)
-                .foregroundColor(.textPrimary)
-            
-            Text(description)
-                .font(.caption)
-                .foregroundColor(.textTertiary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 8)
-    }
-} 
+ 

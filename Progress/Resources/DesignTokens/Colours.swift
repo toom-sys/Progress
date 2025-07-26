@@ -7,10 +7,10 @@ public extension Color {
     // MARK: - Primary Colors
     
     /// Primary brand color - used for main actions and branding
-    static let primary = Color("Primary", bundle: nil) ?? Color.blue
+    static let primary = Color.blue
     
     /// Secondary accent color for highlights and emphasis
-    static let accent = Color("Accent", bundle: nil) ?? Color.green
+    static let accent = Color.green
     
     // MARK: - Background Colors
     
