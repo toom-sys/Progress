@@ -1,0 +1,186 @@
+# This file contains the fastlane configuration
+# For more information about the format, see: https://docs.fastlane.tools/advanced/#control-configuration-by-lane-and-by-platform
+#
+# Configuration for the Progress iOS App
+
+default_platform(:ios)
+
+platform :ios do
+  # Constants
+  SCHEME = "Progress"
+  PROJECT = "Progress.xcodeproj"
+  BUNDLE_ID = "com.myname.Progress"
+  
+  before_all do
+    setup_circle_ci if ENV["CI"]
+  end
+
+  # MARK: - Beta Lane
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    # Pre-flight checks
+    ensure_git_status_clean(show_uncommitted_changes: true)
+    
+    # Increment build number based on git commits
+    increment_build_number(
+      xcodeproj: PROJECT,
+      build_number: latest_testflight_build_number(
+        app_identifier: BUNDLE_ID,
+        initial_build_number: 1
+      ) + 1
+    )
+    
+    # Match for code signing
+    match(
+      type: "appstore",
+      readonly: true,
+      app_identifier: BUNDLE_ID
+    )
+    
+    # Build the app
+    build_app(
+      scheme: SCHEME,
+      configuration: "Release",
+      export_method: "app-store",
+      clean: true,
+      include_bitcode: false,
+      include_symbols: true,
+      export_options: {
+        provisioningProfiles: {
+          BUNDLE_ID => "match AppStore #{BUNDLE_ID}"
+        }
+      }
+    )
+    
+    # Upload to TestFlight
+    upload_to_testflight(
+      skip_waiting_for_build_processing: false,
+      notify_external_testers: false,
+      changelog: "Latest build from CI/CD pipeline",
+      distribute_external: false
+    )
+    
+    # Clean up
+    clean_build_artifacts
+    
+    # Send notification
+    notification(
+      title: "Progress iOS",
+      subtitle: "Beta Build Complete",
+      message: "Successfully uploaded build #{get_build_number} to TestFlight"
+    )
+  end
+
+  # MARK: - Lint Lane
+  desc "Run SwiftLint and unit tests"
+  lane :lint do
+    UI.header "🧪 Running Progress iOS Lint & Test Suite"
+    
+    # Run SwiftLint
+    UI.message "🔍 Running SwiftLint analysis..."
+    swiftlint(
+      mode: :lint,
+      config_file: ".swiftlint.yml",
+      reporter: "json",
+      output_file: "swiftlint-results.json",
+      raise_if_swiftlint_error: true
+    )
+    
+    # Run unit tests
+    UI.message "🧪 Running unit tests..."
+    run_tests(
+      scheme: SCHEME,
+      devices: ["iPhone 15 Pro"],
+      code_coverage: true,
+      output_types: "junit,html",
+      output_files: "test-results.xml,test-results.html",
+      fail_build: true,
+      skip_slack: true
+    )
+    
+    # Run design token checks
+    UI.message "🎨 Checking design token compliance..."
+    sh("../Scripts/ci/check-design-tokens.sh")
+    
+    # Run localization checks
+    UI.message "🌍 Checking localization compliance..."
+    sh("../Scripts/ci/check-localization.sh")
+    
+    # Generate coverage report if xcov is available
+    if sh("which xcov", error_callback: ->(result) { false })
+      UI.message "📊 Generating code coverage report..."
+      xcov(
+        scheme: SCHEME,
+        minimum_coverage_percentage: 80.0,
+        include_test_targets: false,
+        output_directory: "coverage_reports"
+      )
+    else
+      UI.important "⚠️ xcov not found. Install with: gem install xcov"
+    end
+    
+    # Check for TODO/FIXME comments
+    UI.message "📝 Checking for TODO/FIXME comments..."
+    todos = sh("grep -r -E 'TODO|FIXME|HACK' ../Progress/ --include='*.swift' || true")
+    unless todos.strip.empty?
+      todo_count = todos.lines.count
+      UI.important "⚠️ Found #{todo_count} TODO/FIXME comments. Consider addressing these before release."
+    end
+    
+    UI.success "✅ All lint checks and tests passed!"
+  end
+
+  # MARK: - Helper Lanes
+  desc "Setup certificates and provisioning profiles"
+  lane :certificates do
+    match(
+      type: "development",
+      app_identifier: BUNDLE_ID,
+      force_for_new_devices: true
+    )
+    match(
+      type: "appstore",
+      app_identifier: BUNDLE_ID
+    )
+  end
+  
+  desc "Refresh provisioning profiles"
+  lane :refresh_profiles do
+    match(
+      type: "development",
+      app_identifier: BUNDLE_ID,
+      force: true
+    )
+    match(
+      type: "appstore",
+      app_identifier: BUNDLE_ID,
+      force: true
+    )
+  end
+  
+  desc "Clean and reset"
+  lane :clean do
+    clear_derived_data
+    clean_build_artifacts
+    reset_git_repo(force: true, skip_clean: true)
+  end
+
+  # MARK: - Error Handling
+  error do |lane, exception|
+    UI.error "❌ Lane #{lane} failed with exception: #{exception}"
+    
+    # Clean up on error
+    clean_build_artifacts
+    
+    # Send error notification
+    notification(
+      title: "Progress iOS - Build Failed",
+      subtitle: "Lane: #{lane}",
+      message: exception.message
+    )
+  end
+  
+  after_all do |lane|
+    UI.success "🎉 Lane #{lane} completed successfully!"
+  end
+end 

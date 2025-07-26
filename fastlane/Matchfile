@@ -1,0 +1,34 @@
+# Matchfile configuration for Progress iOS App
+# For more information about match, see: https://docs.fastlane.tools/actions/match/
+
+# Git repository for storing certificates and provisioning profiles
+git_url("https://github.com/your-org/certificates")
+
+# App identifier for the Progress app
+app_identifier(["com.myname.Progress"])
+
+# Username for Apple Developer Portal
+username("your-apple-id@example.com")
+
+# Team ID from Apple Developer Portal
+team_id("YOUR_TEAM_ID")
+
+# Storage mode (git is recommended for teams)
+storage_mode("git")
+
+# Generate profiles for specific platforms only
+platform("ios")
+
+# Additional configuration
+generate_apple_certs(true)
+force_for_new_devices(true)
+
+# Keychain configuration for CI
+keychain_name("fastlane_tmp_keychain")
+keychain_password("temp_password_for_ci")
+
+# Skip confirmation prompts in CI
+skip_confirmation(true) if ENV["CI"]
+
+# Verbose output for debugging
+verbose(true) if ENV["DEBUG"] 
