@@ -1,0 +1,116 @@
+/* 
+  Localizable.strings
+  Progress
+  
+  Localized strings for the Progress iOS app.
+  Use SwiftGen L10n keys in code: Text(L10n.welcome.title)
+*/
+
+// MARK: - General
+"general.cancel" = "Cancel";
+"general.save" = "Save";
+"general.delete" = "Delete";
+"general.edit" = "Edit";
+"general.done" = "Done";
+"general.continue" = "Continue";
+"general.back" = "Back";
+"general.next" = "Next";
+"general.ok" = "OK";
+"general.error" = "Error";
+"general.loading" = "Loading...";
+
+// MARK: - Onboarding
+"onboarding.welcome.title" = "Welcome to Progress";
+"onboarding.welcome.subtitle" = "Track workouts, log nutrition, and visualize your progress";
+"onboarding.plan_selection.title" = "Choose Your Plan";
+"onboarding.plan_selection.standard" = "Standard - £1/month";
+"onboarding.plan_selection.ai_native" = "AI Native - £3/month";
+"onboarding.profile.title" = "Set Up Your Profile";
+"onboarding.profile.age" = "Age";
+"onboarding.profile.goal" = "Fitness Goal";
+"onboarding.profile.ability" = "Fitness Level";
+
+// MARK: - Authentication
+"auth.sign_in.title" = "Sign In";
+"auth.sign_up.title" = "Sign Up";
+"auth.email" = "Email";
+"auth.password" = "Password";
+"auth.sign_in_apple" = "Sign in with Apple";
+"auth.forgot_password" = "Forgot Password?";
+"auth.create_account" = "Create Account";
+
+// MARK: - Workouts
+"workouts.title" = "Workouts";
+"workouts.start_workout" = "Start Workout";
+"workouts.create_workout" = "Create Workout";
+"workouts.workout_name" = "Workout Name";
+"workouts.add_exercise" = "Add Exercise";
+"workouts.rest_timer" = "Rest Timer";
+"workouts.finish_workout" = "Finish Workout";
+"workouts.duplicate" = "Duplicate";
+"workouts.share" = "Share";
+
+// MARK: - Exercises
+"exercises.resistance" = "Resistance";
+"exercises.cardio" = "Cardio";
+"exercises.recovery" = "Recovery";
+"exercises.sets" = "Sets";
+"exercises.reps" = "Reps";
+"exercises.weight" = "Weight";
+"exercises.duration" = "Duration";
+"exercises.distance" = "Distance";
+
+// MARK: - Nutrition
+"nutrition.title" = "Nutrition";
+"nutrition.log_meal" = "Log Meal";
+"nutrition.search_food" = "Search Food";
+"nutrition.scan_barcode" = "Scan Barcode";
+"nutrition.take_photo" = "Take Photo"; // AI tier only
+"nutrition.calories" = "Calories";
+"nutrition.protein" = "Protein";
+"nutrition.carbs" = "Carbs";
+"nutrition.fat" = "Fat";
+"nutrition.favorites" = "Favorites";
+
+// MARK: - Progress
+"progress.title" = "Progress";
+"progress.daily_snapshot" = "Today's Summary";
+"progress.weekly_charts" = "Weekly Charts";
+"progress.streak" = "Streak";
+"progress.insights" = "Insights"; // AI tier only
+
+// MARK: - Settings
+"settings.title" = "Settings";
+"settings.profile" = "Profile";
+"settings.subscription" = "Subscription";
+"settings.units" = "Units";
+"settings.notifications" = "Notifications";
+"settings.privacy" = "Privacy";
+"settings.export_data" = "Export Data";
+"settings.delete_account" = "Delete Account";
+
+// MARK: - Subscription
+"subscription.standard.title" = "Standard";
+"subscription.ai_native.title" = "AI Native";
+"subscription.upgrade" = "Upgrade";
+"subscription.manage" = "Manage Subscription";
+"subscription.restore" = "Restore Purchases";
+
+// MARK: - Errors
+"error.network" = "Network connection error";
+"error.invalid_input" = "Invalid input";
+"error.sync_failed" = "Sync failed";
+"error.camera_permission" = "Camera permission required";
+"error.try_again" = "Please try again";
+
+// MARK: - Success Messages
+"success.workout_saved" = "Workout saved";
+"success.meal_logged" = "Meal logged";
+"success.data_exported" = "Data exported successfully";
+"success.subscription_updated" = "Subscription updated";
+
+// MARK: - Referral
+"referral.invite_friends" = "Invite Friends";
+"referral.get_free_month" = "Get 1 month free";
+"referral.share_link" = "Share Link";
+"referral.code_redeemed" = "Referral code redeemed!"; 

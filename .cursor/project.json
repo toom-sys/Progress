@@ -1,0 +1,145 @@
+{
+  "name": "Progress iOS App",
+  "description": "Fitness tracking app with workout planning, nutrition logging, and progress visualization",
+  "version": "0.7",
+  "documentation": {
+    "prd": ".cursor/rules/prd.mdc",
+    "readme": "README.md"
+  },
+  "rules": {
+    "swift": {
+      "linting": {
+        "enabled": true,
+        "tool": "swiftlint",
+        "config": ".swiftlint.yml",
+        "rules": {
+          "no_uikit_import": {
+            "enabled": true,
+            "severity": "error",
+            "description": "UIKit imports are forbidden - use SwiftUI only"
+          },
+          "no_hardcoded_colors": {
+            "enabled": true,
+            "severity": "error",
+            "description": "Use design tokens from Colours.swift instead of hardcoded colors"
+          },
+          "no_hardcoded_fonts": {
+            "enabled": true,
+            "severity": "error", 
+            "description": "Use design tokens from Typography.swift instead of hardcoded fonts"
+          },
+          "swiftgen_localization": {
+            "enabled": true,
+            "severity": "error",
+            "description": "All UI strings must use SwiftGen localized keys"
+          }
+        }
+      },
+      "formatting": {
+        "enabled": true,
+        "tool": "swift-format"
+      }
+    },
+    "architecture": {
+      "feature_folders": {
+        "enabled": true,
+        "structure": "Features/{FeatureName}/{View|ViewModel|UnitTests}",
+        "description": "Each feature must have its own folder with View, ViewModel, and UnitTests subfolders"
+      },
+      "design_tokens": {
+        "colors_file": "Progress/Resources/DesignTokens/Colours.swift",
+        "typography_file": "Progress/Resources/DesignTokens/Typography.swift",
+        "enforce_usage": true
+      }
+    }
+  },
+  "hooks": {
+    "pre_commit": {
+      "enabled": true,
+      "script": "Scripts/ci/pre-commit.sh",
+      "checks": [
+        {
+          "name": "swiftlint",
+          "command": "swiftlint lint --strict",
+          "description": "Run SwiftLint with strict mode"
+        },
+        {
+          "name": "no_uikit_imports",
+          "command": "! grep -r 'import UIKit' Progress/ --include='*.swift' || (echo 'ERROR: UIKit imports found. Use SwiftUI only.' && exit 1)",
+          "description": "Block commits with UIKit imports"
+        },
+        {
+          "name": "check_localization",
+          "command": "Scripts/ci/check-localization.sh",
+          "description": "Verify all UI strings use SwiftGen localization"
+        },
+        {
+          "name": "design_tokens_usage",
+          "command": "Scripts/ci/check-design-tokens.sh", 
+          "description": "Ensure design tokens are used instead of hardcoded values"
+        },
+        {
+          "name": "run_tests",
+          "command": "xcodebuild test -scheme Progress -destination 'platform=iOS Simulator,name=iPhone 15 Pro'",
+          "description": "Run unit tests before commit"
+        }
+      ]
+    },
+    "pre_push": {
+      "enabled": true,
+      "checks": [
+        {
+          "name": "full_test_suite",
+          "command": "Scripts/ci/run-full-tests.sh",
+          "description": "Run complete test suite including UI tests"
+        }
+      ]
+    }
+  },
+  "build": {
+    "swift_package_manager": {
+      "enabled": true,
+      "dependencies_only": true
+    },
+    "xcode": {
+      "project": "Progress.xcodeproj",
+      "scheme": "Progress",
+      "configuration": "Debug"
+    }
+  },
+  "testing": {
+    "unit_tests": {
+      "target": "ProgressTests",
+      "coverage_threshold": 80
+    },
+    "ui_tests": {
+      "target": "ProgressUITests"
+    }
+  },
+  "localization": {
+    "tool": "SwiftGen",
+    "config": "swiftgen.yml",
+    "strings_files": [
+      "Progress/Resources/Localization/en.lproj/Localizable.strings"
+    ],
+    "enforce_usage": true
+  },
+  "ci_cd": {
+    "github_actions": ".github/workflows/",
+    "fastlane": "fastlane/"
+  },
+  "compliance": {
+    "gdpr": {
+      "enabled": true,
+      "data_export": true,
+      "account_deletion": true
+    },
+    "app_store": {
+      "privacy_manifest": "Progress/PrivacyInfo.xcprivacy"
+    }
+  },
+  "performance": {
+    "launch_time_target": "500ms",
+    "crash_free_sessions": "99.5%"
+  }
+} 

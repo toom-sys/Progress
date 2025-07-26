@@ -1,0 +1,97 @@
+# SwiftGen Configuration for Progress iOS App
+# Generates type-safe accessors for localized strings, colors, fonts, and assets
+
+# Input/Output paths
+input_dir: Progress/Resources/
+output_dir: Progress/Resources/Generated/
+
+# Strings Configuration
+strings:
+  inputs:
+    - Progress/Resources/Localization/en.lproj/Localizable.strings
+  outputs:
+    - templateName: structured-swift5
+      output: Strings.swift
+      params:
+        enumName: L10n
+        publicAccess: true
+
+# Assets Configuration  
+xcassets:
+  inputs:
+    - Progress/Assets.xcassets
+  outputs:
+    - templateName: swift5
+      output: Assets.swift
+      params:
+        enumName: Asset
+        publicAccess: true
+
+# Colors Configuration (if using color assets)
+colors:
+  inputs:
+    - Progress/Resources/DesignTokens/Colors.xcassets
+  outputs:
+    - templateName: swift5
+      output: Colors.swift
+      params:
+        enumName: ColorAsset
+        publicAccess: true
+
+# Fonts Configuration (if using custom fonts)
+fonts:
+  inputs:
+    - Progress/Resources/Fonts
+  outputs:
+    - templateName: swift5
+      output: Fonts.swift
+      params:
+        enumName: FontFamily
+        publicAccess: true
+        preservePath: true
+
+# Interface Builder (if using Storyboards - optional for SwiftUI)
+# ib:
+#   inputs:
+#     - Progress/Storyboards
+#   outputs:
+#     - templateName: scenes-swift5
+#       output: Storyboards.swift
+#       params:
+#         enumName: StoryboardScene
+#         publicAccess: true
+
+# JSON/Plist Configuration (for app configuration files)
+json:
+  inputs:
+    - Progress/Resources/Configuration
+  filter: .*\.json$
+  outputs:
+    - templateName: runtime-swift5
+      output: JSON.swift
+      params:
+        enumName: JSONFiles
+        publicAccess: true
+
+# Yaml Configuration (for app configuration files)  
+yaml:
+  inputs:
+    - Progress/Resources/Configuration
+  filter: .*\.ya?ml$
+  outputs:
+    - templateName: runtime-swift5
+      output: YAML.swift
+      params:
+        enumName: YAMLFiles
+        publicAccess: true
+
+# Core Data (if using Core Data models)
+# coredata:
+#   inputs:
+#     - Progress/Models/Progress.xcdatamodeld
+#   outputs:
+#     - templateName: swift5
+#       output: CoreData.swift
+#       params:
+#         enumName: CoreDataModel
+#         publicAccess: true 

@@ -1,190 +1,360 @@
 import SwiftUI
 
 /// Design tokens for consistent typography usage throughout the Progress app
-public struct ProgressTypography {
-    
-    // MARK: - Font Families
-    
-    /// System font family - SF Pro
-    public static let systemFont = "SF Pro"
-    
-    /// Rounded system font family - SF Pro Rounded
-    public static let roundedFont = "SF Pro Rounded"
-    
-    /// Monospace font family - SF Mono
-    public static let monospaceFont = "SF Mono"
+/// Provides semantic font styles that scale with Dynamic Type
+public extension Font {
     
     // MARK: - Display Typography
     
-    /// Large display text - hero sections
-    public static let displayLarge = Font.system(size: 57, weight: .regular, design: .default)
+    /// Extra large title - hero sections and main headers
+    static let titleXL = Font.system(size: 34, weight: .bold, design: .default)
     
-    /// Medium display text - section headers
-    public static let displayMedium = Font.system(size: 45, weight: .regular, design: .default)
+    /// Large title - page titles and section headers
+    static let titleLarge = Font.system(size: 28, weight: .bold, design: .default)
     
-    /// Small display text - card headers
-    public static let displaySmall = Font.system(size: 36, weight: .regular, design: .default)
+    /// Medium title - subsection headers
+    static let titleMedium = Font.system(size: 22, weight: .semibold, design: .default)
     
-    // MARK: - Headline Typography
-    
-    /// Large headline - page titles
-    public static let headlineLarge = Font.system(size: 32, weight: .bold, design: .default)
-    
-    /// Medium headline - section titles
-    public static let headlineMedium = Font.system(size: 28, weight: .bold, design: .default)
-    
-    /// Small headline - subsection titles
-    public static let headlineSmall = Font.system(size: 24, weight: .bold, design: .default)
-    
-    // MARK: - Title Typography
-    
-    /// Large title - modal headers
-    public static let titleLarge = Font.system(size: 22, weight: .semibold, design: .default)
-    
-    /// Medium title - card titles
-    public static let titleMedium = Font.system(size: 20, weight: .semibold, design: .default)
-    
-    /// Small title - list headers
-    public static let titleSmall = Font.system(size: 18, weight: .semibold, design: .default)
+    /// Small title - card headers and labels
+    static let titleSmall = Font.system(size: 20, weight: .semibold, design: .default)
     
     // MARK: - Body Typography
     
     /// Large body text - primary content
-    public static let bodyLarge = Font.system(size: 16, weight: .regular, design: .default)
+    static let bodyLarge = Font.system(size: 17, weight: .regular, design: .default)
     
-    /// Medium body text - standard content
-    public static let bodyMedium = Font.system(size: 14, weight: .regular, design: .default)
+    /// Standard body text - default content
+    static let body = Font.system(size: 16, weight: .regular, design: .default)
     
     /// Small body text - secondary content
-    public static let bodySmall = Font.system(size: 12, weight: .regular, design: .default)
+    static let bodySmall = Font.system(size: 14, weight: .regular, design: .default)
     
-    // MARK: - Label Typography
+    // MARK: - Supporting Typography
     
-    /// Large label - form labels
-    public static let labelLarge = Font.system(size: 14, weight: .medium, design: .default)
+    /// Caption text - hints and metadata
+    static let caption = Font.system(size: 12, weight: .regular, design: .default)
     
-    /// Medium label - button labels
-    public static let labelMedium = Font.system(size: 12, weight: .medium, design: .default)
+    /// Label text - buttons and form labels
+    static let label = Font.system(size: 14, weight: .medium, design: .default)
     
-    /// Small label - captions and hints
-    public static let labelSmall = Font.system(size: 10, weight: .medium, design: .default)
+    /// Subheadline text - supporting headers
+    static let subheadline = Font.system(size: 15, weight: .medium, design: .default)
     
     // MARK: - Specialized Typography
     
-    /// Numbers and metrics - rounded design
-    public static let numberLarge = Font.system(size: 24, weight: .bold, design: .rounded)
-    public static let numberMedium = Font.system(size: 18, weight: .semibold, design: .rounded)
-    public static let numberSmall = Font.system(size: 14, weight: .medium, design: .rounded)
+    /// Numbers and metrics - monospaced for alignment
+    static let numberLarge = Font.system(size: 32, weight: .bold, design: .rounded)
+        .monospacedDigit()
     
-    /// Code and technical text - monospace
-    public static let codeLarge = Font.system(size: 16, weight: .regular, design: .monospaced)
-    public static let codeMedium = Font.system(size: 14, weight: .regular, design: .monospaced)
-    public static let codeSmall = Font.system(size: 12, weight: .regular, design: .monospaced)
+    static let numberMedium = Font.system(size: 20, weight: .semibold, design: .rounded)
+        .monospacedDigit()
+    
+    static let numberSmall = Font.system(size: 16, weight: .medium, design: .rounded)
+        .monospacedDigit()
     
     /// Timer display - large, prominent numbers
-    public static let timerDisplay = Font.system(size: 48, weight: .bold, design: .rounded)
-    public static let timerSeconds = Font.system(size: 32, weight: .semibold, design: .rounded)
+    static let timerDisplay = Font.system(size: 48, weight: .bold, design: .rounded)
+        .monospacedDigit()
+    
+    /// Button text styles
+    static let buttonPrimary = Font.system(size: 16, weight: .semibold, design: .default)
+    static let buttonSecondary = Font.system(size: 14, weight: .medium, design: .default)
 }
 
-// MARK: - Text Styles
+// MARK: - Text Style Extensions
 
-public struct ProgressTextStyles {
-    
-    /// Primary button text style
-    public static func primaryButton() -> some View {
-        EmptyView()
-            .font(ProgressTypography.labelLarge)
-            .foregroundColor(ProgressColors.textPrimary)
+public extension Text {
+    /// Applies primary button styling
+    func primaryButtonStyle() -> some View {
+        self
+            .font(.buttonPrimary)
+            .foregroundColor(.white)
     }
     
-    /// Secondary button text style
-    public static func secondaryButton() -> some View {
-        EmptyView()
-            .font(ProgressTypography.labelMedium)
-            .foregroundColor(ProgressColors.textSecondary)
+    /// Applies secondary button styling
+    func secondaryButtonStyle() -> some View {
+        self
+            .font(.buttonSecondary)
+            .foregroundColor(.primary)
     }
     
-    /// Input field text style
-    public static func inputField() -> some View {
-        EmptyView()
-            .font(ProgressTypography.bodyMedium)
-            .foregroundColor(ProgressColors.textPrimary)
+    /// Applies number formatting for metrics
+    func numberStyle(_ font: Font = .numberMedium) -> some View {
+        self
+            .font(font)
+            .monospacedDigit()
+            .foregroundColor(.textPrimary)
     }
     
-    /// Placeholder text style
-    public static func placeholder() -> some View {
-        EmptyView()
-            .font(ProgressTypography.bodyMedium)
-            .foregroundColor(ProgressColors.textPlaceholder)
+    /// Applies timer display formatting
+    func timerStyle() -> some View {
+        self
+            .font(.timerDisplay)
+            .foregroundColor(.primary)
     }
     
-    /// Error text style
-    public static func error() -> some View {
-        EmptyView()
-            .font(ProgressTypography.labelSmall)
-            .foregroundColor(ProgressColors.error)
+    /// Applies error text styling
+    func errorStyle() -> some View {
+        self
+            .font(.caption)
+            .foregroundColor(.error)
     }
     
-    /// Caption text style
-    public static func caption() -> some View {
-        EmptyView()
-            .font(ProgressTypography.labelSmall)
-            .foregroundColor(ProgressColors.textTertiary)
+    /// Applies success text styling
+    func successStyle() -> some View {
+        self
+            .font(.caption)
+            .foregroundColor(.success)
     }
 }
 
-// MARK: - Line Height and Spacing
+// MARK: - Typography Helpers
 
-public struct ProgressSpacing {
-    
-    /// Typography line height multipliers
-    public static let lineHeightTight: CGFloat = 1.1
-    public static let lineHeightNormal: CGFloat = 1.4
-    public static let lineHeightLoose: CGFloat = 1.6
+public struct ProgressTypography {
+    /// Standard line height multiplier for body text
+    public static let lineHeightMultiplier: CGFloat = 1.25
     
     /// Letter spacing values
     public static let letterSpacingTight: CGFloat = -0.5
     public static let letterSpacingNormal: CGFloat = 0
     public static let letterSpacingWide: CGFloat = 0.5
     
-    /// Paragraph spacing
-    public static let paragraphSpacingSmall: CGFloat = 8
-    public static let paragraphSpacingMedium: CGFloat = 16
-    public static let paragraphSpacingLarge: CGFloat = 24
+    /// Paragraph spacing values
+    public static let paragraphSpacing: CGFloat = 16
 }
 
-// MARK: - Typography Extensions
+// MARK: - Preview
 
-extension Font {
-    /// Creates a font with custom tracking (letter spacing)
-    public func tracking(_ value: CGFloat) -> Font {
-        return self
+#Preview("Progress Typography") {
+    ScrollView {
+        VStack(spacing: 32) {
+            // Title Styles Section
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Title Styles")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    TypographySample(
+                        text: "Title XL - Hero Header",
+                        font: .titleXL,
+                        description: "34pt Bold"
+                    )
+                    
+                    TypographySample(
+                        text: "Title Large - Page Header",
+                        font: .titleLarge,
+                        description: "28pt Bold"
+                    )
+                    
+                    TypographySample(
+                        text: "Title Medium - Section Header",
+                        font: .titleMedium,
+                        description: "22pt Semibold"
+                    )
+                    
+                    TypographySample(
+                        text: "Title Small - Card Header",
+                        font: .titleSmall,
+                        description: "20pt Semibold"
+                    )
+                }
+            }
+            
+            // Body Styles Section
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Body Styles")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    TypographySample(
+                        text: "Body Large - Primary content for important information",
+                        font: .bodyLarge,
+                        description: "17pt Regular"
+                    )
+                    
+                    TypographySample(
+                        text: "Body - Standard content for most text in the app",
+                        font: .body,
+                        description: "16pt Regular"
+                    )
+                    
+                    TypographySample(
+                        text: "Body Small - Secondary content and supporting text",
+                        font: .bodySmall,
+                        description: "14pt Regular"
+                    )
+                }
+            }
+            
+            // Supporting Styles Section
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Supporting Styles")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    TypographySample(
+                        text: "Subheadline - Supporting headers",
+                        font: .subheadline,
+                        description: "15pt Medium"
+                    )
+                    
+                    TypographySample(
+                        text: "Label - Buttons and form labels",
+                        font: .label,
+                        description: "14pt Medium"
+                    )
+                    
+                    TypographySample(
+                        text: "Caption - Hints and metadata",
+                        font: .caption,
+                        description: "12pt Regular"
+                    )
+                }
+            }
+            
+            // Number Styles Section
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Number Styles")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(alignment: .leading, spacing: 12) {
+                    TypographySample(
+                        text: "12:34",
+                        font: .timerDisplay,
+                        description: "Timer Display - 48pt Bold Rounded"
+                    )
+                    
+                    TypographySample(
+                        text: "1,234",
+                        font: .numberLarge,
+                        description: "Number Large - 32pt Bold Rounded"
+                    )
+                    
+                    TypographySample(
+                        text: "567",
+                        font: .numberMedium,
+                        description: "Number Medium - 20pt Semibold Rounded"
+                    )
+                    
+                    TypographySample(
+                        text: "89",
+                        font: .numberSmall,
+                        description: "Number Small - 16pt Medium Rounded"
+                    )
+                }
+            }
+            
+            // Interactive Examples Section
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Interactive Examples")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(spacing: 16) {
+                    // Button Examples
+                    HStack(spacing: 16) {
+                        Button("Primary Button") {}
+                            .primaryButtonStyle()
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(.primary)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        
+                        Button("Secondary Button") {}
+                            .secondaryButtonStyle()
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(.primary, lineWidth: 1)
+                            )
+                    }
+                    
+                    // Status Examples
+                    HStack(spacing: 20) {
+                        Text("Success message")
+                            .successStyle()
+                        
+                        Text("Error message")
+                            .errorStyle()
+                    }
+                    
+                    // Timer Example
+                    Text("02:45")
+                        .timerStyle()
+                        .padding(20)
+                        .background(.backgroundSecondary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+            }
+            
+            // Usage Sample Card
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Sample Workout Card")
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+                
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Push Day")
+                        .font(.titleSmall)
+                        .foregroundColor(.textPrimary)
+                    
+                    Text("Upper body workout focusing on pushing movements")
+                        .font(.body)
+                        .foregroundColor(.textSecondary)
+                        .lineLimit(2)
+                    
+                    HStack {
+                        Label("45 min", systemImage: "clock")
+                            .font(.caption)
+                            .foregroundColor(.textTertiary)
+                        
+                        Spacer()
+                        
+                        Text("1,250")
+                            .numberStyle(.numberSmall)
+                        
+                        Text("calories")
+                            .font(.caption)
+                            .foregroundColor(.textTertiary)
+                    }
+                }
+                .padding(16)
+                .background(.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(.border, lineWidth: 1)
+                )
+            }
+        }
+        .padding(20)
     }
-    
-    /// Creates a font with custom line height
-    public func lineHeight(_ value: CGFloat) -> Font {
-        return self
-    }
+    .background(.background)
 }
 
-extension Text {
-    /// Applies Progress app typography style
-    public func progressStyle(_ style: Font) -> Text {
-        return self.font(style)
-    }
+// MARK: - Helper Views
+
+private struct TypographySample: View {
+    let text: String
+    let font: Font
+    let description: String
     
-    /// Applies number formatting for metrics
-    public func numberStyle(size: Font) -> Text {
-        return self
-            .font(size)
-            .monospacedDigit()
-    }
-    
-    /// Applies timer display formatting
-    public func timerStyle() -> Text {
-        return self
-            .font(ProgressTypography.timerDisplay)
-            .monospacedDigit()
-            .foregroundColor(ProgressColors.textPrimary)
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(text)
+                .font(font)
+                .foregroundColor(.textPrimary)
+            
+            Text(description)
+                .font(.caption)
+                .foregroundColor(.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 8)
     }
 } 
