@@ -121,67 +121,7 @@ struct PaywallView: View {
     // MARK: - Features Section
     
     private var featuresSection: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("What's Included")
-                .font(.titleMedium)
-                .foregroundColor(Color.textPrimary)
-            
-            if let selected = selectedOffering {
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(selected.tier.features, id: \.self) { feature in
-                        HStack(spacing: 12) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundColor(Color.success)
-                                .font(.body)
-                            
-                            Text(feature)
-                                .font(.body)
-                                .foregroundColor(Color.textPrimary)
-                            
-                            Spacer()
-                        }
-                    }
-                }
-                .padding(20)
-                .background(Color.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-            }
-        }
-    }
-    
-    // MARK: - Purchase Section
-    
-    private var purchaseSection: some View {
         VStack(spacing: 16) {
-            if let selected = selectedOffering {
-                Button {
-                    Task {
-                        await subscriptionService.purchase(selected)
-                        if subscriptionService.activeSubscription != nil {
-                            dismiss()
-                        }
-                    }
-                } label: {
-                    HStack {
-                        if subscriptionService.isLoading {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(0.8)
-                        } else {
-                            Text("Start \(selected.tier.displayName) - \(selected.pricePerMonth)/month")
-                                .font(.buttonPrimary)
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .foregroundColor(.white)
-                    .background(Color.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-                .disabled(subscriptionService.isLoading)
-            }
-            
             Button("Restore Purchases") {
                 Task {
                     await subscriptionService.restorePurchases()
@@ -190,6 +130,14 @@ struct PaywallView: View {
             .font(.body)
             .foregroundColor(Color.textSecondary)
             .disabled(subscriptionService.isLoading)
+            
+            if subscriptionService.purchaseError != nil {
+                Text(subscriptionService.purchaseError!)
+                    .font(.bodySmall)
+                    .foregroundColor(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
         }
     }
     
