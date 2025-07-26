@@ -213,6 +213,8 @@ struct SubscriptionCard: View {
     let onSelect: () -> Void
     let onPurchase: () -> Void
     
+    @State private var showAllFeatures = false
+    
     var body: some View {
         Button(action: onSelect) {
             VStack(spacing: 16) {
@@ -270,7 +272,9 @@ struct SubscriptionCard: View {
             
             // Key features preview
             VStack(alignment: .leading, spacing: 8) {
-                ForEach(Array(offering.tier.features.prefix(3)), id: \.self) { feature in
+                let featuresToShow = showAllFeatures ? offering.tier.features : Array(offering.tier.features.prefix(3))
+                
+                ForEach(featuresToShow, id: \.self) { feature in
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark")
                             .font(.caption)
@@ -285,10 +289,23 @@ struct SubscriptionCard: View {
                 }
                 
                 if offering.tier.features.count > 3 {
-                    Text("+ \(offering.tier.features.count - 3) more features")
-                        .font(.caption)
-                        .foregroundColor(Color.textTertiary)
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            showAllFeatures.toggle()
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Text(showAllFeatures ? "Show less" : "+ \(offering.tier.features.count - 3) more features")
+                                .font(.caption)
+                                .foregroundColor(Color.primary)
+                            
+                            Image(systemName: showAllFeatures ? "chevron.up" : "chevron.down")
+                                .font(.caption)
+                                .foregroundColor(Color.primary)
+                        }
                         .padding(.leading, 16)
+                    }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
             
