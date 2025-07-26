@@ -1,0 +1,283 @@
+---
+alwaysApply: true
+---
+# Product Requirements Document – **Progress** iOS App
+
+*Version 0.7 - 25 July 2025*
+
+---
+
+## 1  Purpose & Vision
+
+Progress helps everyday athletes in the UK effortlessly **track workouts, log nutrition and visualise progress** in one minimalist, affordable iPhone app. It closes the behaviour loop—*Activity → Nutrition → Insight*—so users understand exactly how actions drive results.
+
+---
+
+## 2  Goals & Success Metrics
+
+| Objective                | KPI                                                             | 90‑day Target                                               |
+| ------------------------ | --------------------------------------------------------------- | ----------------------------------------------------------- |
+| Seamless workout capture | % sessions logged without edit errors                           | **≥ 85 %**                                                  |
+| Fast nutrition entry     | Median meal‑logging time                                        | **≤ 15 s**                                                  |
+| Sticky engagement        | Day‑7 retention                                                 | **≥ 40 %**                                                  |
+| Monetisation             | **Tier mix** (Std : AI), **Referral→Paid** conversion, **ARPU** | Std 70 % / AI 30 %; 20 % referral conversion; **ARPU ≥ £2** |
+| Reliability              | Crash‑free sessions                                             | **≥ 99.5 %**                                                |
+
+---
+
+## 3  Personas (abridged)
+
+1. **Hannah (29), Consultant** – lifts 3×/wk; values speed & macro hints.
+2. **Chris (35), Runner** – imports Apple Watch runs; aims to lose weight.
+3. **Jas (41), Hobbyist** – loves deep charts & AI‑driven plans; pays for premium.
+
+---
+
+## 4  Product Scope
+
+### Must‑haves
+
+* Workout planning & live tracker with rest timer
+* Nutrition logging (search, barcode, **camera‑AI†**, quick‑add)
+* Daily snapshot & weekly charts
+* **Paid‑only model**: Standard £1/mo, AI Native £3/mo
+* One‑month free via **referral invite**
+* Local‑first storage + CloudKit sync
+* RevenueCat for subscriptions & promo codes † AI tier only
+
+### Nice‑to‑haves
+
+* Insight engine (AI tier)
+* Micro‑animations, shared‑element transitions
+* Push reminder personalisation
+
+---
+
+## 5  Functional Requirements – Epics → Features → User Stories
+
+Here are the comprehensive Epic tables clearly defined, including your two-tier subscription model, AI capabilities, and referral mechanics:
+
+⸻
+
+### Epic 1 — On‑boarding & Identity
+
+Feature	Stories & Tests	Acceptance Criteria
+Plan Selection	• 1.0‑A Pick tier (Standard £1 / AI Native £3)• 1.0‑B Change tier later	Prices localised, tier saved, clearly differentiated
+Referral Redemption	• 1.1‑A Redeem single-use referral link for 1-month free	Promo validated, applies entitlement, clear messaging
+Email Auth	• 1.2‑A Sign‑up flow• 1.2‑B Validation errors• 1.2‑C Persistent sign-in	Valid email, secure password, biometric unlock supported
+Apple Sign‑in	• 1.3‑A First‑time sign-in• 1.3‑B Return sign-in	Relay email secure, nonce verification, seamless experience
+Profile Prefill	• 1.4‑A Age, goal, ability setup	Drives relevant default workouts
+
+
+⸻
+
+### Epic 2 — Core Navigation & Structure
+
+Feature	Stories & Tests	Acceptance Criteria
+Floating Navigation	• 2.1‑A Instant tab switching• 2.1‑B Hide on scroll	Smooth transitions, responsive animations
+Deep-link Routing	• 2.2‑A Notifications open correct screens	Routes functional, context maintained
+
+
+⸻
+
+### Epic 3 — Workouts
+
+Feature	Stories & Tests	Acceptance Criteria
+Default Workouts	• 3.0‑A Select from predefined templates	Multiple defaults, clearly labelled
+Pre-Workout Planner	• 3.1‑A Create new plan• 3.1‑B Edit existing• 3.1‑C Duplicate past workouts	Intuitive editing, offline support
+Exercise Types & Inputs	• 3.2‑A Choose type (Resistance/Cardio/Recovery)• 3.2‑B Type-specific editable fields	Mandatory picker, relevant fields appear
+Live Tracker	• 3.3‑A Tick sets live• 3.3‑B Edit mid-session• 3.3‑C Persist offline	Immediate save, real-time updates
+Rest Timer	• 3.4‑A Pause/resume• 3.4‑B Triple-tap reset• 3.4‑C Editable swipe digits	Intuitive control, haptic feedback
+Exercise Re-ordering	• 3.5‑A Drag-and-drop reordering	Easy dragging, persistent ordering
+Delete & Undo	• 3.6‑A Swipe delete with undo snackbar	Undo available (5 sec), safe deletion
+Unsaved Changes	• 3.7‑A Prompt on unsaved edits	Modal confirmation, clear choices
+Finish Workout Flow	• 3.8‑A Manual finish• 3.8‑B Auto finish when complete• 3.8‑C Share summary	Smooth workflow, clear confirmations
+Workout Sharing	• 3.9‑A Generate shareable link• 3.9‑B Recipient imports workout• 3.9‑C Recipient directed to App Store if not installed	Seamless sharing, easy import
+AI Exercise Generation (AI tier only)	• 3.10‑A Single exercise creation• 3.10‑B Full workout generation	Accurate recommendations, quick creation
+
+
+⸻
+
+### Epic 4 — Nutrition
+
+Feature	Stories & Tests	Acceptance Criteria
+Verified Food Search	• 4.1‑A Priority verified results	Clearly labelled, accurate data
+Barcode Scan	• 4.2‑A Instant scan• 4.2‑B Manual fallback	Quick recognition, manual entry easy
+Camera AI Logging (AI tier only)	• 4.3‑A Snap to auto-fill• 4.3‑B Correct AI guess• 4.3‑C Low-confidence handling• 4.3‑D Offline support	Fast response, confidence indicators
+Quick-add Parser	• 4.4‑A Intelligent parsing	90% accuracy, intuitive usage
+Favourites & Meals	• 4.5‑A Pin for quick logging	One-tap add, frequent usage sorted
+Macro Targets & Rings	• 4.6‑A Set & track macros	Easy visualisation, adjustable settings
+Intake Reminders	• 4.7‑A Reminder if no log by afternoon	Gentle nudging, easy action
+
+
+⸻
+
+### Epic 5 — Progress & Insights
+
+Feature	Stories & Tests	Acceptance Criteria
+Snapshot Card	• 5.1‑A Daily metrics overview	Instant updates, clear visual
+Weekly Charts	• 5.2‑A Calories vs. workload	Interactive, easy toggle
+Streak Badges	• 5.3‑A Reward for 7-day streak	Visually rewarding, clear reset rules
+Personalised Insights (AI tier only)	• 5.4‑A Weekly tailored recommendations• 5.4‑B Upgrade prompt for Standard users	Relevant insights, clear upgrade prompts
+
+
+⸻
+
+### Epic 6 — Data Management & Sync
+
+Feature	Stories & Tests	Acceptance Criteria
+Local-first Storage	• 6.1‑A Offline persistence	Data safe, robust syncing
+CloudKit Sync	• 6.2‑A Auto hourly sync• 6.2‑B Manual sync	Fast, seamless updates
+GDPR Compliance	• 6.3‑A Export data• 6.3‑B Delete account permanently	Prompt compliance, clear actions
+Conflict Resolution	• 6.4‑A Manual conflict resolution	Simple UI, clear choices
+
+
+⸻
+
+### Epic 7 — Visual Design & Animations
+
+Feature	Stories & Tests	Acceptance Criteria
+Design Tokens	• 7.1‑A Linting enforcement	Consistent styles
+Micro-animations	• 7.2‑A Rive animations	Small, engaging animations
+Loading States	• 7.3‑A Lottie loaders	Clear feedback on waits
+Shared-element Transitions	• 7.4‑A Smooth navigation transitions	Maintain user context
+
+
+⸻
+
+### Epic 8 — Engagement & Personalisation
+
+Feature	Stories & Tests	Acceptance Criteria
+Push Reminders	• 8.1‑A Daily log nudges	Context-aware, helpful
+Referral System	• 8.2‑A Generate referral links
+                • 8.2‑B Notify inviter on redemption	Easy sharing, clear reward
+Units & Locale	• 8.3‑A Unit toggles	Simple switching
+Dynamic Themes	• 8.4‑A Dark/light mode	Smooth transitions, persistent preference
+Feedback Prompt	• 8.5‑A Prompt for ratings	Timely, non-intrusive
+
+
+⸻
+
+### Epic 9 — Performance & Compliance
+
+Feature	Stories & Tests	Acceptance Criteria
+App Launch Performance	• 9.1‑A Fast launch	≤ 500 ms launch
+Energy Efficiency	• 9.2‑A Battery optimisations	Low-power mode optimisations
+Crash Reporting	• 9.3‑A Real-time crash logging	Immediate alerts
+GDPR CI Gate	• 9.4‑A Compliance checks	Automated enforcement
+
+
+⸻
+
+### Epic 10 — Monetisation & Revenue (RevenueCat)
+
+Feature	Stories & Tests	Acceptance Criteria
+Dual-tier Paywall	• 10.1‑A Clear Standard vs AI Native comparison	Clear choices, local pricing
+Subscription Handling	• 10.2‑A Successful purchases• 10.2‑B Cancellations	Smooth transactions
+Restore Purchases	• 10.3‑A Easy restoration	Clear messaging
+Remote Paywall Config	• 10.4‑A Remote updates without app release	Quick updates, dynamic
+Promo Codes	• 10.5‑A Support influencer codes	Instant entitlement updates
+
+
+⸻
+
+## 6  Technical Stack
+
+* **UI**: SwiftUI (iOS 18 +), Swift Charts
+* **State & Persistence**: SwiftData, CloudKit
+* **AI Services**: OpenAI API (AI workout/nutrition support), Vision + Core ML (food image detection)
+* **Subscription & Analytics**: RevenueCat, Firebase Crashlytics
+* **CI/CD**: GitHub Actions + Fastlane → TestFlight
+* **Dependencies**: Swift Package Manager only
+
+---
+
+## 7  File‑Structure Hierarchy (Cursor IDE project)
+
+```text
+Progress/                  # Workspace root
+├─ .cursor/                # Cursor IDE rules
+│   └─ project.json        # Lint, tests, PRD linkage
+├─ PRD.md                  # ← this file (source of truth)
+├─ README.md
+├─ ios/
+│   ├─ ProgressApp/        # Main SwiftUI app
+│   │   ├─ AppDelegate.swift
+│   │   ├─ ContentView.swift
+│   │   ├─ Resources/
+│   │   │   ├─ Assets.xcassets
+│   │   │   └─ DesignTokens/
+│   │   │       ├─ Colours.swift
+│   │   │       └─ Typography.swift
+│   │   ├─ Features/
+│   │   │   ├─ Onboarding/
+│   │   │   ├─ Workouts/
+│   │   │   │   ├─ Planner/
+│   │   │   │   ├─ LiveTracker/
+│   │   │   │   ├─ RestTimer/
+│   │   │   │   └─ History/
+│   │   │   ├─ Nutrition/
+│   │   │   │   ├─ Search/
+│   │   │   │   ├─ Barcode/
+│   │   │   │   ├─ CameraAI/
+│   │   │   │   └─ MacroGoals/
+│   │   │   ├─ ProgressDashboard/
+│   │   │   ├─ Engagement/
+│   │   │   ├─ Paywall/
+│   │   │   └─ Settings/
+│   │   ├─ Extensions/
+│   │   └─ Utilities/
+│   ├─ ProgressCore/       # Core logic / services
+│   │   ├─ Models/
+│   │   ├─ Data/
+│   │   │   ├─ Repositories/
+│   │   │   └─ Persistence/
+│   │   ├─ Services/
+│   │   │   ├─ CloudKit/
+│   │   │   ├─ HealthKit/
+│   │   │   ├─ VisionFoodAI/
+│   │   │   ├─ RevenueCat/
+│   │   │   └─ Analytics/
+│   │   └─ Tests/
+├─ docs/
+│   ├─ backlog.xlsx
+│   └─ wireframes/
+├─ Scripts/
+│   └─ ci/
+└─ fastlane/
+    ├─ Fastfile
+    └─ Matchfile
+```
+
+---
+
+## 8  File‑Organisation Rules (`.cursor/project.json` enforced)
+
+* One feature = one folder under `Features/`, with `View`, `ViewModel`, and `UnitTests` sub‑folders
+* UIKit imports (`import UIKit`) are rejected via pre‑commit hook
+* All strings must be localised with SwiftGen; `.strings` entries required for UI text
+* Design tokens from `Colours.swift` and `Typography.swift` must be used; **no hard‑coded colours or fonts**
+
+---
+
+## 9  Non‑Functional Requirements
+
+* Offline‑first: every user action must succeed without an internet connection and sync later
+* Accessibility: complies with WCAG AA colour contrast
+* Energy efficiency: background sync throttled during Low Power Mode
+* Cold launch under 500 ms on iPhone 12 +
+* All major flows must be covered by unit and snapshot tests
+
+---
+
+## 10  Risks & Mitigations
+
+| Risk                                  | Impact            | Mitigation                                                       |
+| ------------------------------------- | ----------------- | ---------------------------------------------------------------- |
+| AI misclassification (food/workout)   | User trust drop   | Confidence badge, user override, fallback UI                     |
+| CloudKit quota exceeded               | Sync failure      | Monitor usage, batch uploads, alert at 80 %                      |
+| Subscription confusion (plan tiering) | Drop‑off in sales | Clear dual‑plan paywall with benefit breakdown                   |
+| Referral fraud (free‑month abuse)     | Revenue loss      | Single‑use promo codes, device/account rate limits               |
+| Apple App Store privacy rejection     | Launch delayed    | Follow HealthKit permission and purpose‑justification guidelines |
+
+---
