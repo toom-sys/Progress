@@ -75,7 +75,7 @@ struct ContentView: View {
                 .padding(.bottom, 32)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.background)
+            .background(Color.background)
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -106,7 +106,7 @@ struct FeatureCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(16)
-        .background(.surface)
+        .background(Color.surface)
         .cornerRadius(12)
         .shadow(
             color: .textPrimary.opacity(0.1),
