@@ -153,6 +153,7 @@ struct PaywallView: View {
                 SubscriptionCard(
                     offering: offering,
                     isSelected: selectedOffering?.productId == offering.productId,
+                    isCurrentPlan: subscriptionService.isActiveTier(offering.tier),
                     isLoading: subscriptionService.isLoading && selectedOffering?.productId == offering.productId,
                     onSelect: {
                         selectedOffering = offering
@@ -247,6 +248,7 @@ struct PaywallView: View {
 struct SubscriptionCard: View {
     let offering: SubscriptionService.SubscriptionOffering
     let isSelected: Bool
+    let isCurrentPlan: Bool
     let isLoading: Bool
     let onSelect: () -> Void
     let onPurchase: () -> Void
@@ -359,9 +361,6 @@ struct SubscriptionCard: View {
                             .font(.buttonPrimary)
                             .fontWeight(.semibold)
                     } else {
-                        // Check if this is the active subscription
-                        let isCurrentPlan = subscriptionService.isActiveTier(offering.tier)
-                        
                         Text(isCurrentPlan ? "Current Plan" : "Start \(offering.tier.displayName)")
                             .font(.buttonPrimary)
                             .fontWeight(.semibold)
@@ -409,6 +408,7 @@ struct SubscriptionCard: View {
                 package: nil
             ),
             isSelected: false,
+            isCurrentPlan: false,
             isLoading: false,
             onSelect: {},
             onPurchase: {}
@@ -425,6 +425,7 @@ struct SubscriptionCard: View {
                 package: nil
             ),
             isSelected: true,
+            isCurrentPlan: true,
             isLoading: false,
             onSelect: {},
             onPurchase: {}
