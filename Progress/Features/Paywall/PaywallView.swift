@@ -71,15 +71,37 @@ struct PaywallView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            Text("Unlock Your Progress")
-                .font(.titleXL)
-                .foregroundColor(.textPrimary)
-                .multilineTextAlignment(.center)
-            
-            Text("Choose the plan that fits your fitness journey")
-                .font(.bodyLarge)
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
+            if let activeSubscription = subscriptionService.activeSubscription {
+                // Show current subscription status
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.success)
+                            .font(.title2)
+                        
+                        Text("Active Subscription")
+                            .font(.titleLarge)
+                            .foregroundColor(.textPrimary)
+                            .fontWeight(.semibold)
+                    }
+                    
+                    Text("You're subscribed to \(activeSubscription.displayName)")
+                        .font(.bodyLarge)
+                        .foregroundColor(.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            } else {
+                // Show signup prompt
+                Text("Unlock Your Progress")
+                    .font(.titleXL)
+                    .foregroundColor(.textPrimary)
+                    .multilineTextAlignment(.center)
+                
+                Text("Choose the plan that fits your fitness journey")
+                    .font(.bodyLarge)
+                    .foregroundColor(.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
     
@@ -117,6 +139,7 @@ struct PaywallView: View {
                     offering: offering,
                     isSelected: selectedOffering?.productId == offering.productId,
                     isLoading: subscriptionService.isLoading && selectedOffering?.productId == offering.productId,
+                    activeSubscription: subscriptionService.activeSubscription,
                     onSelect: {
                         selectedOffering = offering
                     },
@@ -216,6 +239,9 @@ struct SubscriptionCard: View {
     
     @State private var showAllFeatures = false
     
+    // Active subscription from parent view
+    var activeSubscription: SubscriptionService.SubscriptionTier?
+    
     var body: some View {
         Button(action: onSelect) {
             VStack(spacing: 16) {
@@ -310,7 +336,74 @@ struct SubscriptionCard: View {
                 }
             }
             
-            // Purchase button
+            // Purchase button or status indicator
+            purchaseButtonView
+        }
+        .padding(20)
+        .background(Color.surface)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(
+                    isSelected ? Color.primary : Color.border,
+                    lineWidth: isSelected ? 2 : 1
+                )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Purchase Button View
+    
+    @ViewBuilder
+    private var purchaseButtonView: some View {
+        if activeSubscription == offering.tier {
+            // Current subscription indicator
+            HStack {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.success)
+                
+                Text("Current Plan")
+                    .font(.buttonPrimary)
+                    .fontWeight(.semibold)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .foregroundColor(.success)
+            .background(Color.success.opacity(0.1))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.success, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        } else if let active = activeSubscription {
+            // Upgrade/Downgrade button
+            Button(action: onPurchase) {
+                HStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        
+                        Text("Processing...")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    } else {
+                        let isUpgrade = offering.tier == .aiNative && active == .standard
+                        Text(isUpgrade ? "Upgrade to \(offering.tier.displayName)" : "Switch to \(offering.tier.displayName)")
+                            .font(.buttonPrimary)
+                            .fontWeight(.semibold)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .foregroundColor(.white)
+                .background(Color.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(isLoading)
+        } else {
+            // Initial subscription button
             Button(action: onPurchase) {
                 HStack {
                     if isLoading {
@@ -335,18 +428,6 @@ struct SubscriptionCard: View {
             }
             .disabled(isLoading)
         }
-        .padding(20)
-        .background(Color.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(
-                    isSelected ? Color.primary : Color.border,
-                    lineWidth: isSelected ? 2 : 1
-                )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -370,6 +451,7 @@ struct SubscriptionCard: View {
             ),
             isSelected: false,
             isLoading: false,
+            activeSubscription: .standard,
             onSelect: {},
             onPurchase: {}
         )
@@ -386,6 +468,7 @@ struct SubscriptionCard: View {
             ),
             isSelected: true,
             isLoading: false,
+            activeSubscription: .standard,
             onSelect: {},
             onPurchase: {}
         )
