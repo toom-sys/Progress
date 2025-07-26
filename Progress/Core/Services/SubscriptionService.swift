@@ -87,7 +87,7 @@ class SubscriptionService: ObservableObject {
     
     init() {
         setupMockOfferings()
-        checkSubscriptionStatus()
+        // Don't check subscription status immediately - wait for RevenueCat to be configured
     }
     
     // MARK: - Public Methods
@@ -95,6 +95,14 @@ class SubscriptionService: ObservableObject {
     func loadOfferings() async {
         isLoading = true
         purchaseError = nil
+        
+        // Ensure RevenueCat is configured before making calls
+        guard Purchases.isConfigured else {
+            print("⚠️ RevenueCat not configured yet, using mock offerings")
+            setupMockOfferings()
+            isLoading = false
+            return
+        }
         
         do {
             let offerings = try await Purchases.shared.offerings()
@@ -155,6 +163,13 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
         
+        guard Purchases.isConfigured else {
+            print("⚠️ RevenueCat not configured yet, cannot purchase")
+            purchaseError = "RevenueCat not configured"
+            isLoading = false
+            return
+        }
+        
         do {
             guard let package = offering.package else {
                 print("❌ No package available for offering")
@@ -183,6 +198,13 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
         
+        guard Purchases.isConfigured else {
+            print("⚠️ RevenueCat not configured yet, cannot restore")
+            purchaseError = "RevenueCat not configured"
+            isLoading = false
+            return
+        }
+        
         do {
             let customerInfo = try await Purchases.shared.restorePurchases()
             checkSubscriptionStatus()
@@ -197,6 +219,12 @@ class SubscriptionService: ObservableObject {
     }
     
     func checkSubscriptionStatus() {
+        guard Purchases.isConfigured else {
+            print("⚠️ RevenueCat not configured yet, skipping subscription status check")
+            activeSubscription = nil
+            return
+        }
+        
         Purchases.shared.getCustomerInfo { [weak self] customerInfo, error in
             DispatchQueue.main.async {
                 guard let customerInfo = customerInfo, error == nil else {

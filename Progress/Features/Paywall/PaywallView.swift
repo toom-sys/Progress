@@ -49,7 +49,10 @@ struct PaywallView: View {
             }
         }
         .task {
+            // Small delay to ensure RevenueCat is configured
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
             await subscriptionService.loadOfferings()
+            subscriptionService.checkSubscriptionStatus()
         }
     }
     

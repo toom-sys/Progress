@@ -12,7 +12,7 @@ struct ProgressApp: App {
     
     // MARK: - Properties
     
-    @StateObject private var appDelegate = AppDelegate()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     // MARK: - Body
     
@@ -30,13 +30,4 @@ struct ProgressApp: App {
     }
 }
 
-// MARK: - UIApplicationDelegate Conformance
 
-extension ProgressApp {
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
-    ) -> Bool {
-        return appDelegate.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
-}

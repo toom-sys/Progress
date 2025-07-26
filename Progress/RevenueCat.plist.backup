@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>API_KEY</key>
-    <string>appl_VkliwIaGcxtMnBWwcuvinUtpFLe</string>
+    <string>${REVENUECAT_API_KEY}</string>
     <key>PUBLIC_SDK_KEY_IOS</key>
-    <string>appl_VkliwIaGcxtMnBWwcuvinUtpFLe</string>
+    <string>${REVENUECAT_PUBLIC_SDK_KEY_IOS}</string>
     <key>ENVIRONMENT</key>
-    <string>sandbox</string>
+    <string>${REVENUECAT_ENVIRONMENT}</string>
     <key>DEBUG_LOGS_ENABLED</key>
     <true/>
     <key>STORE_KIT_2_ENABLED</key>
@@ -15,3 +15,4 @@
     <key>ATTRIBUTION_ENABLED</key>
     <true/>
 </dict>
+</plist> 
