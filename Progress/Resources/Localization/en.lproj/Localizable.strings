@@ -24,7 +24,7 @@
 "onboarding.welcome.subtitle" = "Track workouts, log nutrition, and visualize your progress";
 "onboarding.plan_selection.title" = "Choose Your Plan";
 "onboarding.plan_selection.standard" = "Standard - £1/month";
-"onboarding.plan_selection.ai_native" = "AI Native - £3/month";
+"onboarding.plan_selection.plus_ai" = "Plus AI - £3/month";
 "onboarding.profile.title" = "Set Up Your Profile";
 "onboarding.profile.age" = "Age";
 "onboarding.profile.goal" = "Fitness Goal";
@@ -91,7 +91,7 @@
 
 // MARK: - Subscription
 "subscription.standard.title" = "Standard";
-"subscription.ai_native.title" = "AI Native";
+"subscription.plus_ai.title" = "Plus AI";
 "subscription.upgrade" = "Upgrade";
 "subscription.manage" = "Manage Subscription";
 "subscription.restore" = "Restore Purchases";

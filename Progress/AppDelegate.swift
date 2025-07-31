@@ -10,9 +10,9 @@ import SwiftUI
 
 // TODO: Uncomment when frameworks are added to project
 import RevenueCat
-// import FirebaseCore
-// import FirebaseCrashlytics
-// import FirebaseAnalytics
+import FirebaseCore
+import FirebaseCrashlytics
+import FirebaseAnalytics
 
 class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
@@ -20,7 +20,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
     @Published var isInitialized = false
     private let userDefaults = UserDefaults.standard
-    private let firstLaunchKey = "com.myname.Progress.firstLaunch"
+    private let firstLaunchKey = "com.tom.Progress.firstLaunch"
     
     // MARK: - Application Lifecycle
     
@@ -61,7 +61,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         // TODO: Uncomment when Firebase is added
-        /*
         FirebaseApp.configure()
         
         // Enable debug logging in debug builds
@@ -70,7 +69,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         #endif
         
         print("✅ Firebase initialized successfully")
-        */
         
         print("📝 Firebase configuration found - ready for initialization")
     }
@@ -86,7 +84,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         // Configure RevenueCat for sandbox testing
-        Purchases.logLevel = .debug
+        #if DEBUG
+        Purchases.logLevel = .info  // Reduced from .debug
+        #else
+        Purchases.logLevel = .error
+        #endif
         
         // Configure with the new API
         Purchases.configure(withAPIKey: apiKey)
@@ -136,9 +138,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         // TODO: Uncomment when Firebase Analytics is added
-        /*
         Analytics.logEvent("first_launch", parameters: deviceInfo)
-        */
         
         // TODO: Uncomment when RevenueCat is added
         /*

@@ -1,0 +1,129 @@
+{
+  "identifier" : "2C6DD9AD",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6479095018",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 763156234.26999998,
+    "_locale" : "en_GB",
+    "_storefront" : "GBR",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21484467",
+      "localizations" : [
+
+      ],
+      "name" : "Progress Subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "0.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6479096571",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Track workouts and nutrition with core features",
+              "displayName" : "Progress Standard",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.tom.progress.standard.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Progress Standard Monthly",
+          "subscriptionGroupID" : "21484467",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "2.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6479096572",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "All standard features plus AI-powered workout generation and nutrition insights",
+              "displayName" : "Progress Plus AI",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.tom.progress.plus_ai.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Progress Plus AI Monthly",
+          "subscriptionGroupID" : "21484467",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+} 

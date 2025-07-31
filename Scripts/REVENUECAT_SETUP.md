@@ -14,26 +14,26 @@ This guide will help you configure RevenueCat for the Progress iOS app's dual-ti
 Create these exact product IDs to match the app:
 
 #### Standard Tier
-- **Product ID**: `com.myname.progress.standard.monthly`
+- **Product ID**: `com.tom.progress.standard.monthly`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 month
 - **Price**: £0.99/month
 - **Display Name**: "Progress Standard"
 
-#### AI Native Tier  
-- **Product ID**: `com.myname.progress.ai_native.monthly`
+#### Plus AI Tier  
+- **Product ID**: `com.tom.progress.plus_ai.monthly`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 month
 - **Price**: £2.99/month
-- **Display Name**: "Progress AI Native"
+- **Display Name**: "Progress Plus AI"
 
 ### Create Offerings
 1. Go to **Offerings** in RevenueCat dashboard
 2. Create offering: **"Standard"** 
-   - Add package: `com.myname.progress.standard.monthly`
+   - Add package: `com.tom.progress.standard.monthly`
    - Set as monthly package
-3. Create offering: **"AI Native"**
-   - Add package: `com.myname.progress.ai_native.monthly` 
+3. Create offering: **"Plus AI"**
+   - Add package: `com.tom.progress.plus_ai.monthly` 
    - Set as monthly package
 
 ### Configure Entitlements
@@ -41,11 +41,11 @@ Create these entitlements to control feature access:
 
 1. **"standard"** entitlement
    - Grant access to: Standard tier features
-   - Products: `com.myname.progress.standard.monthly`
+   - Products: `com.tom.progress.standard.monthly`
 
-2. **"ai_native"** entitlement  
-   - Grant access to: AI Native tier features
-   - Products: `com.myname.progress.ai_native.monthly`
+2. **"plus_ai"** entitlement  
+   - Grant access to: Plus AI tier features
+   - Products: `com.tom.progress.plus_ai.monthly`
 
 ## 2. App Store Connect Setup
 
@@ -56,21 +56,21 @@ Create these entitlements to control feature access:
 
 #### Standard Subscription
 - **Reference Name**: Progress Standard Monthly
-- **Product ID**: `com.myname.progress.standard.monthly`
+- **Product ID**: `com.tom.progress.standard.monthly`
 - **Subscription Group**: Progress Subscriptions
 - **Duration**: 1 month
 - **Price**: £0.99 (Tier 2)
 
-#### AI Native Subscription  
-- **Reference Name**: Progress AI Native Monthly
-- **Product ID**: `com.myname.progress.ai_native.monthly`
+#### Plus AI Subscription  
+- **Reference Name**: Progress Plus AI Monthly
+- **Product ID**: `com.tom.progress.plus_ai.monthly`
 - **Subscription Group**: Progress Subscriptions  
 - **Duration**: 1 month
 - **Price**: £2.99 (Tier 5)
 
 ### Subscription Group Settings
 - **Reference Name**: Progress Subscriptions
-- **Rank products**: AI Native (higher rank), Standard (lower rank)
+- **Rank products**: Progress Plus AI (higher rank), Standard (lower rank)
 - This allows users to upgrade from Standard to AI Native
 
 ## 3. Get API Keys

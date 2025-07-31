@@ -172,7 +172,7 @@ struct PaywallView: View {
         }
         .onAppear {
             // Auto-select AI Native tier by default
-            if selectedOffering == nil, let aiOffering = subscriptionService.currentOfferings.first(where: { $0.tier == .aiNative }) {
+            if selectedOffering == nil, let aiOffering = subscriptionService.currentOfferings.first(where: { $0.tier == .plusAI }) {
                 selectedOffering = aiOffering
             }
         }
@@ -423,8 +423,8 @@ struct SubscriptionCard: View {
         
         SubscriptionCard(
             offering: SubscriptionService.SubscriptionOffering(
-                tier: .aiNative,
-                productId: "ai_native",
+                tier: .plusAI,
+                productId: "plus_ai",
                 price: "£2.99",
                 pricePerMonth: "£2.99",
                 isPopular: true,

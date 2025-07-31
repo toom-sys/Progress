@@ -26,19 +26,19 @@ class SubscriptionService: ObservableObject {
     
     enum SubscriptionTier: String, CaseIterable {
         case standard = "standard_monthly"
-        case aiNative = "ai_native_monthly"
+        case plusAI = "plus_ai_monthly"
         
         var displayName: String {
             switch self {
             case .standard: return "Standard"
-            case .aiNative: return "AI Native"
+            case .plusAI: return "Plus AI"
             }
         }
         
         var monthlyPrice: String {
             switch self {
             case .standard: return "£1"
-            case .aiNative: return "£3"
+            case .plusAI: return "£3"
             }
         }
         
@@ -52,7 +52,7 @@ class SubscriptionService: ObservableObject {
                     "CloudKit sync across devices",
                     "Export your data anytime"
                 ]
-            case .aiNative:
+            case .plusAI:
                 return [
                     "Everything in Standard",
                     "AI-powered workout generation",
@@ -67,7 +67,7 @@ class SubscriptionService: ObservableObject {
         var tagline: String {
             switch self {
             case .standard: return "Perfect for focused tracking"
-            case .aiNative: return "Powered by artificial intelligence"
+            case .plusAI: return "Powered by artificial intelligence"
             }
         }
     }
@@ -127,9 +127,14 @@ class SubscriptionService: ObservableObject {
             
             var newOfferings: [SubscriptionOffering] = []
             
-            // Look for packages by identifier
-            let standardPackage = currentOffering.package(identifier: "standard_monthly") ?? currentOffering.monthly
-            let aiPackage = currentOffering.package(identifier: "ai_native_monthly")
+            // Look for packages by product identifier (matching StoreKit configuration)
+            let standardPackage = currentOffering.availablePackages.first { package in
+                package.storeProduct.productIdentifier == "com.tom.progress.standard.monthly"
+            } ?? currentOffering.monthly
+            
+            let aiPackage = currentOffering.availablePackages.first { package in
+                package.storeProduct.productIdentifier == "com.tom.progress.plus_ai.monthly"
+            }
             
             if let standard = standardPackage {
                 newOfferings.append(SubscriptionOffering(
@@ -145,7 +150,7 @@ class SubscriptionService: ObservableObject {
             
             if let ai = aiPackage {
                 newOfferings.append(SubscriptionOffering(
-                    tier: .aiNative,
+                    tier: .plusAI,
                     productId: ai.storeProduct.productIdentifier,
                     price: ai.storeProduct.localizedPriceString,
                     pricePerMonth: ai.storeProduct.localizedPriceString,
@@ -167,8 +172,20 @@ class SubscriptionService: ObservableObject {
             
         } catch {
             print("❌ Failed to load offerings: \(error.localizedDescription)")
-            // Don't show configuration errors to users in sandbox mode
-            if !error.localizedDescription.contains("configuration") {
+            
+            // Provide helpful debug information for common configuration issues
+            if error.localizedDescription.contains("configuration") || 
+               error.localizedDescription.contains("OfferingsManager.Error") {
+                print("🔧 Configuration Issue Detected:")
+                print("   • Check that products are configured in RevenueCat dashboard")
+                print("   • Product IDs should match: com.tom.progress.standard.monthly, com.tom.progress.plus_ai.monthly")
+                print("   • Ensure offerings are set up with these products as packages")
+                print("   • See Scripts/REVENUECAT_SETUP.md for detailed setup instructions")
+            }
+            
+            // Don't show configuration errors to users in sandbox mode - use mock offerings instead
+            if !error.localizedDescription.contains("configuration") && 
+               !error.localizedDescription.contains("OfferingsManager.Error") {
                 purchaseError = error.localizedDescription
             }
             setupMockOfferings()
@@ -295,9 +312,9 @@ class SubscriptionService: ObservableObject {
                 if info.entitlements.active["standard"]?.isActive == true {
                     self?.activeSubscription = .standard
                     print("✅ Standard subscription active")
-                } else if info.entitlements.active["ai_native"]?.isActive == true {
-                    self?.activeSubscription = .aiNative
-                    print("✅ AI Native subscription active")
+                } else if info.entitlements.active["plus_ai"]?.isActive == true {
+                    self?.activeSubscription = .plusAI
+                    print("✅ Plus AI subscription active")
                 } else {
                     self?.activeSubscription = nil
                     print("ℹ️ No active subscription found")
@@ -312,7 +329,7 @@ class SubscriptionService: ObservableObject {
         currentOfferings = [
             SubscriptionOffering(
                 tier: .standard,
-                productId: "com.myname.progress.standard.monthly",
+                productId: "com.tom.progress.standard.monthly",
                 price: "£0.99",
                 pricePerMonth: "£0.99",
                 isPopular: false,
@@ -320,8 +337,8 @@ class SubscriptionService: ObservableObject {
                 package: nil
             ),
             SubscriptionOffering(
-                tier: .aiNative,
-                productId: "com.myname.progress.ai_native.monthly",
+                tier: .plusAI,
+                productId: "com.tom.progress.plus_ai.monthly",
                 price: "£2.99",
                 pricePerMonth: "£2.99",
                 isPopular: true,
@@ -329,7 +346,11 @@ class SubscriptionService: ObservableObject {
                 package: nil
             )
         ]
-        print("📝 Using mock offerings - configure products in RevenueCat dashboard for real purchases")
+        print("📝 Using mock offerings for development")
+        print("💡 To enable real purchases:")
+        print("   1. Configure products in RevenueCat dashboard (see Scripts/REVENUECAT_SETUP.md)")
+        print("   2. Set up offerings with product IDs: com.tom.progress.standard.monthly, com.tom.progress.plus_ai.monthly")
+        print("   3. Ensure products are approved in App Store Connect")
         isSandboxMode = true
     }
     
@@ -344,7 +365,7 @@ class SubscriptionService: ObservableObject {
     }
     
     var isAIUser: Bool {
-        activeSubscription == .aiNative
+        activeSubscription == .plusAI
     }
     
     func isActiveTier(_ tier: SubscriptionTier) -> Bool {
