@@ -7,9 +7,16 @@
 
 import SwiftUI
 
+// MARK: - NotificationCenter Extension
+extension Notification.Name {
+    static let dismissWorkoutDetail = Notification.Name("dismissWorkoutDetail")
+    static let showWorkoutDetail = Notification.Name("showWorkoutDetail")
+}
+
 struct MainTabView: View {
     @State private var selectedTab: Tab = .workouts
     @StateObject private var subscriptionService = SubscriptionService()
+    @State private var isInWorkoutDetail = false
     
     var body: some View {
         ZStack {
@@ -34,18 +41,38 @@ struct MainTabView: View {
                     ForEach([Tab.workouts, Tab.progress, Tab.nutrition], id: \.self) { tab in
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedTab = tab
+                                // If we're in workout detail and tap workouts, dismiss detail view
+                                if tab == .workouts && isInWorkoutDetail {
+                                    isInWorkoutDetail = false
+                                    // Trigger navigation back - this will be handled by the environment
+                                    NotificationCenter.default.post(name: .dismissWorkoutDetail, object: nil)
+                                } else {
+                                    selectedTab = tab
+                                }
                             }
                         }) {
+                            // Special logic for workouts tab - only highlight when NOT in workout detail
+                            let isTabActive = tab == .workouts ? (selectedTab == tab && !isInWorkoutDetail) : (selectedTab == tab)
+                            
                             VStack(spacing: 4) {
-                                Image(systemName: selectedTab == tab ? tab.activeIcon : tab.icon)
-                                    .font(.system(size: 20, weight: .medium))
-                                    .foregroundColor(selectedTab == tab ? .primary : .textSecondary)
+                                ZStack {
+                                    Image(systemName: isTabActive ? tab.activeIcon : tab.icon)
+                                        .font(.system(size: 20, weight: .medium))
+                                        .foregroundColor(isTabActive ? .primary : .textSecondary)
+                                    
+                                    // Blue indicator dot for workout detail
+                                    if tab == .workouts && isInWorkoutDetail {
+                                        Circle()
+                                            .fill(.blue)
+                                            .frame(width: 6, height: 6)
+                                            .offset(x: 12, y: -8)
+                                    }
+                                }
                                 
                                 Text(tab.displayName)
                                     .font(.caption2)
                                     .fontWeight(.medium)
-                                    .foregroundColor(selectedTab == tab ? .primary : .textSecondary)
+                                    .foregroundColor(isTabActive ? .primary : .textSecondary)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
@@ -72,6 +99,12 @@ struct MainTabView: View {
             // Load subscription status when app starts
             await subscriptionService.loadOfferings()
             subscriptionService.checkSubscriptionStatus()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showWorkoutDetail)) { _ in
+            isInWorkoutDetail = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dismissWorkoutDetail)) { _ in
+            isInWorkoutDetail = false
         }
     }
 }
@@ -138,40 +171,7 @@ struct ProgressTab: View {
 
 // MARK: - Placeholder Views (to be implemented next)
 
-struct WorkoutListView: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Text("💪")
-                .font(.system(size: 80))
-            
-            Text("Workouts")
-                .font(.titleLarge)
-                .foregroundColor(.textPrimary)
-            
-            Text("Plan and track your workouts")
-                .font(.bodyLarge)
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Start First Workout") {
-                // TODO: Navigate to workout planner
-            }
-            .primaryButtonStyle()
-        }
-        .padding()
-        .navigationTitle("Workouts")
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    // TODO: Add workout action
-                }) {
-                    Image(systemName: "plus")
-                        .foregroundColor(.primary)
-                }
-            }
-        }
-    }
-}
+
 
 struct NutritionDashboardView: View {
     var body: some View {

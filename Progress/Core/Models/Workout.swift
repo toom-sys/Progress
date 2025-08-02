@@ -25,6 +25,9 @@ final class Workout {
     /// When the workout was created
     var createdAt: Date
     
+    /// When the workout was last updated
+    var updatedAt: Date
+    
     /// When the workout was started (nil if not started yet)
     var startedAt: Date?
     
@@ -81,6 +84,13 @@ final class Workout {
         }
     }
     
+    // MARK: - Methods
+    
+    /// Updates the updatedAt timestamp to the current time
+    func updateTimestamp() {
+        self.updatedAt = Date()
+    }
+    
     // MARK: - Initialization
     
     init(
@@ -93,6 +103,7 @@ final class Workout {
         self.name = name
         self.notes = notes
         self.createdAt = Date()
+        self.updatedAt = Date()
         self.status = .planned
         self.isTemplate = isTemplate
         self.templateId = templateId
