@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - NotificationCenter Extension
 extension Notification.Name {
@@ -174,37 +175,335 @@ struct ProgressTab: View {
 
 
 struct NutritionDashboardView: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Text("🥗")
-                .font(.system(size: 80))
-            
-            Text("Nutrition")
-                .font(.titleLarge)
-                .foregroundColor(.textPrimary)
-            
-            Text("Log your meals and track macros")
-                .font(.bodyLarge)
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Log First Meal") {
-                // TODO: Navigate to nutrition logging
-            }
-            .primaryButtonStyle()
+    @Environment(\.modelContext) private var modelContext
+    @Query(sort: \NutritionEntry.loggedAt, order: .reverse) private var nutritionEntries: [NutritionEntry]
+    @EnvironmentObject private var subscriptionService: SubscriptionService
+    @State private var showingFoodSearch = false
+    @State private var showingBarcodeScanner = false
+    
+    // Filter entries for today
+    private var todaysEntries: [NutritionEntry] {
+        let calendar = Calendar.current
+        let today = Date()
+        return nutritionEntries.filter { entry in
+            calendar.isDate(entry.loggedAt, inSameDayAs: today)
         }
-        .padding()
+    }
+    
+    // Calculate totals for today
+    private var todaysTotals: (calories: Double, protein: Double, carbs: Double, fat: Double) {
+        let calories = todaysEntries.reduce(0) { $0 + $1.totalCalories }
+        let protein = todaysEntries.reduce(0) { $0 + $1.totalProtein }
+        let carbs = todaysEntries.reduce(0) { $0 + $1.totalCarbohydrates }
+        let fat = todaysEntries.reduce(0) { $0 + $1.totalFat }
+        return (calories, protein, carbs, fat)
+    }
+    
+    // Group entries by meal type
+    private var mealGroups: [MealType: [NutritionEntry]] {
+        Dictionary(grouping: todaysEntries) { $0.mealType }
+    }
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                if todaysEntries.isEmpty {
+                    emptyStateView
+                } else {
+                    // Daily Summary
+                    dailySummaryCard
+                    
+                    // Meals
+                    mealsSection
+                }
+            }
+            .padding()
+        }
         .navigationTitle("Nutrition")
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    // TODO: Add meal action
-                }) {
+                Menu {
+                    Button(action: {
+                        showingFoodSearch = true
+                    }) {
+                        Label("Search Foods", systemImage: "magnifyingglass")
+                    }
+                    
+                    Button(action: {
+                        showingBarcodeScanner = true
+                    }) {
+                        Label("Scan Barcode", systemImage: "barcode.viewfinder")
+                    }
+                } label: {
                     Image(systemName: "plus")
                         .foregroundColor(.primary)
                 }
             }
         }
+        .sheet(isPresented: $showingFoodSearch) {
+            FoodSearchView()
+        }
+        .sheet(isPresented: $showingBarcodeScanner) {
+            BarcodeScannerView()
+        }
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: 24) {
+            Text("🥗")
+                .font(.system(size: 80))
+            
+            Text("Start tracking nutrition")
+                .font(.titleLarge)
+                .foregroundColor(.textPrimary)
+            
+            Text("Log your meals and track macros to reach your fitness goals")
+                .font(.bodyLarge)
+                .foregroundColor(.textSecondary)
+                .multilineTextAlignment(.center)
+            
+            HStack(spacing: 16) {
+                Button("Search Foods") {
+                    showingFoodSearch = true
+                }
+                .primaryButtonStyle()
+                
+                Button("Scan Barcode") {
+                    showingBarcodeScanner = true
+                }
+                .secondaryButtonStyle()
+            }
+        }
+        .padding()
+    }
+    
+    private var dailySummaryCard: some View {
+        VStack(spacing: 16) {
+            Text("Today's Nutrition")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            HStack(spacing: 20) {
+                MacroCircle(
+                    value: todaysTotals.calories,
+                    target: 2000, // TODO: Make this user configurable
+                    label: "Calories",
+                    unit: "cal",
+                    color: .orange
+                )
+                
+                MacroBar(value: todaysTotals.protein, target: 150, label: "Protein", unit: "g", color: .blue)
+                MacroBar(value: todaysTotals.carbs, target: 200, label: "Carbs", unit: "g", color: .green)
+                MacroBar(value: todaysTotals.fat, target: 65, label: "Fat", unit: "g", color: .purple)
+            }
+        }
+        .padding()
+        .background(Color.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+    
+    private var mealsSection: some View {
+        VStack(spacing: 16) {
+            ForEach(MealType.allCases, id: \.self) { mealType in
+                MealCard(
+                    mealType: mealType,
+                    entries: mealGroups[mealType] ?? [],
+                    onAddFood: { showingFoodSearch = true }
+                )
+            }
+        }
+    }
+}
+
+struct MacroCircle: View {
+    let value: Double
+    let target: Double
+    let label: String
+    let unit: String
+    let color: Color
+    
+    private var progress: Double {
+        target > 0 ? min(value / target, 1.0) : 0
+    }
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: 8)
+                    .frame(width: 80, height: 80)
+                
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .frame(width: 80, height: 80)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.5), value: progress)
+                
+                VStack(spacing: 2) {
+                    Text("\(Int(value))")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                        .foregroundColor(.textPrimary)
+                    
+                    Text(unit)
+                        .font(.caption2)
+                        .foregroundColor(.textSecondary)
+                }
+            }
+            
+            Text(label)
+                .font(.caption)
+                .foregroundColor(.textSecondary)
+        }
+    }
+}
+
+struct MacroBar: View {
+    let value: Double
+    let target: Double
+    let label: String
+    let unit: String
+    let color: Color
+    
+    private var progress: Double {
+        target > 0 ? min(value / target, 1.0) : 0
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+                
+                Spacer()
+                
+                HStack(spacing: 2) {
+                    Text("\(Int(value))")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    Text(unit)
+                        .font(.caption2)
+                }
+                .foregroundColor(color)
+            }
+            
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(color.opacity(0.2))
+                        .frame(height: 6)
+                        .clipShape(Capsule())
+                    
+                    Rectangle()
+                        .fill(color)
+                        .frame(width: geometry.size.width * progress, height: 6)
+                        .clipShape(Capsule())
+                        .animation(.easeInOut(duration: 0.5), value: progress)
+                }
+            }
+            .frame(height: 6)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct MealCard: View {
+    let mealType: MealType
+    let entries: [NutritionEntry]
+    let onAddFood: () -> Void
+    
+    private var totalCalories: Double {
+        entries.reduce(0) { $0 + $1.totalCalories }
+    }
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack {
+                HStack(spacing: 8) {
+                    Text(mealType.icon)
+                        .font(.title2)
+                    
+                    Text(mealType.displayName)
+                        .font(.headline)
+                        .foregroundColor(.textPrimary)
+                }
+                
+                Spacer()
+                
+                if !entries.isEmpty {
+                    Text("\(Int(totalCalories)) cal")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.textSecondary)
+                }
+                
+                Button(action: onAddFood) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title3)
+                        .foregroundColor(.primary)
+                }
+            }
+            
+            if entries.isEmpty {
+                Button(action: onAddFood) {
+                    HStack {
+                        Image(systemName: "plus")
+                            .font(.caption)
+                        Text("Add food")
+                            .font(.subheadline)
+                    }
+                    .foregroundColor(.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(Color.backgroundTertiary)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(PlainButtonStyle())
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(entries) { entry in
+                        FoodEntryRow(entry: entry)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+}
+
+struct FoodEntryRow: View {
+    let entry: NutritionEntry
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.foodName)
+                    .font(.subheadline)
+                    .foregroundColor(.textPrimary)
+                
+                if entry.quantity != 1.0 {
+                    Text("\(String(format: "%.2g", entry.quantity)) × \(entry.servingSize)")
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                } else {
+                    Text(entry.servingSize)
+                        .font(.caption)
+                        .foregroundColor(.textSecondary)
+                }
+            }
+            
+            Spacer()
+            
+            Text("\(Int(entry.totalCalories)) cal")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.orange)
+        }
+        .padding(.vertical, 4)
     }
 }
 
