@@ -16,7 +16,7 @@ struct FoodSearchView: View {
     @State private var searchText = ""
     @State private var selectedFood: FoodSearchResult?
     @State private var showingAddFood = false
-    @State private var selectedMealType: MealType = .breakfast
+
     
     var body: some View {
         NavigationStack {
@@ -24,12 +24,12 @@ struct FoodSearchView: View {
                 // Search Bar
                 searchBar
                 
-                // Meal Type Picker
-                mealTypePicker
+
                 
                 // Search Results
                 searchResultsList
             }
+            .background(AdaptiveGradientBackground())
             .navigationTitle("Add Food")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -42,7 +42,6 @@ struct FoodSearchView: View {
             .sheet(item: $selectedFood) { food in
                 AddFoodSheet(
                     food: food,
-                    mealType: selectedMealType,
                     modelContext: modelContext
                 ) {
                     dismiss() // Close search view after adding food
@@ -77,19 +76,16 @@ struct FoodSearchView: View {
                     }
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.backgroundSecondary)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .cardStyle()
             
             // Search suggestion buttons
             if searchText.isEmpty {
                 searchSuggestions
             }
-        }
+                }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
-        .background(Color.background)
+        .background(Color.backgroundSecondary)
     }
     
     private var searchSuggestions: some View {
@@ -114,40 +110,7 @@ struct FoodSearchView: View {
         }
     }
     
-    // MARK: - Meal Type Picker
-    
-    private var mealTypePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ForEach(MealType.allCases, id: \.self) { mealType in
-                    Button(action: {
-                        selectedMealType = mealType
-                    }) {
-                        HStack(spacing: 8) {
-                            Text(mealType.icon)
-                                .font(.title3)
-                            
-                            Text(mealType.displayName)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(
-                            selectedMealType == mealType ? Color.primary : Color.backgroundSecondary
-                        )
-                        .foregroundColor(
-                            selectedMealType == mealType ? .white : .textPrimary
-                        )
-                        .clipShape(Capsule())
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-        }
-        .padding(.vertical, 12)
-        .background(Color.background)
-    }
+
     
     // MARK: - Search Results
     
@@ -173,7 +136,7 @@ struct FoodSearchView: View {
             Text("Searching foods...")
                 .font(.subheadline)
                 .foregroundColor(.textSecondary)
-        }
+                }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.background)
     }
@@ -202,7 +165,7 @@ struct FoodSearchView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.background)
+                    .background(Color.background)
     }
     
     private var emptyStateView: some View {
@@ -222,7 +185,7 @@ struct FoodSearchView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.background)
+                    .background(Color.background)
     }
     
     private var resultsList: some View {
@@ -230,10 +193,10 @@ struct FoodSearchView: View {
             FoodSearchRowView(food: food) {
                 selectedFood = food
             }
-            .listRowBackground(Color.background)
+                            .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
         }
-        .listStyle(PlainListStyle())
+                .listStyle(PlainListStyle())
         .background(Color.background)
     }
 }
@@ -252,8 +215,12 @@ struct FoodSearchRowView: View {
                     .font(.title2)
                     .foregroundColor(food.isVerified ? .green : .orange)
                     .frame(width: 40, height: 40)
-                    .background(Color.backgroundSecondary)
+                    .background(Color.surface)
                     .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.border, lineWidth: 1)
+                    )
                 
                 // Food Info
                 VStack(alignment: .leading, spacing: 4) {
@@ -327,7 +294,6 @@ struct NutrientLabel: View {
 
 struct AddFoodSheet: View {
     let food: FoodSearchResult
-    let mealType: MealType
     let modelContext: ModelContext
     let onComplete: () -> Void
     
@@ -373,7 +339,7 @@ struct AddFoodSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("Add to \(mealType.displayName)")
+            .navigationTitle("Add Food")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -440,8 +406,12 @@ struct AddFoodSheet: View {
                 }
             }
             .padding()
-            .background(Color.backgroundSecondary)
+            .background(Color.background)
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.border, lineWidth: 1)
+            )
         }
     }
     
@@ -458,8 +428,12 @@ struct AddFoodSheet: View {
                 NutritionRow(label: "Fat", value: totalFat, unit: "g", color: .purple)
             }
             .padding()
-            .background(Color.backgroundSecondary)
+            .background(Color.background)
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.border, lineWidth: 1)
+            )
         }
     }
     
@@ -472,8 +446,12 @@ struct AddFoodSheet: View {
             TextField("Add any notes about this food...", text: $notes, axis: .vertical)
                 .textFieldStyle(PlainTextFieldStyle())
                 .padding()
-                .background(Color.backgroundSecondary)
+                .background(Color.background)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.border, lineWidth: 1)
+                )
                 .lineLimit(3...6)
         }
     }
@@ -489,7 +467,7 @@ struct AddFoodSheet: View {
                     Image(systemName: "plus.circle.fill")
                 }
                 
-                Text("Add to \(mealType.displayName)")
+                Text("Add Food")
                     .fontWeight(.semibold)
             }
         }
@@ -508,7 +486,7 @@ struct AddFoodSheet: View {
             protein: food.protein ?? 0,
             carbohydrates: food.carbohydrates ?? 0,
             fat: food.fat ?? 0,
-            mealType: mealType,
+            mealType: .breakfast, // Default value since we're not using meal types
             logMethod: .search
         )
         

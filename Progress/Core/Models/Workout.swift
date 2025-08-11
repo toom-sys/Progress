@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class Workout {
+final class Workout: Hashable {
     
     // MARK: - Properties
     
@@ -161,6 +161,16 @@ final class Workout {
         }
         
         return newWorkout
+    }
+    
+    // MARK: - Hashable
+    
+    static func == (lhs: Workout, rhs: Workout) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

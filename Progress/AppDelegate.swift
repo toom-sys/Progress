@@ -22,6 +22,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let firstLaunchKey = "com.tom.Progress.firstLaunch"
     
+    // Orientation lock support
+    static var orientationLock = UIInterfaceOrientationMask.all
+    
     // MARK: - Application Lifecycle
     
     func application(
@@ -38,6 +41,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         }
         
         return true
+    }
+    
+    // MARK: - Orientation Support
+    
+    func application(
+        _ application: UIApplication,
+        supportedInterfaceOrientationsFor window: UIWindow?
+    ) -> UIInterfaceOrientationMask {
+        return AppDelegate.orientationLock
     }
     
     // MARK: - Private Methods

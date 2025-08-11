@@ -107,12 +107,14 @@ struct WorkoutListView: View {
                         } label: {
                             Image(systemName: "arrow.up.arrow.down")
                                 .foregroundColor(.textSecondary)
-                                .frame(width: 44, height: 44)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .aspectRatio(1, contentMode: .fit)
                                 .background(Color.backgroundTertiary)
                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
+                        .frame(height: 40) // Match search bar height (text + 8pt padding top + 8pt padding bottom + border)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                 }
                 .padding(.top, 16)
                 .padding(.bottom, 8)
@@ -152,22 +154,20 @@ struct WorkoutListView: View {
                     .padding(.horizontal, 20)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    // Workout List
+                    // Workout List with Card Style
                     List {
                         ForEach(filteredWorkouts) { workout in
-                            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
-                                VStack(alignment: .leading, spacing: 8) {
-                                    Text(workout.name)
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.textPrimary)
-                                    
-                                    Text(workout.updatedAt, style: .relative)
-                                        .font(.caption)
-                                        .foregroundColor(.textTertiary)
+                            ZStack {
+                                NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                                    EmptyView()
                                 }
-                                .padding(.vertical, 4)
+                                .opacity(0)
+                                
+                                WorkoutRowView(workout: workout)
                             }
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     workoutToDelete = workout
@@ -179,6 +179,7 @@ struct WorkoutListView: View {
                         }
                     }
                     .listStyle(PlainListStyle())
+                    .scrollContentBackground(.hidden)
                     .safeAreaInset(edge: .bottom) {
                         // Add bottom padding to ensure content isn't hidden behind floating navigation bar
                         Rectangle()
@@ -188,8 +189,11 @@ struct WorkoutListView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(AdaptiveGradientBackground())
             .navigationTitle("Workouts")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showingCreateSheet = true }) {
@@ -227,6 +231,65 @@ struct WorkoutListView: View {
             modelContext.delete(workout)
             try? modelContext.save()
         }
+    }
+}
+
+// MARK: - Workout Row View
+
+struct WorkoutRowView: View {
+    let workout: Workout
+    
+    private var exerciseCount: Int {
+        workout.exercises.count
+    }
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: workout.updatedAt)
+    }
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            // Workout Icon
+            Image(systemName: "dumbbell.fill")
+                .font(.title2)
+                .foregroundColor(.blue)
+                .frame(width: 40, height: 40)
+                .background(Color.surface)
+                .clipShape(Circle())
+                .overlay(
+                    Circle()
+                        .stroke(Color.border, lineWidth: 1)
+                )
+            
+            // Workout Info
+            VStack(alignment: .leading, spacing: 4) {
+                Text(workout.name)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.textPrimary)
+                    .lineLimit(2)
+                
+                HStack(spacing: 4) {
+                    Text("\(exerciseCount)")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                    Text(exerciseCount == 1 ? "exercise" : "exercises")
+                        .font(.caption2)
+                }
+                .foregroundColor(.blue)
+            }
+            
+            Spacer()
+            
+            // Date only
+            Text(formattedDate)
+                .font(.caption2)
+                .foregroundColor(.textTertiary)
+        }
+        .whiteCardStyle(padding: 16)
     }
 }
 

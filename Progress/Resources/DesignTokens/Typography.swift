@@ -188,7 +188,7 @@ public struct ProgressTypography {
             .timerStyle()
     }
     .padding()
-    .background(Color.background)
+            .background(Color.backgroundGradient)
 }
 
  

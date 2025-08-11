@@ -15,7 +15,7 @@ struct BarcodeScannerView: View {
     @Environment(\.modelContext) private var modelContext
     
     @StateObject private var barcodeService = BarcodeSearchService()
-    @State private var selectedMealType: MealType = .breakfast
+
     @State private var showingAddFood = false
     @State private var scannedProduct: BarcodeResult?
     @State private var hasScannedSuccessfully = false
@@ -108,10 +108,7 @@ struct BarcodeScannerView: View {
             }
             .sheet(isPresented: $showingAddFood) {
                 if let product = scannedProduct {
-                    AddBarcodeProductView(
-                        product: product,
-                        mealType: selectedMealType
-                    ) {
+                    AddBarcodeProductView(product: product) {
                         dismiss()
                     }
                 }
@@ -126,6 +123,14 @@ struct BarcodeScannerView: View {
                 }
             } message: {
                 Text(barcodeService.errorMessage ?? "")
+            }
+            .onAppear {
+                // Lock orientation to portrait when scanner appears
+                AppDelegate.orientationLock = UIInterfaceOrientationMask.portrait
+            }
+            .onDisappear {
+                // Restore all orientations when scanner disappears
+                AppDelegate.orientationLock = UIInterfaceOrientationMask.all
             }
         }
     }
@@ -214,7 +219,6 @@ struct AddBarcodeProductView: View {
     @Environment(\.modelContext) private var modelContext
     
     let product: BarcodeResult
-    @State var mealType: MealType
     @State private var quantity: Double = 1.0
     @State private var notes: String = ""
     
@@ -252,15 +256,7 @@ struct AddBarcodeProductView: View {
                     .padding(.vertical, 4)
                 }
                 
-                // Meal Type
-                Section("Meal Type") {
-                    Picker("Meal Type", selection: $mealType) {
-                        ForEach(MealType.allCases, id: \.self) { meal in
-                            Text(meal.displayName).tag(meal)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+
                 
                 // Quantity
                 Section("Quantity") {
@@ -327,6 +323,7 @@ struct AddBarcodeProductView: View {
                         .lineLimit(3...5)
                 }
             }
+            .background(AdaptiveGradientBackground())
             .navigationTitle("Add Product")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -356,7 +353,7 @@ struct AddBarcodeProductView: View {
             protein: (product.protein ?? 0),
             carbohydrates: (product.carbohydrates ?? 0),
             fat: (product.fat ?? 0),
-            mealType: mealType,
+            mealType: .breakfast, // Default value since we're not using meal types
             logMethod: .barcode
         )
         

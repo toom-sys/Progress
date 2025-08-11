@@ -89,9 +89,10 @@ struct ContentView: View {
                 .padding(.bottom, 32)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.background)
+            .background(AdaptiveGradientBackground())
             .navigationTitle("")
             .toolbar(.hidden, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
             }
@@ -122,15 +123,7 @@ struct FeatureCard: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(16)
-        .background(Color.surface)
-        .cornerRadius(12)
-        .shadow(
-            color: .textPrimary.opacity(0.1),
-            radius: 8,
-            x: 0,
-            y: 2
-        )
+        .whiteCardStyle()
     }
 }
 

@@ -79,6 +79,7 @@ struct CreateWorkoutView: View {
                 
                 Spacer()
             }
+            .background(AdaptiveGradientBackground())
             .navigationTitle("New Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

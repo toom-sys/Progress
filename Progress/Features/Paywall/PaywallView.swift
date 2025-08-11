@@ -16,7 +16,7 @@ struct PaywallView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.background
+                Color.backgroundGradient
                     .ignoresSafeArea()
                 
                 ScrollView {
@@ -49,6 +49,7 @@ struct PaywallView: View {
             }
             .navigationTitle("Choose Your Plan")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Close") {
@@ -439,5 +440,5 @@ struct SubscriptionCard: View {
         )
     }
     .padding()
-    .background(Color.background)
+                .background(Color.backgroundGradient)
 } 
