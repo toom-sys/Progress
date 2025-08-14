@@ -317,8 +317,8 @@ struct NutritionDashboardView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    // Daily Summary (always show, starting at 0 when no entries)
-                    dailySummaryCard
+                    // Daily Summary with swipeable metrics
+                    SwipeableNutritionMetrics(nutritionEntries: selectedDateEntries)
                     
                     // Meals Section Header
                     HStack {
@@ -372,43 +372,7 @@ struct NutritionDashboardView: View {
         return formatter.string(from: validatedSelectedDate)
     }
     
-    private var dailySummaryCard: some View {
-        VStack(spacing: 12) {
-            // Calories card - full width
-            CalorieCard(
-                consumed: selectedDateTotals.calories,
-                target: 2000
-            )
-            
-            // Macro cards row
-            HStack(spacing: 12) {
-                MacroCard(
-                    value: selectedDateTotals.protein,
-                    target: 150,
-                    label: "Protein left",
-                    icon: "fish.fill",
-                    color: .red
-                )
-                
-                MacroCard(
-                    value: selectedDateTotals.carbs,
-                    target: 200,
-                    label: "Carbs left",
-                    icon: "leaf.fill",
-                    color: .orange
-                )
-                
-                MacroCard(
-                    value: selectedDateTotals.fat,
-                    target: 65,
-                    label: "Fat left",
-                    icon: "drop.fill",
-                    color: .blue
-                )
-            }
-        }
-        .padding(16)
-    }
+
     
     private var foodEntriesList: some View {
         LazyVStack(spacing: 12) {
@@ -1038,6 +1002,10 @@ struct SettingsView: View {
                 }
                 
                 Section {
+                    NavigationLink(destination: NutritionMetricsSettingsView()) {
+                        Label("Nutrition Metrics", systemImage: "chart.bar.fill")
+                    }
+                    
                     NavigationLink(destination: UnitsSettingsView()) {
                         Label("Units & Preferences", systemImage: "ruler")
                     }

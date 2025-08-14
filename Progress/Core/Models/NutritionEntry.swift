@@ -60,6 +60,12 @@ final class NutritionEntry {
     /// Sodium in milligrams per serving (optional)
     var sodium: Double?
     
+    // MARK: - Extended Nutritional Information
+    
+    /// Additional nutrition metrics (vitamins, minerals, supplements)
+    /// Key: NutritionMetricType.rawValue, Value: amount per serving
+    var extendedNutrition: [String: Double]?
+    
     // MARK: - Database Information
     
     /// Food database ID (for verified foods)
@@ -186,7 +192,8 @@ final class NutritionEntry {
         fat: Double? = nil,
         fiber: Double? = nil,
         sugar: Double? = nil,
-        sodium: Double? = nil
+        sodium: Double? = nil,
+        extendedNutrition: [String: Double]? = nil
     ) {
         if let calories = calories { self.calories = calories }
         if let protein = protein { self.protein = protein }
@@ -195,6 +202,45 @@ final class NutritionEntry {
         if let fiber = fiber { self.fiber = fiber }
         if let sugar = sugar { self.sugar = sugar }
         if let sodium = sodium { self.sodium = sodium }
+        if let extendedNutrition = extendedNutrition { self.extendedNutrition = extendedNutrition }
+    }
+    
+    /// Get value for a specific nutrition metric
+    func getValue(for metric: NutritionMetricType) -> Double {
+        switch metric {
+        case .calories: return calories
+        case .protein: return protein
+        case .carbohydrates: return carbohydrates
+        case .fat: return fat
+        case .fiber: return fiber ?? 0
+        case .sugar: return sugar ?? 0
+        case .sodium: return sodium ?? 0
+        default:
+            return extendedNutrition?[metric.rawValue] ?? 0
+        }
+    }
+    
+    /// Get total value for a specific nutrition metric (accounting for quantity)
+    func getTotalValue(for metric: NutritionMetricType) -> Double {
+        return getValue(for: metric) * quantity
+    }
+    
+    /// Set value for a specific nutrition metric
+    func setValue(_ value: Double, for metric: NutritionMetricType) {
+        switch metric {
+        case .calories: calories = value
+        case .protein: protein = value
+        case .carbohydrates: carbohydrates = value
+        case .fat: fat = value
+        case .fiber: fiber = value
+        case .sugar: sugar = value
+        case .sodium: sodium = value
+        default:
+            if extendedNutrition == nil {
+                extendedNutrition = [:]
+            }
+            extendedNutrition?[metric.rawValue] = value
+        }
     }
     
     /// Set AI detection data
@@ -235,6 +281,7 @@ final class NutritionEntry {
         newEntry.fiber = fiber
         newEntry.sugar = sugar
         newEntry.sodium = sodium
+        newEntry.extendedNutrition = extendedNutrition
         newEntry.foodDatabaseId = foodDatabaseId
         newEntry.isVerified = isVerified
         
