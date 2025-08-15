@@ -290,6 +290,10 @@ struct WorkoutRowView: View {
                 .foregroundColor(.textTertiary)
         }
         .whiteCardStyle(padding: 16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
 }
 

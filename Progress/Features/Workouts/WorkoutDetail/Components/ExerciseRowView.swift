@@ -54,6 +54,10 @@ struct ExerciseRowView: View {
                 }
             }
             .whiteCardStyle()
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+            )
             .onTapGesture {
                 let globalFrame = geometry.frame(in: .global)
                 onTap(globalFrame)

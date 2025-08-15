@@ -57,12 +57,10 @@ struct SwipeableNutritionMetrics: View {
             TabView(selection: $selectedPage) {
                 // Page 1: Primary metrics (Calories + 3 macros)
                 primaryMetricsPage
-                    .padding(.horizontal, 16)
                     .tag(0)
                 
                 // Page 2: Secondary/customizable metrics
                 secondaryMetricsPage
-                    .padding(.horizontal, 16)
                     .tag(1)
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
@@ -84,7 +82,7 @@ struct SwipeableNutritionMetrics: View {
                 
                 Spacer()
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 24)
         }
     }
     
@@ -109,6 +107,7 @@ struct SwipeableNutritionMetrics: View {
                 }
             }
         }
+        .padding(.horizontal, 24)
     }
     
     private var secondaryMetricsPage: some View {
@@ -121,6 +120,7 @@ struct SwipeableNutritionMetrics: View {
                 )
             }
         }
+        .padding(.horizontal, 24)
     }
     
     private func saveMetrics(primary: [NutritionMetricType], secondary: [NutritionMetricType]) {
@@ -226,6 +226,10 @@ struct CompactNutritionMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .whiteCardStyle()
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
     
     private func formatValue(_ value: Double) -> String {
@@ -332,6 +336,10 @@ struct NutritionMetricCard: View {
         }
         .frame(maxWidth: .infinity)
         .whiteCardStyle()
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+        )
     }
     
     private func formatValue(_ value: Double) -> String {
