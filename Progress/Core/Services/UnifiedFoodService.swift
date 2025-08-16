@@ -155,7 +155,7 @@ final class UnifiedFoodService: ObservableObject {
                 
                 // If this is a rate limit or quota error, try next service
                 if let foodError = error as? FoodDataServiceError,
-                   foodError.shouldFallbackToNextSource {
+                   foodError.shouldFallbackToNextSource == true {
                     continue
                 }
             }
