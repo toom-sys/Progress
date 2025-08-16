@@ -8,7 +8,7 @@
 import Foundation
 import Combine
 
-/// Service for looking up food products by barcode using Open Food Facts API
+/// Enhanced service for looking up food products by barcode using unified food system
 @MainActor
 class BarcodeSearchService: ObservableObject {
     
@@ -17,9 +17,9 @@ class BarcodeSearchService: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
     
-    // MARK: - Constants
+    // MARK: - Private Properties
     
-    private let baseURL = "https://world.openfoodfacts.org/api/v2/product"
+    private let unifiedFoodService = UnifiedFoodService()
     
     // MARK: - Search Methods
     
@@ -33,36 +33,11 @@ class BarcodeSearchService: ObservableObject {
         
         defer { isLoading = false }
         
-        do {
-            let url = URL(string: "\(baseURL)/\(barcode).json")!
-            let (data, response) = try await URLSession.shared.data(from: url)
-            
-            guard let httpResponse = response as? HTTPURLResponse else {
-                errorMessage = "Invalid response"
-                return nil
-            }
-            
-            guard httpResponse.statusCode == 200 else {
-                if httpResponse.statusCode == 404 {
-                    errorMessage = "Product not found"
-                } else {
-                    errorMessage = "Server error: \(httpResponse.statusCode)"
-                }
-                return nil
-            }
-            
-            let decoder = JSONDecoder()
-            let apiResponse = try decoder.decode(OpenFoodFactsResponse.self, from: data)
-            
-            guard apiResponse.status == 1, let product = apiResponse.product else {
-                errorMessage = "Product not found"
-                return nil
-            }
-            
-            return BarcodeResult(from: product, barcode: barcode)
-            
-        } catch {
-            errorMessage = "Network error: \(error.localizedDescription)"
+        // Use the unified food service for barcode lookup
+        if let unifiedItem = await unifiedFoodService.searchByBarcode(barcode) {
+            return BarcodeResult(from: unifiedItem)
+        } else {
+            errorMessage = unifiedFoodService.errorMessage ?? "Product not found"
             return nil
         }
     }
@@ -85,7 +60,7 @@ struct BarcodeResult {
     init(from product: OpenFoodFactsProduct, barcode: String) {
         self.barcode = barcode
         self.productName = product.product_name ?? "Unknown Product"
-        self.brandName = product.brands?.components(separatedBy: ",").first?.trimmingCharacters(in: .whitespacesAndNewlines)
+        self.brandName = product.brands?.components(separatedBy: ",").first?.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
         
         // Try to get serving size, fallback to 100g
         if let servingQuantity = product.serving_quantity {
@@ -106,6 +81,20 @@ struct BarcodeResult {
         self.isVerified = nutrients?.energy_kcal_100g != nil
     }
     
+    // New initializer for UnifiedFoodItem
+    init(from unifiedItem: UnifiedFoodItem) {
+        self.barcode = unifiedItem.barcode ?? unifiedItem.sourceId
+        self.productName = unifiedItem.name
+        self.brandName = unifiedItem.brand
+        self.servingSize = unifiedItem.servingSize
+        self.calories = unifiedItem.calories
+        self.protein = unifiedItem.protein
+        self.carbohydrates = unifiedItem.carbohydrates
+        self.fat = unifiedItem.fat
+        self.fiber = unifiedItem.fiber
+        self.isVerified = unifiedItem.source.isVerified
+    }
+    
     var displayName: String {
         if let brand = brandName {
             return "\(brand) \(productName)"
@@ -114,24 +103,4 @@ struct BarcodeResult {
     }
 }
 
-// MARK: - Open Food Facts API Models
-
-struct OpenFoodFactsResponse: Codable {
-    let status: Int
-    let product: OpenFoodFactsProduct?
-}
-
-struct OpenFoodFactsProduct: Codable {
-    let product_name: String?
-    let brands: String?
-    let serving_quantity: Double?
-    let nutriments: OpenFoodFactsNutriments?
-}
-
-struct OpenFoodFactsNutriments: Codable {
-    let energy_kcal_100g: Double?
-    let proteins_100g: Double?
-    let carbohydrates_100g: Double?
-    let fat_100g: Double?
-    let fiber_100g: Double?
-}
+// Note: OpenFoodFacts API models are now defined in OpenFoodFactsClient.swift
