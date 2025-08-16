@@ -214,16 +214,6 @@ enum FoodDataServiceError: LocalizedError, Equatable {
             return "Please try again"
         }
     }
-    
-    /// Whether this error suggests trying a different data source
-    var shouldFallbackToNextSource: Bool {
-        switch self {
-        case .rateLimitExceeded, .quotaExceeded, .serviceUnavailable, .timeout:
-            return true
-        default:
-            return false
-        }
-    }
 }
 
 // MARK: - Default Implementations
