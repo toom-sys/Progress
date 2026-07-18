@@ -1,6 +1,7 @@
 # RevenueCat Setup Guide for Progress iOS
 
-This guide will help you configure RevenueCat for the Progress iOS app's dual-tier subscription model.
+This guide walks through configuring RevenueCat for the **Progress Pro** subscription, which is
+offered as two billing plans (annual and monthly) sharing a single `pro` entitlement.
 
 ## 1. RevenueCat Dashboard Setup
 
@@ -11,67 +12,70 @@ This guide will help you configure RevenueCat for the Progress iOS app's dual-ti
 4. Select platform: **iOS**
 
 ### Configure Products
-Create these exact product IDs to match the app:
+Create two products to match the app:
 
-#### Standard Tier
-- **Product ID**: `com.tom.progress.standard.monthly`
+#### Progress Pro (Annual)
+- **Product ID**: `com.tom.progress.pro.annual`
+- **Type**: Auto-renewable subscription
+- **Duration**: 1 year
+- **Price**: £35.00/year (sale price; £49.00 is shown struck-through in-app as the reference price)
+- **Display Name**: "Progress Pro (Annual)"
+- **Introductory Offer**: 3-day free trial (Free Trial type, P3D period)
+
+#### Progress Pro (Monthly)
+- **Product ID**: `com.tom.progress.pro.monthly`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 month
-- **Price**: £0.99/month
-- **Display Name**: "Progress Standard"
+- **Price**: £4.99/month
+- **Display Name**: "Progress Pro (Monthly)"
+- **Introductory Offer**: none
 
-#### Plus AI Tier  
-- **Product ID**: `com.tom.progress.plus_ai.monthly`
-- **Type**: Auto-renewable subscription
-- **Duration**: 1 month
-- **Price**: £2.99/month
-- **Display Name**: "Progress Plus AI"
-
-### Create Offerings
+### Create Offering
 1. Go to **Offerings** in RevenueCat dashboard
-2. Create offering: **"Standard"** 
-   - Add package: `com.tom.progress.standard.monthly`
-   - Set as monthly package
-3. Create offering: **"Plus AI"**
-   - Add package: `com.tom.progress.plus_ai.monthly` 
-   - Set as monthly package
+2. Create offering: **"Pro"** (set as the default/current offering)
+   - Add package `com.tom.progress.pro.annual` as the **Annual** package
+   - Add package `com.tom.progress.pro.monthly` as the **Monthly** package
 
-### Configure Entitlements
-Create these entitlements to control feature access:
+### Configure Entitlement
+Create one entitlement to control feature access:
 
-1. **"standard"** entitlement
-   - Grant access to: Standard tier features
-   - Products: `com.tom.progress.standard.monthly`
-
-2. **"plus_ai"** entitlement  
-   - Grant access to: Plus AI tier features
-   - Products: `com.tom.progress.plus_ai.monthly`
+1. **"pro"** entitlement
+   - Grant access to: All Progress Pro features
+   - Products: `com.tom.progress.pro.annual`, `com.tom.progress.pro.monthly`
 
 ## 2. App Store Connect Setup
 
 ### Create In-App Purchases
 1. Go to [App Store Connect](https://appstoreconnect.apple.com)
 2. Navigate to your app → **Monetization** → **In-App Purchases**
-3. Create two auto-renewable subscriptions:
+3. Create two auto-renewable subscriptions in the same group:
 
-#### Standard Subscription
-- **Reference Name**: Progress Standard Monthly
-- **Product ID**: `com.tom.progress.standard.monthly`
+#### Progress Pro Annual
+- **Reference Name**: Progress Pro Annual
+- **Product ID**: `com.tom.progress.pro.annual`
+- **Subscription Group**: Progress Subscriptions
+- **Duration**: 1 year
+- **Price**: £35.00
+
+#### Progress Pro Monthly
+- **Reference Name**: Progress Pro Monthly
+- **Product ID**: `com.tom.progress.pro.monthly`
 - **Subscription Group**: Progress Subscriptions
 - **Duration**: 1 month
-- **Price**: £0.99 (Tier 2)
+- **Price**: £4.99
 
-#### Plus AI Subscription  
-- **Reference Name**: Progress Plus AI Monthly
-- **Product ID**: `com.tom.progress.plus_ai.monthly`
-- **Subscription Group**: Progress Subscriptions  
-- **Duration**: 1 month
-- **Price**: £2.99 (Tier 5)
+### Introductory Offer
+Configure a free trial on the **annual** product:
+- **Type**: Free Trial
+- **Duration**: 3 days
+- **Eligible customers**: New subscribers only
 
-### Subscription Group Settings
-- **Reference Name**: Progress Subscriptions
-- **Rank products**: Progress Plus AI (higher rank), Standard (lower rank)
-- This allows users to upgrade from Standard to AI Native
+> Note: because both products live in the same subscription group, a customer is only eligible
+> for the free trial once across the group.
+
+### StoreKit Configuration
+The local `Configuration.storekit` file already mirrors this setup: an annual product with a
+3-day free trial and a monthly product with no trial.
 
 ## 3. Get API Keys
 
@@ -87,22 +91,22 @@ Set these in your environment:
 ```bash
 # RevenueCat Configuration
 export REVENUECAT_PUBLIC_SDK_KEY_IOS="your_public_sdk_key_here"
-export REVENUECAT_API_KEY="your_secret_api_key_here"  
+export REVENUECAT_API_KEY="your_secret_api_key_here"
 export REVENUECAT_ENVIRONMENT="sandbox"  # or "production"
 ```
 
 ## 4. Test Configuration
 
 ### Sandbox Testing
-1. Create sandbox test user in App Store Connect
-2. Sign in with sandbox account on device
-3. Test both subscription tiers
-4. Verify purchase flow works correctly
+1. Create a sandbox test user in App Store Connect
+2. Sign in with the sandbox account on device
+3. Test the Progress Pro subscription and free trial
+4. Verify the trial converts to paid after 7 days
 
 ### RevenueCat Testing
-1. In RevenueCat dashboard, check **Customer** section
+1. In RevenueCat dashboard, check the **Customer** section
 2. Verify test purchases appear
-3. Check entitlements are granted correctly
+3. Confirm the **"pro"** entitlement is granted correctly
 
 ## 5. Enable RevenueCat in App
 
@@ -110,79 +114,62 @@ Once products are configured, enable RevenueCat in the app:
 
 ### Step 1: Inject Environment Variables
 ```bash
-# Set your actual API keys
 export REVENUECAT_PUBLIC_SDK_KEY_IOS="your_actual_key"
 export REVENUECAT_ENVIRONMENT="sandbox"
-
-# Inject into plist files
 ./Scripts/inject-secrets.sh inject
 ```
 
-### Step 2: Uncomment RevenueCat Code
-In `AppDelegate.swift`, uncomment:
+### Step 2: Verify Configuration
+In `AppDelegate.swift`, ensure RevenueCat is configured:
 ```swift
 import RevenueCat
 
 // In initializeRevenueCat():
 Purchases.logLevel = .debug
 Purchases.configure(withAPIKey: apiKey)
-// ... rest of configuration
-```
-
-In `SubscriptionService.swift`, uncomment:
-```swift
-import RevenueCat
-
-// All the actual RevenueCat API calls
 ```
 
 ### Step 3: Test Integration
-1. Build and run app
-2. Tap "View Subscription Plans"
-3. Verify offerings load from RevenueCat
-4. Test purchase flow with sandbox account
+1. Build and run the app
+2. Complete onboarding to reach the subscription step
+3. Verify the Pro offering loads from RevenueCat
+4. Test the free trial purchase flow with the sandbox account
 
 ## 6. Production Deployment
 
 ### Pre-Launch Checklist
-- [ ] Products approved in App Store Connect
+- [ ] Product approved in App Store Connect
+- [ ] Free trial introductory offer approved
 - [ ] RevenueCat webhooks configured (if using server)
 - [ ] Set environment to "production"
 - [ ] Test with production API keys in staging
-- [ ] Set up analytics/tracking for subscription events
-
-### Environment Settings
-```bash
-# Production environment
-export REVENUECAT_ENVIRONMENT="production"
-export REVENUECAT_PUBLIC_SDK_KEY_IOS="your_production_key"
-```
+- [ ] Confirm `"pro"` entitlement works end-to-end
 
 ### Monitor Key Metrics
-Track these in RevenueCat dashboard:
-- Conversion rate (free trial → paid)
-- Churn rate
+Track these in the RevenueCat dashboard:
+- Free trial start rate
+- Trial-to-paid conversion rate
+- Monthly churn rate
 - Revenue per user
-- Upgrade rate (Standard → AI Native)
 
 ## 7. Troubleshooting
 
 ### Common Issues
 
-#### "No offerings found"
-- Check product IDs match exactly
-- Verify products are approved in App Store Connect
-- Ensure offering is configured in RevenueCat
+#### "No offering found"
+- Check the product ID matches exactly: `com.tom.progress.pro.monthly`
+- Verify the product is approved in App Store Connect
+- Ensure the "Pro" offering is set as current/default in RevenueCat
 
-#### "Purchase failed" 
+#### "Purchase failed"
 - Verify sandbox account setup
 - Check App Store Connect agreement status
-- Ensure correct product IDs
+- Ensure the correct product ID is used
 
-#### "Entitlements not granted"
-- Check entitlement configuration in RevenueCat
-- Verify product mapping to entitlements
-- Check webhook delivery if using server
+#### "Entitlement not granted"
+- Check the **"pro"** entitlement is mapped to `com.tom.progress.pro.monthly`
+- Verify webhook delivery if using a server
+- Check RevenueCat customer info for active entitlements
 
 ### Debug Tools
 ```swift
@@ -191,8 +178,7 @@ Purchases.logLevel = .debug
 
 // Check customer info
 Purchases.shared.getCustomerInfo { customerInfo, error in
-    print("Customer Info: \(customerInfo)")
-    print("Active entitlements: \(customerInfo?.entitlements.active)")
+    print("Active entitlements: \(customerInfo?.entitlements.active ?? [:])")
 }
 ```
 
@@ -200,7 +186,6 @@ Purchases.shared.getCustomerInfo { customerInfo, error in
 
 - [RevenueCat Documentation](https://docs.revenuecat.com)
 - [iOS SDK Guide](https://docs.revenuecat.com/docs/ios)
+- [Free Trial Setup](https://docs.revenuecat.com/docs/introductory-offers)
 - [Testing Guide](https://docs.revenuecat.com/docs/sandbox)
 - [App Store Connect Help](https://help.apple.com/app-store-connect/)
-
-Need help? Check the RevenueCat community or support channels for assistance. 

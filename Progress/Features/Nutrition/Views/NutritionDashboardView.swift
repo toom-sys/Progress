@@ -13,10 +13,14 @@ import SwiftData
 struct NutritionDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \NutritionEntry.loggedAt, order: .reverse) private var nutritionEntries: [NutritionEntry]
+    @Query(sort: \WaterEntry.loggedAt, order: .reverse) private var allWaterEntries: [WaterEntry]
+    @Query private var users: [User]
     @EnvironmentObject private var subscriptionService: SubscriptionService
-    @Binding var showingFoodSearch: Bool
-    @Binding var showingBarcodeScanner: Bool
+    @State private var showingCameraAI = false
+    @State private var showingManualEntry = false
+    @State private var showingWaterLog = false
     @State private var selectedDate = Date()
+    @State private var weekDragOffset: CGFloat = 0
     
     private var validatedSelectedDate: Date {
         let calendar = Calendar.current
@@ -45,11 +49,24 @@ struct NutritionDashboardView: View {
     
     // Generate date range for the week view (Monday to Sunday)
     private var weekDates: [Date] {
+        weekDates(containing: validatedSelectedDate)
+    }
+    
+    private var previousWeekDates: [Date] {
+        let previous = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: validatedSelectedDate) ?? validatedSelectedDate
+        return weekDates(containing: previous)
+    }
+    
+    private var nextWeekDates: [Date] {
+        let next = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: validatedSelectedDate) ?? validatedSelectedDate
+        return weekDates(containing: next)
+    }
+    
+    private func weekDates(containing date: Date) -> [Date] {
         let calendar = Calendar.current
-        let today = Date()
         
-        // Find the start of the week containing the validated selected date (Monday)
-        let weekStart = calendar.dateInterval(of: .weekOfYear, for: validatedSelectedDate)?.start ?? today
+        // Find the start of the week containing the date
+        let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
         
         // Adjust to start on Monday (if calendar doesn't already)
         let mondayStart: Date
@@ -66,32 +83,59 @@ struct NutritionDashboardView: View {
         // Generate Monday through Sunday
         var dates: [Date] = []
         for i in 0..<7 {
-            if let date = calendar.date(byAdding: .day, value: i, to: mondayStart) {
-                dates.append(date)
+            if let weekDate = calendar.date(byAdding: .day, value: i, to: mondayStart) {
+                dates.append(weekDate)
             }
         }
         return dates
     }
     
-    // Calculate totals for selected date
-    private var selectedDateTotals: (calories: Double, protein: Double, carbs: Double, fat: Double) {
-        let calories = selectedDateEntries.reduce(0) { $0 + $1.totalCalories }
-        let protein = selectedDateEntries.reduce(0) { $0 + $1.totalProtein }
-        let carbs = selectedDateEntries.reduce(0) { $0 + $1.totalCarbohydrates }
-        let fat = selectedDateEntries.reduce(0) { $0 + $1.totalFat }
-        return (calories, protein, carbs, fat)
+    private var totalWaterToday: Double {
+        allWaterEntries
+            .filter { Calendar.current.isDate($0.loggedAt, inSameDayAs: validatedSelectedDate) }
+            .reduce(0) { $0 + $1.amount }
     }
-    
+
+    private var dailyWaterGoal: Double {
+        users.first?.dailyWaterGoal ?? 2500
+    }
+
+    private var nutritionGoals: NutritionGoals {
+        users.first?.nutritionGoals ?? .default
+    }
+
     var body: some View {
         VStack(spacing: 0) {
+            // Custom title header
+            HStack {
+                Text("Nutrition")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.textPrimary)
+                    .multilineTextAlignment(.leading)
+                
+                Spacer()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+            
             // Day Picker Header
             dayPickerHeader
             
             ScrollView {
                 VStack(spacing: 16) {
                     // Daily Summary with swipeable metrics
-                    SwipeableNutritionMetrics(nutritionEntries: selectedDateEntries)
-                    
+                    SwipeableNutritionMetrics(
+                        nutritionEntries: selectedDateEntries,
+                        totalWater: totalWaterToday,
+                        waterGoal: dailyWaterGoal,
+                        calorieGoal: nutritionGoals.calories,
+                        proteinGoal: nutritionGoals.protein,
+                        carbGoal: nutritionGoals.carbs,
+                        fatGoal: nutritionGoals.fat
+                    )
+
                     // Meals Section Header
                     HStack {
                         Text(isToday ? "Today's Food" : "Food")
@@ -109,39 +153,69 @@ struct NutritionDashboardView: View {
                     }
                 }
                 .padding(.top, 8)
+                .padding(.bottom, 88) // Keep last row clear of the floating add button
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AdaptiveGradientBackground())
-        .navigationTitle("Nutrition")
-        .navigationBarTitleDisplayMode(.large)
+        .overlay(alignment: .bottom) {
+            FloatingAddButton {
+                Button("Take Photo (AI)", systemImage: "camera.fill") {
+                    HapticFeedback.workoutButtonTap()
+                    showingCameraAI = true
+                }
+                Button("Enter Manually", systemImage: "pencil") {
+                    HapticFeedback.workoutButtonTap()
+                    showingManualEntry = true
+                }
+                Button("Log Water", systemImage: "drop.fill") {
+                    HapticFeedback.workoutButtonTap()
+                    showingWaterLog = true
+                }
+            }
+            .padding(.bottom, 8)
+        }
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showingCameraAI) {
+            CameraFoodView()
+                .environmentObject(subscriptionService)
+        }
+        .sheet(isPresented: $showingManualEntry) {
+            ManualFoodEntryView()
+        }
+        .sheet(isPresented: $showingWaterLog) {
+            WaterLogSheet(selectedDate: validatedSelectedDate)
+                .presentationDetents([.medium, .large])
+        }
     }
     
     private var emptyFoodMessage: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
+            Image(systemName: "fork.knife")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundColor(.green)
+                .frame(width: 52, height: 52)
+                .background(Color.green.opacity(0.12))
+                .clipShape(Circle())
+            
             Text("No food logged yet")
-                .font(.body)
-                .foregroundColor(.textSecondary)
-                .multilineTextAlignment(.center)
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.textPrimary)
             
             Text("Use the + button to add food")
                 .font(.caption)
-                .foregroundColor(.textTertiary)
-                .multilineTextAlignment(.center)
+                .foregroundColor(.textSecondary)
         }
-        .padding(.vertical, 32)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .whiteCardStyle(cornerRadius: 16, padding: 20)
         .padding(.horizontal, 24)
     }
     
     private var isToday: Bool {
         Calendar.current.isDate(validatedSelectedDate, inSameDayAs: Date())
-    }
-    
-    private var selectedDateTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
-        return formatter.string(from: validatedSelectedDate)
     }
     
     private var foodEntriesList: some View {
@@ -159,54 +233,122 @@ struct NutritionDashboardView: View {
     }
     
     private var dayPickerHeader: some View {
-        VStack(spacing: 0) {
-            // Day picker - full width
+        GeometryReader { geometry in
+            let pageWidth = geometry.size.width
+            
             HStack(spacing: 0) {
-                ForEach(weekDates, id: \.self) { date in
-                    DayPickerCard(
-                        date: date,
-                        isSelected: Calendar.current.isDate(date, inSameDayAs: validatedSelectedDate),
-                        onTap: {
-                            // Only allow selection if the date is within bounds
-                            if canNavigateToWeek(date) {
-                                selectedDate = date
-                            }
-                        }
-                    )
-                    .frame(maxWidth: .infinity)
-                }
+                weekRow(dates: previousWeekDates, interactive: false)
+                    .frame(width: pageWidth)
+                
+                weekRow(dates: weekDates, interactive: true)
+                    .frame(width: pageWidth)
+                
+                weekRow(dates: nextWeekDates, interactive: false)
+                    .frame(width: pageWidth)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .offset(x: -pageWidth + weekDragOffset)
+            .gesture(weekDragGesture(pageWidth: pageWidth))
         }
-        .background(Color.clear)
-        .gesture(
-            DragGesture(minimumDistance: 50)
-                .onEnded { value in
-                    // Only respond to horizontal swipes that are primarily horizontal (not vertical)
-                    let horizontalMovement = abs(value.translation.width)
-                    let verticalMovement = abs(value.translation.height)
-                    
-                    // Require horizontal movement to be at least 2x vertical movement
-                    guard horizontalMovement > verticalMovement * 2 && horizontalMovement > 50 else { return }
-                    
-                    if value.translation.width > 0 {
-                        // Swipe right - go to previous week (with limits)
-                        let newDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: selectedDate) ?? selectedDate
-                        let newWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: newDate)?.start ?? newDate
-                        if canNavigateToWeekStart(newWeekStart) {
-                            selectedDate = newDate
-                        }
-                    } else {
-                        // Swipe left - go to next week (with limits)
-                        let newDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: selectedDate) ?? selectedDate
-                        let newWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: newDate)?.start ?? newDate
-                        if canNavigateToWeekStart(newWeekStart) {
-                            selectedDate = newDate
+        .frame(height: 74)
+        .clipped()
+    }
+    
+    private func weekRow(dates: [Date], interactive: Bool) -> some View {
+        let selectedWeekday = Calendar.current.component(.weekday, from: validatedSelectedDate)
+        
+        return HStack(spacing: 0) {
+            ForEach(dates, id: \.self) { date in
+                DayPickerCard(
+                    date: date,
+                    isSelected: Calendar.current.component(.weekday, from: date) == selectedWeekday,
+                    onTap: {
+                        guard interactive, canNavigateToWeek(date) else { return }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedDate = date
                         }
                     }
+                )
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+    
+    private func weekDragGesture(pageWidth: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 20)
+            .onChanged { value in
+                let horizontalMovement = abs(value.translation.width)
+                let verticalMovement = abs(value.translation.height)
+                
+                // Only track primarily horizontal drags
+                guard horizontalMovement > verticalMovement else { return }
+                
+                var translation = value.translation.width
+                
+                // Rubber-band at navigation limits
+                if translation > 0 {
+                    let previousDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: validatedSelectedDate) ?? validatedSelectedDate
+                    let previousWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: previousDate)?.start ?? previousDate
+                    if !canNavigateToWeekStart(previousWeekStart) {
+                        translation *= 0.25
+                    }
+                } else if translation < 0 {
+                    let nextDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: validatedSelectedDate) ?? validatedSelectedDate
+                    let nextWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: nextDate)?.start ?? nextDate
+                    if !canNavigateToWeekStart(nextWeekStart) {
+                        translation *= 0.25
+                    }
                 }
-        )
+                
+                weekDragOffset = translation
+            }
+            .onEnded { value in
+                let horizontalMovement = abs(value.translation.width)
+                let verticalMovement = abs(value.translation.height)
+                let threshold = pageWidth * 0.22
+                let predicted = value.predictedEndTranslation.width
+                
+                guard horizontalMovement > verticalMovement || abs(predicted) > threshold else {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                        weekDragOffset = 0
+                    }
+                    return
+                }
+                
+                if (value.translation.width > threshold || predicted > pageWidth * 0.4) {
+                    let newDate = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: validatedSelectedDate) ?? validatedSelectedDate
+                    let newWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: newDate)?.start ?? newDate
+                    if canNavigateToWeekStart(newWeekStart) {
+                        animateWeekChange(to: newDate, targetOffset: pageWidth)
+                        return
+                    }
+                } else if (value.translation.width < -threshold || predicted < -pageWidth * 0.4) {
+                    let newDate = Calendar.current.date(byAdding: .weekOfYear, value: 1, to: validatedSelectedDate) ?? validatedSelectedDate
+                    let newWeekStart = Calendar.current.dateInterval(of: .weekOfYear, for: newDate)?.start ?? newDate
+                    if canNavigateToWeekStart(newWeekStart) {
+                        animateWeekChange(to: newDate, targetOffset: -pageWidth)
+                        return
+                    }
+                }
+                
+                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                    weekDragOffset = 0
+                }
+            }
+    }
+    
+    private func animateWeekChange(to newDate: Date, targetOffset: CGFloat) {
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+            weekDragOffset = targetOffset
+        } completion: {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                selectedDate = newDate
+                weekDragOffset = 0
+            }
+        }
     }
     
     private func canNavigateToWeek(_ date: Date) -> Bool {
@@ -243,10 +385,7 @@ struct NutritionDashboardView: View {
             
             do {
                 try modelContext.save()
-                print("Successfully deleted nutrition entry: \(entry.foodName)")
             } catch {
-                print("Failed to delete nutrition entry: \(error)")
-                // Re-insert the entry if save fails
                 modelContext.insert(entry)
             }
         }

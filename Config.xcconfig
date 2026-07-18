@@ -1,0 +1,7 @@
+// Base build configuration for the Progress app target.
+// Secrets live in Secrets.xcconfig, which is gitignored — copy
+// Secrets.example.xcconfig to Secrets.xcconfig and fill in your keys.
+// The optional include means a fresh clone still builds (AI features
+// will just report a missing key at runtime).
+
+#include? "Secrets.xcconfig"

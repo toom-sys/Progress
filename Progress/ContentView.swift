@@ -9,7 +9,8 @@ import SwiftUI
 
 struct ContentView: View {
     @State private var showingPaywall = false
-    
+    @StateObject private var subscriptionService = SubscriptionService()
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 32) {
@@ -95,6 +96,7 @@ struct ContentView: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingPaywall) {
                 PaywallView()
+                    .environmentObject(subscriptionService)
             }
         }
     }

@@ -14,6 +14,7 @@ struct SwipeableNutritionRow: View {
     let onDelete: () -> Void
     @State private var offset: CGFloat = 0
     @State private var showingDeleteButton = false
+    @State private var showingDetail = false
     
     private let deleteButtonWidth: CGFloat = 80
     
@@ -21,7 +22,6 @@ struct SwipeableNutritionRow: View {
         ZStack {
             // Main card content
             SimpleFoodEntryRow(entry: entry)
-                .frame(height: 120)
                 .offset(x: offset)
             
             // Delete button positioned off-screen to the right
@@ -35,7 +35,8 @@ struct SwipeableNutritionRow: View {
                             .font(.caption)
                     }
                     .foregroundColor(.white)
-                    .frame(width: deleteButtonWidth, height: 120)
+                    .frame(width: deleteButtonWidth)
+                    .frame(maxHeight: .infinity)
                     .background(Color.red)
                     .clipShape(
                         UnevenRoundedRectangle(
@@ -49,31 +50,43 @@ struct SwipeableNutritionRow: View {
                 .offset(x: deleteButtonWidth + offset) // Position off-screen initially
             }
         }
-        .frame(height: 120)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .gesture(
-            DragGesture()
+        .clipped()
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
                 .onChanged { value in
                     let translation = value.translation.width
+                    let verticalTranslation = abs(value.translation.height)
+                    let horizontalTranslation = abs(translation)
                     
-                    // Only allow leftward swipes (negative translation)
-                    if translation < 0 {
-                        let progress = min(abs(translation), deleteButtonWidth)
+                    // Only respond if this is VERY horizontal (3:1 ratio) and leftward
+                    if horizontalTranslation > verticalTranslation * 3 && translation < 0 {
+                        let progress = min(horizontalTranslation, deleteButtonWidth)
                         offset = -progress
-                        showingDeleteButton = progress > 20
+                        showingDeleteButton = progress > 30
                     }
                 }
                 .onEnded { value in
                     let translation = value.translation.width
+                    let verticalTranslation = abs(value.translation.height)
+                    let horizontalTranslation = abs(translation)
                     
-                    if abs(translation) > deleteButtonWidth / 2 {
-                        // Show delete button
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            offset = -deleteButtonWidth
-                            showingDeleteButton = true
+                    // Only handle if this was VERY horizontal (3:1 ratio)
+                    if horizontalTranslation > verticalTranslation * 3 && horizontalTranslation > 30 {
+                        if horizontalTranslation > deleteButtonWidth / 2 {
+                            // Show delete button
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                offset = -deleteButtonWidth
+                                showingDeleteButton = true
+                            }
+                        } else {
+                            // Snap back
+                            withAnimation(.easeOut(duration: 0.2)) {
+                                offset = 0
+                                showingDeleteButton = false
+                            }
                         }
                     } else {
-                        // Snap back
+                        // If it wasn't a strong horizontal gesture, reset
                         withAnimation(.easeOut(duration: 0.2)) {
                             offset = 0
                             showingDeleteButton = false
@@ -82,13 +95,18 @@ struct SwipeableNutritionRow: View {
                 }
         )
         .onTapGesture {
-            // Tap to close if delete button is showing
+            // Tap to close if delete button is showing, otherwise show detail
             if showingDeleteButton {
                 withAnimation(.easeOut(duration: 0.2)) {
                     offset = 0
                     showingDeleteButton = false
                 }
+            } else {
+                showingDetail = true
             }
+        }
+        .sheet(isPresented: $showingDetail) {
+            FoodDetailView(entry: entry)
         }
     }
 }

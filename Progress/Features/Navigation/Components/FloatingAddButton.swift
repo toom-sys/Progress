@@ -9,51 +9,32 @@ import SwiftUI
 
 // MARK: - Floating Add Button Component
 
-struct FloatingAddButton: View {
-    @Binding var showingFoodSearch: Bool
-    @Binding var showingBarcodeScanner: Bool
-    
+/// A circular glass "+" button that floats above the tab bar and presents
+/// a menu of add actions. Hides itself while the keyboard is visible.
+struct FloatingAddButton<MenuContent: View>: View {
+    @EnvironmentObject private var keyboardObserver: KeyboardObserver
+    @ViewBuilder let menuContent: () -> MenuContent
+
     var body: some View {
-        VStack {
-            Spacer()
-            
-            HStack {
-                Spacer()
-                Spacer()
-                Spacer()
-                Spacer()
-                
-                Menu {
-                    Button(action: {
-                        showingFoodSearch = true
-                    }) {
-                        Label("Search Foods", systemImage: "magnifyingglass")
-                    }
-                    
-                    Button(action: {
-                        showingBarcodeScanner = true
-                    }) {
-                        Label("Scan Barcode", systemImage: "barcode.viewfinder")
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundColor(.primary)
-                }
-                .frame(width: 44, height: 44)
-                .background(
-                    Circle()
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Circle()
-                                .stroke(Color.border.opacity(0.3), lineWidth: 0.5)
-                        )
-                )
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                
-                Spacer()
+        if !keyboardObserver.isKeyboardVisible {
+            Menu {
+                menuContent()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.textPrimary)
+                    .frame(width: 52, height: 52)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.border.opacity(0.3), lineWidth: 0.5)
+                            )
+                    )
+                    .shadow(color: .cardShadow, radius: 8, x: 0, y: 2)
             }
-            .padding(.bottom, 120) // Position above the tab bar
+            .accessibilityLabel("Add")
         }
     }
 }

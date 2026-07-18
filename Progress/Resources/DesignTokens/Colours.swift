@@ -6,8 +6,11 @@ public extension Color {
     
     // MARK: - Primary Colors
     
+    /// Brand blue from the app icon (#3B6FC8)
+    static let brand = Color(red: 59 / 255, green: 111 / 255, blue: 200 / 255)
+    
     /// Primary brand color - used for main actions and branding
-    static let primary = Color.blue
+    static let primary = brand
     
     /// Secondary accent color for highlights and emphasis
     static let accent = Color.green
@@ -135,6 +138,29 @@ public extension Color {
     
     /// Error states and destructive actions
     static let error = Color.red
+    
+    // MARK: - Progress Tier Colors
+    
+    /// Six-tier progress system colors for consistent visual feedback
+    /// Used throughout the app for muscle group progress, achievements, and motivation
+    
+    /// Dormant state - no recent activity
+    static let progressDormant = Color.gray.opacity(0.3)
+    
+    /// Beginner spark - just getting started
+    static let progressBeginnerSpark = Color.white.opacity(0.8)
+    
+    /// Getting traction - building consistency
+    static let progressGettingTraction = Color.green.opacity(0.6)
+    
+    /// Solid intermediate - regular training established
+    static let progressSolidIntermediate = Color.blue.opacity(0.7)
+    
+    /// Advanced - high level training
+    static let progressAdvanced = Color.blue.opacity(0.9)
+    
+    /// Athlete tier - elite consistency
+    static let progressAthleteTier = Color.purple.opacity(0.8)
     
     // MARK: - Component-Specific Colors
     
@@ -381,6 +407,22 @@ public extension View {
                 radius: 8,
                 x: 0,
                 y: 2
+            )
+    }
+    
+    /// Applies white card styling with visible grey border for consistent UI elements
+    func whiteCardStyleWithBorder(
+        cornerRadius: CGFloat = 12,
+        padding: CGFloat = 16
+    ) -> some View {
+        self
+            .padding(padding)
+            .background(Color.surfaceWhite)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.border, lineWidth: 1)
+                    .opacity(0.2)
             )
     }
 }

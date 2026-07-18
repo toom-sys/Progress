@@ -363,20 +363,33 @@ extension NutritionMetricType {
     
     /// Default metrics for the secondary (second) tab - supplement focused
     static let secondaryMetrics: [NutritionMetricType] = [
-        .fiber, .creatine, .zinc, .vitaminD, .omega3, .magnesium
+        .fiber, .vitaminD, .magnesium, .zinc, .omega3, .creatine
     ]
     
-    /// All available metrics grouped by category for customization
+    /// Essential metrics grouped by category for customization (limited to 18 most important)
     static let availableMetricsByCategory: [NutritionCategory: [NutritionMetricType]] = [
-        .secondaryMacros: [.fiber, .sugar, .saturatedFat, .sodium],
-        .vitamins: [.vitaminA, .vitaminC, .vitaminD, .vitaminE, .vitaminK, .vitaminB6, .vitaminB12, .folate],
-        .minerals: [.calcium, .iron, .magnesium, .phosphorus, .potassium, .zinc, .copper, .selenium],
-        .performance: [.creatine, .caffeine, .omega3, .betaAlanine, .citrulline, .leucine, .glutamine, .taurine],
-        .health: [.waterIntake, .cholesterol, .choline, .inositol]
+        .secondaryMacros: [.fiber],
+        .vitamins: [.vitaminD, .vitaminB12, .vitaminC, .folate, .vitaminB6],
+        .minerals: [.magnesium, .zinc, .iron, .calcium, .potassium],
+        .performance: [.creatine, .caffeine, .omega3, .betaAlanine, .citrulline, .leucine],
+        .health: [.choline]
     ]
     
-    /// Most popular supplement metrics for quick selection
-    static let popularSupplements: [NutritionMetricType] = [
-        .creatine, .vitaminD, .omega3, .magnesium, .zinc, .vitaminB12, .iron, .caffeine
+    /// Most essential 18 supplement metrics for tracking
+    static let essentialSupplements: [NutritionMetricType] = [
+        // Performance supplements (most popular)
+        .creatine, .caffeine, .omega3, .betaAlanine, .citrulline, .leucine,
+        
+        // Essential vitamins (commonly deficient)
+        .vitaminD, .vitaminB12, .vitaminC, .folate, .vitaminB6,
+        
+        // Essential minerals (commonly deficient)
+        .magnesium, .zinc, .iron, .calcium, .potassium,
+        
+        // Additional important nutrients
+        .fiber, .choline
     ]
+    
+    /// Legacy popular supplements list (kept for backward compatibility)
+    static let popularSupplements: [NutritionMetricType] = essentialSupplements
 }

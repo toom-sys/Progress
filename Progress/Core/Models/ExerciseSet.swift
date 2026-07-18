@@ -42,6 +42,9 @@ final class ExerciseSet {
     /// Target weight (for planning vs actual)
     var targetWeight: Double?
     
+    /// Target duration in seconds (for timed plan sets)
+    var targetDuration: TimeInterval?
+    
     // MARK: - Cardio Exercise Properties
     
     /// Duration of the set in seconds
@@ -169,6 +172,7 @@ final class ExerciseSet {
         
         newSet.targetWeight = targetWeight
         newSet.targetReps = targetReps
+        newSet.targetDuration = targetDuration
         newSet.intensityLevel = intensityLevel
         newSet.notes = notes
         

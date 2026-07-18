@@ -12,48 +12,47 @@ import SwiftData
 
 struct MainTabView: View {
     @State private var selectedTab: Tab = .workouts
-    @StateObject private var subscriptionService = SubscriptionService()
     @State private var isInWorkoutDetail = false
-    @State private var showingFoodSearch = false
-    @State private var showingBarcodeScanner = false
+    @State private var isInWorkoutHistory = false
+    @EnvironmentObject private var subscriptionService: SubscriptionService
+    @StateObject private var keyboardObserver = KeyboardObserver()
+    @StateObject private var deepLinkService = DeepLinkService.shared
     
     var body: some View {
-        ZStack {
-            // Main content
-            Group {
-                switch selectedTab {
-                case .workouts:
-                    WorkoutTab()
-                case .progress:
-                    ProgressTab()
-                case .nutrition:
-                    NutritionTab(
-                        showingFoodSearch: $showingFoodSearch,
-                        showingBarcodeScanner: $showingBarcodeScanner
-                    )
+        TabView(selection: $selectedTab) {
+            WorkoutTab()
+                .tabItem {
+                    let isActive = selectedTab == .workouts && !(isInWorkoutDetail || isInWorkoutHistory)
+                    Label(Tab.workouts.displayName, systemImage: isActive ? Tab.workouts.activeIcon : Tab.workouts.icon)
                 }
-            }
-            .environmentObject(subscriptionService)
+                .tag(Tab.workouts)
+                .overlay(gateOverlay)
             
-            // Floating + Button for Nutrition Tab
-            if selectedTab == .nutrition {
-                FloatingAddButton(
-                    showingFoodSearch: $showingFoodSearch,
-                    showingBarcodeScanner: $showingBarcodeScanner
-                )
-            }
+            JourneyTab()
+                .tabItem {
+                    Label(Tab.journey.displayName, systemImage: selectedTab == .journey ? Tab.journey.activeIcon : Tab.journey.icon)
+                }
+                .tag(Tab.journey)
+                .overlay(gateOverlay)
             
-            // Floating Tab Bar
-            FloatingTabBar(
-                selectedTab: $selectedTab,
-                isInWorkoutDetail: isInWorkoutDetail,
-                onTabSelected: handleTabSelection
-            )
+            NutritionTab()
+                .tabItem {
+                    Label(Tab.nutrition.displayName, systemImage: selectedTab == .nutrition ? Tab.nutrition.activeIcon : Tab.nutrition.icon)
+                }
+                .tag(Tab.nutrition)
+                .overlay(gateOverlay)
         }
-        .task {
-            // Load subscription status when app starts
-            await subscriptionService.loadOfferings()
-            subscriptionService.checkSubscriptionStatus()
+        .environmentObject(subscriptionService)
+        .environmentObject(keyboardObserver)
+        .toolbar(keyboardObserver.isKeyboardVisible ? .hidden : .visible, for: .tabBar)
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToProgress)) { _ in
+            selectedTab = .journey
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToWorkouts)) { _ in
+            selectedTab = .workouts
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToNutrition)) { _ in
+            selectedTab = .nutrition
         }
         .onReceive(NotificationCenter.default.publisher(for: .showWorkoutDetail)) { _ in
             isInWorkoutDetail = true
@@ -61,26 +60,29 @@ struct MainTabView: View {
         .onReceive(NotificationCenter.default.publisher(for: .dismissWorkoutDetail)) { _ in
             isInWorkoutDetail = false
         }
-        .sheet(isPresented: $showingFoodSearch) {
-            FoodSearchView()
+        .onReceive(NotificationCenter.default.publisher(for: .showWorkoutHistory)) { _ in
+            isInWorkoutHistory = true
         }
-        .sheet(isPresented: $showingBarcodeScanner) {
-            BarcodeScannerView()
+        .onReceive(NotificationCenter.default.publisher(for: .dismissWorkoutHistory)) { _ in
+            isInWorkoutHistory = false
+        }
+        .onChange(of: deepLinkService.shouldNavigateToWorkouts) { _, shouldNavigate in
+            if shouldNavigate {
+                selectedTab = .workouts
+            }
         }
     }
-    
-    private func handleTabSelection(_ tab: Tab) {
-        // If we're in workout detail and tap workouts, dismiss detail view
-        if tab == .workouts && isInWorkoutDetail {
-            isInWorkoutDetail = false
-            // Trigger navigation back - this will be handled by the environment
-            NotificationCenter.default.post(name: .dismissWorkoutDetail, object: nil)
-        } else {
-            selectedTab = tab
+    // MARK: - Gate Overlay
+
+    @ViewBuilder
+    private var gateOverlay: some View {
+        if !subscriptionService.isSubscribed {
+            SubscriptionGateView()
         }
     }
 }
 
 #Preview {
     MainTabView()
+        .environmentObject(SubscriptionService())
 }

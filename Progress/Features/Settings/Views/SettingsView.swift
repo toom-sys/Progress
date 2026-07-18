@@ -6,16 +6,24 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Settings View
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var subscriptionService: SubscriptionService
+    @Query private var users: [User]
     @State private var showingPaywall = false
+    #if DEBUG
+    @State private var showingOnboardingResetConfirmation = false
+    #endif
+
+    private var currentUser: User? { users.first }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 Section {
                     NavigationLink(destination: ProfileView()) {
@@ -23,16 +31,17 @@ struct SettingsView: View {
                     }
                     
                     Button(action: {
+                        HapticFeedback.workoutButtonTap()
                         showingPaywall = true
                     }) {
                         HStack {
-                            Label("Subscription", systemImage: "star.circle")
+                            Label("Subscription", systemImage: "bolt.circle")
                                 .foregroundColor(.textPrimary)
                             
                             Spacer()
                             
-                            if let tier = subscriptionService.activeSubscription {
-                                Text(tier.displayName)
+                            if subscriptionService.isSubscribed {
+                                Text("Progress Pro")
                                     .font(.caption)
                                     .foregroundColor(.primary)
                                     .padding(.horizontal, 8)
@@ -40,7 +49,7 @@ struct SettingsView: View {
                                     .background(Color.primary.opacity(0.1))
                                     .clipShape(Capsule())
                             } else {
-                                Text("Free")
+                                Text("Not subscribed")
                                     .font(.caption)
                                     .foregroundColor(.textTertiary)
                             }
@@ -49,8 +58,16 @@ struct SettingsView: View {
                 }
                 
                 Section {
-                    NavigationLink(destination: NutritionMetricsSettingsView()) {
-                        Label("Nutrition Metrics", systemImage: "chart.bar.fill")
+                    NavigationLink(destination: WorkoutGoalsSettingsView()) {
+                        Label("Workout & Activity Goals", systemImage: "figure.run.circle")
+                    }
+
+                    NavigationLink(destination: NutritionGoalsSettingsView()) {
+                        Label("Nutrition Goals", systemImage: "fork.knife.circle")
+                    }
+
+                    NavigationLink(destination: TrainingPlanSettingsView()) {
+                        Label("Training Plan", systemImage: "list.bullet.clipboard")
                     }
                     
                     NavigationLink(destination: UnitsSettingsView()) {
@@ -65,6 +82,19 @@ struct SettingsView: View {
                         Label("Export Data", systemImage: "square.and.arrow.up")
                     }
                 }
+                
+                // Debug Section (only in debug builds)
+                #if DEBUG
+                Section("Debug") {
+                    Toggle(isOn: onboardingCompletedBinding) {
+                        Label("Onboarding Completed", systemImage: "flag.checkered")
+                    }
+
+                    NavigationLink(destination: OpenAITestView()) {
+                        Label("OpenAI Test", systemImage: "brain.head.profile")
+                    }
+                }
+                #endif
                 
                 Section {
                     NavigationLink(destination: PrivacyPolicyView()) {
@@ -81,6 +111,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
+                        HapticFeedback.workoutButtonTap()
                         dismiss()
                     }
                     .foregroundColor(.primary)
@@ -90,5 +121,44 @@ struct SettingsView: View {
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
+        #if DEBUG
+        .alert("Reset Onboarding?", isPresented: $showingOnboardingResetConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Reset", role: .destructive) {
+                resetOnboarding()
+            }
+        } message: {
+            Text("You'll go through the setup flow again from the start.")
+        }
+        #endif
     }
+
+    #if DEBUG
+    private var onboardingCompletedBinding: Binding<Bool> {
+        Binding(
+            get: { currentUser?.hasCompletedOnboarding ?? false },
+            set: { isCompleted in
+                guard !isCompleted, currentUser?.hasCompletedOnboarding == true else { return }
+                showingOnboardingResetConfirmation = true
+            }
+        )
+    }
+
+    private func resetOnboarding() {
+        guard let user = currentUser else { return }
+
+        user.hasCompletedOnboarding = false
+        user.updatedAt = Date()
+        OnboardingProgressStore.resetSavedProgress()
+
+        do {
+            try modelContext.save()
+            HapticFeedback.workoutButtonTap()
+            dismiss()
+        } catch {
+            print("❌ Failed to reset onboarding: \(error.localizedDescription)")
+        }
+    }
+    #endif
 }
+

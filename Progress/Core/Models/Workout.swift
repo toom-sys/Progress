@@ -43,6 +43,24 @@ final class Workout: Hashable {
     /// Whether this workout can be used as a template
     var isTemplate: Bool
     
+    /// Current session within this workout's block (1–5), if part of a plan
+    var planSessionIndex: Int?
+    
+    /// Block number for this repeating plan workout (starts at 1)
+    var planBlockNumber: Int?
+    
+    /// Phase of this plan workout (baseline, progression, deload)
+    var planPhase: PlanWorkoutPhase?
+    
+    /// ID of the training plan this workout belongs to
+    var trainingPlanId: UUID?
+    
+    /// Links a historical clone back to the live repeating plan workout
+    var sourceWorkoutId: UUID?
+    
+    /// When the workout was soft-deleted (nil if active). Kept for restore until purged.
+    var deletedAt: Date?
+    
     // MARK: - Relationships
     
     /// The user who owns this workout
@@ -51,6 +69,45 @@ final class Workout: Hashable {
     /// All exercises in this workout
     @Relationship(deleteRule: .cascade, inverse: \Exercise.workout)
     var exercises: [Exercise]
+    
+    // MARK: - Soft Delete
+    
+    /// How long soft-deleted workouts remain restorable before permanent purge
+    static let softDeleteRetentionDays = 30
+    
+    /// Whether this workout is in the Recently Deleted trash
+    var isDeleted: Bool {
+        deletedAt != nil
+    }
+    
+    /// When this soft-deleted workout will be permanently removed
+    var softDeleteExpiresAt: Date? {
+        guard let deletedAt else { return nil }
+        return Calendar.current.date(
+            byAdding: .day,
+            value: Self.softDeleteRetentionDays,
+            to: deletedAt
+        )
+    }
+    
+    /// Days remaining until permanent deletion (0 if expired)
+    var daysUntilPermanentDeletion: Int {
+        guard let expires = softDeleteExpiresAt else { return 0 }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: expires).day ?? 0
+        return max(0, days)
+    }
+    
+    /// Move the workout to Recently Deleted
+    func softDelete() {
+        deletedAt = Date()
+        updateTimestamp()
+    }
+    
+    /// Restore a soft-deleted workout back to its previous location
+    func restoreFromDeletion() {
+        deletedAt = nil
+        updateTimestamp()
+    }
     
     // MARK: - Computed Properties
     
@@ -107,6 +164,7 @@ final class Workout: Hashable {
         self.status = .planned
         self.isTemplate = isTemplate
         self.templateId = templateId
+        self.deletedAt = nil
         self.exercises = []
     }
     
@@ -121,9 +179,49 @@ final class Workout: Hashable {
     
     /// Complete the workout
     func complete() {
-        guard status == .inProgress else { return }
+        print("🏁 Completing workout '\(name)'...")
+        print("   Current status: \(status)")
+        
+        // Log current hidden state before completion
+        let hiddenExercises = exercises.filter { $0.isHidden }
+        let visibleExercises = exercises.filter { !$0.isHidden }
+        
+        print("📊 Pre-completion state:")
+        print("   Total exercises: \(exercises.count)")
+        if !hiddenExercises.isEmpty {
+            print("   Hidden exercises: \(hiddenExercises.count) - \(hiddenExercises.map { $0.name })")
+        }
+        if !visibleExercises.isEmpty {
+            print("   Visible exercises: \(visibleExercises.count) - \(visibleExercises.map { $0.name })")
+        }
+        
+        // Always set status and completion time (allow re-completion)
         status = .completed
         completedAt = Date()
+        
+        // Unhide all exercises when workout is completed
+        print("🔄 Unhiding all exercises...")
+        var unhiddenCount = 0
+        for exercise in exercises {
+            if exercise.isHidden {
+                print("   Unhiding: '\(exercise.name)'")
+                exercise.setHidden(false)
+                unhiddenCount += 1
+            }
+        }
+        
+        // Log final state after completion
+        let stillHiddenExercises = exercises.filter { $0.isHidden }
+        print("📊 Post-completion state:")
+        print("   Hidden exercises: \(stillHiddenExercises.count)")
+        if unhiddenCount > 0 {
+            print("   ✅ Successfully unhid \(unhiddenCount) exercises")
+        } else {
+            print("   ℹ️ No exercises were hidden")
+        }
+        print("   All exercises visible: \(stillHiddenExercises.isEmpty ? "✅ SUCCESS" : "❌ FAILED")")
+        
+        print("✅ Workout '\(name)' completed successfully")
     }
     
     /// Cancel the workout
@@ -199,4 +297,15 @@ enum WorkoutStatus: String, CaseIterable, Codable {
         case .cancelled: return "red"
         }
     }
+}
+
+// MARK: - Supporting Types
+
+/// Statistics about workouts in the database
+struct WorkoutStats {
+    let total: Int
+    let completed: Int
+    let inProgress: Int
+    let planned: Int
+    let templates: Int
 }

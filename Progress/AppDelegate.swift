@@ -7,12 +7,13 @@
 
 import UIKit
 import SwiftUI
+import UserNotifications
 
-// TODO: Uncomment when frameworks are added to project
 import RevenueCat
 import FirebaseCore
 import FirebaseCrashlytics
 import FirebaseAnalytics
+import FirebaseAuth
 
 class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
@@ -22,8 +23,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let firstLaunchKey = "com.tom.Progress.firstLaunch"
     
-    // Orientation lock support
-    static var orientationLock = UIInterfaceOrientationMask.all
+    // Orientation lock support - locked to portrait only
+    static var orientationLock = UIInterfaceOrientationMask.portrait
     
     // MARK: - Application Lifecycle
     
@@ -34,13 +35,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         
         setupLogging()
         initializeSDKs()
+        setupNotifications()
         handleFirstLaunch()
+        
+        // Clear any existing badge count on app launch
+        UIApplication.shared.applicationIconBadgeNumber = 0
         
         DispatchQueue.main.async {
             self.isInitialized = true
         }
         
         return true
+    }
+    
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        // Clear badge count when app comes to foreground
+        UIApplication.shared.applicationIconBadgeNumber = 0
     }
     
     // MARK: - Orientation Support
@@ -65,24 +75,44 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         initializeRevenueCat()
     }
     
+    private func setupNotifications() {
+        _ = NotificationService.shared
+    }
+    
     private func initializeFirebase() {
         guard let configPath = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
               FileManager.default.fileExists(atPath: configPath) else {
+            #if DEBUG
             print("⚠️ Firebase config not found. Skipping Firebase initialization.")
+            #endif
             return
         }
         
-        // TODO: Uncomment when Firebase is added
         FirebaseApp.configure()
+        signInAnonymouslyIfNeeded()
         
-        // Enable debug logging in debug builds
         #if DEBUG
         Analytics.setAnalyticsCollectionEnabled(true)
-        #endif
-        
         print("✅ Firebase initialized successfully")
+        #endif
+    }
+    
+    /// The AI proxy authenticates requests with Firebase ID tokens, so every
+    /// install needs a (anonymous) Firebase user.
+    private func signInAnonymouslyIfNeeded() {
+        guard Auth.auth().currentUser == nil else { return }
         
-        print("📝 Firebase configuration found - ready for initialization")
+        Task {
+            do {
+                let result = try await Auth.auth().signInAnonymously()
+                #if DEBUG
+                print("✅ Firebase anonymous sign-in: \(result.user.uid)")
+                #endif
+            } catch {
+                // AIBackend retries sign-in on demand before AI requests.
+                print("⚠️ Firebase anonymous sign-in failed: \(error.localizedDescription)")
+            }
+        }
     }
     
     private func initializeRevenueCat() {
@@ -91,37 +121,27 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
               let apiKey = config["PUBLIC_SDK_KEY_IOS"] as? String,
               !apiKey.isEmpty,
               !apiKey.hasPrefix("${") else {
+            #if DEBUG
             print("⚠️ RevenueCat config not found or invalid. Skipping RevenueCat initialization.")
+            #endif
             return
         }
         
-        // Configure RevenueCat for sandbox testing
         #if DEBUG
-        Purchases.logLevel = .info  // Reduced from .debug
+        Purchases.logLevel = .info
         #else
         Purchases.logLevel = .error
         #endif
         
-        // Configure with the new API
         Purchases.configure(withAPIKey: apiKey)
         
-        // Enable StoreKit 2 if specified
-        if let storeKit2Enabled = config["STORE_KIT_2_ENABLED"] as? Bool, storeKit2Enabled {
-            // StoreKit 2 is enabled by default in RevenueCat 4.0+
-        }
-        
-        // Set attribution if enabled
         if let attributionEnabled = config["ATTRIBUTION_ENABLED"] as? Bool, attributionEnabled {
             Purchases.shared.attribution.enableAdServicesAttributionTokenCollection()
         }
         
-        print("✅ RevenueCat initialized with API key: \(String(apiKey.prefix(8)))...")
-        
         #if DEBUG
-        print("🧪 RevenueCat configured for sandbox testing")
+        print("✅ RevenueCat initialized")
         #endif
-        
-        print("💰 RevenueCat configuration found - ready for initialization")
     }
     
     private func handleFirstLaunch() {
@@ -129,33 +149,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
         
         if isFirstLaunch {
             userDefaults.set(true, forKey: firstLaunchKey)
-            logFirstLaunchEvent()
-            print("🎉 First launch detected - welcome to Progress!")
+            requestNotificationPermissionsOnFirstLaunch()
+            #if DEBUG
+            print("🎉 First launch detected")
+            #endif
         }
     }
     
-    private func logFirstLaunchEvent() {
-        let deviceInfo = [
-            "device_model": UIDevice.current.model,
-            "ios_version": UIDevice.current.systemVersion,
-            "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
-            "build_number": Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "unknown",
-            "launch_timestamp": ISO8601DateFormatter().string(from: Date())
-        ]
-        
-        // Log to console for now
-        print("📊 First Launch Event:")
-        deviceInfo.forEach { key, value in
-            print("   \(key): \(value)")
+    private func requestNotificationPermissionsOnFirstLaunch() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            Task {
+                let granted = await NotificationService.shared.requestNotificationPermissions()
+                #if DEBUG
+                print("🔔 Timer notifications \(granted ? "enabled" : "disabled")")
+                #endif
+            }
         }
-        
-        // TODO: Uncomment when Firebase Analytics is added
-        Analytics.logEvent("first_launch", parameters: deviceInfo)
-        
-        // TODO: Uncomment when RevenueCat is added
-        /*
-        Purchases.shared.attribution.setAttributes(deviceInfo)
-        */
     }
     
     // MARK: - Public Methods
@@ -166,7 +175,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, ObservableObject {
     
     func resetFirstLaunch() {
         userDefaults.removeObject(forKey: firstLaunchKey)
+        #if DEBUG
         print("🔄 First launch flag reset")
+        #endif
     }
 }
 
@@ -179,4 +190,4 @@ extension AppDelegate {
         }
         return delegate
     }
-} 
+}

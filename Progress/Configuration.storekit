@@ -76,21 +76,26 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "0.99",
+          "displayPrice" : "35.00",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "6479096571",
-          "introductoryOffer" : null,
+          "internalID" : "6479096574",
+          "introductoryOffer" : {
+            "identifier" : "trial_3_days",
+            "paymentMode" : "FREE_TRIAL",
+            "subscriptionPeriod" : "P3D",
+            "type" : "Introductory"
+          },
           "localizations" : [
             {
-              "description" : "Track workouts and nutrition with core features",
-              "displayName" : "Progress Standard",
+              "description" : "Unlimited workout tracking, AI coaching, nutrition logging and personalised insights",
+              "displayName" : "Progress Pro (Annual)",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.tom.progress.standard.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Progress Standard Monthly",
+          "productID" : "com.tom.progress.pro.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Progress Pro Annual",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         },
@@ -101,21 +106,20 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "4.99",
           "familyShareable" : false,
-          "groupNumber" : 2,
-          "internalID" : "6479096572",
-          "introductoryOffer" : null,
+          "groupNumber" : 1,
+          "internalID" : "6479096573",
           "localizations" : [
             {
-              "description" : "All standard features plus AI-powered workout generation and nutrition insights",
-              "displayName" : "Progress Plus AI",
+              "description" : "Unlimited workout tracking, AI coaching, nutrition logging and personalised insights",
+              "displayName" : "Progress Pro (Monthly)",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.tom.progress.plus_ai.monthly",
+          "productID" : "com.tom.progress.pro.monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Progress Plus AI Monthly",
+          "referenceName" : "Progress Pro Monthly",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         }
@@ -126,4 +130,4 @@
     "major" : 3,
     "minor" : 0
   }
-} 
+}

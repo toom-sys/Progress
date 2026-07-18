@@ -149,19 +149,20 @@ xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platf
 xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:ProgressUITests
 ```
 
-## 📱 Subscription Tiers
+## 📱 Subscription
 
-### Standard (£1/month)
-- Workout planning and tracking
-- Basic nutrition logging
-- Progress charts and snapshots
-- Rest timer functionality
+### Progress Pro (£2.99/month — 7-day free trial)
+- Unlimited workout tracking and planning
+- Nutrition logging and search
+- AI-powered workout generation
+- Camera food logging with AI recognition
+- Progress charts and analytics
+- Smart nutrition recommendations
+- CloudKit sync across devices
+- Personalised insights engine
+- Export your data anytime
 
-### AI Native (£3/month)
-- Everything in Standard
-- AI workout generation
-- Camera-based food logging
-- Personalised insights and recommendations
+All features require an active Progress Pro subscription. Users without a subscription can browse the navigation but all tab content is gated behind a trial/subscribe prompt.
 
 ## 🔒 Privacy & Security
 

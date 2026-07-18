@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.tom.progress.cache-refresh</string>
+		<string>com.tom.progress.cache-maintenance</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.tom.progress.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>progress</string>
+			</array>
+		</dict>
+	</array>
+	<key>AI_PROXY_URL</key>
+	<string>$(AI_PROXY_URL)</string>
+	<key>OPENAI_API_KEY</key>
+	<string>$(OPENAI_API_KEY)</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Progress reads your step count from Apple Health to show daily progress toward your step goal.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-app-refresh</string>
+		<string>background-processing</string>
+	</array>
+</dict>
+</plist>

@@ -22,9 +22,8 @@
 // MARK: - Onboarding
 "onboarding.welcome.title" = "Welcome to Progress";
 "onboarding.welcome.subtitle" = "Track workouts, log nutrition, and visualize your progress";
-"onboarding.plan_selection.title" = "Choose Your Plan";
-"onboarding.plan_selection.standard" = "Standard - £1/month";
-"onboarding.plan_selection.plus_ai" = "Plus AI - £3/month";
+"onboarding.plan_selection.title" = "Start Free";
+"onboarding.plan_selection.pro" = "Progress Pro - 3 days free, then £35/year or £4.99/month";
 "onboarding.profile.title" = "Set Up Your Profile";
 "onboarding.profile.age" = "Age";
 "onboarding.profile.goal" = "Fitness Goal";
@@ -90,11 +89,10 @@
 "settings.delete_account" = "Delete Account";
 
 // MARK: - Subscription
-"subscription.standard.title" = "Standard";
-"subscription.plus_ai.title" = "Plus AI";
-"subscription.upgrade" = "Upgrade";
+"subscription.pro.title" = "Progress Pro";
 "subscription.manage" = "Manage Subscription";
 "subscription.restore" = "Restore Purchases";
+"subscription.start_trial" = "Start 3-Day Free Trial";
 
 // MARK: - Errors
 "error.network" = "Network connection error";

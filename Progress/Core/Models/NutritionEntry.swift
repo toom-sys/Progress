@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import UIKit
 
 @Model
 final class NutritionEntry {
@@ -83,8 +84,14 @@ final class NutritionEntry {
     /// Whether this entry has been marked as favorite
     var isFavorite: Bool
     
+    /// Whether this entry is a pending placeholder while AI analysis is in progress
+    var isPending: Bool
+    
     /// User notes about the entry
     var notes: String?
+    
+    /// Captured image data (for AI camera entries)
+    var imageData: Data?
     
     // MARK: - Relationships
     
@@ -139,6 +146,12 @@ final class NutritionEntry {
         return false
     }
     
+    /// Get the captured image if available
+    var capturedImage: UIImage? {
+        guard let imageData = imageData else { return nil }
+        return UIImage(data: imageData)
+    }
+    
     // MARK: - Initialization
     
     init(
@@ -165,6 +178,7 @@ final class NutritionEntry {
         self.loggedAt = Date()
         self.isVerified = false
         self.isFavorite = false
+        self.isPending = false
     }
     
     // MARK: - Methods
@@ -244,10 +258,15 @@ final class NutritionEntry {
     }
     
     /// Set AI detection data
-    func setAIData(confidence: Double, foodDatabaseId: String? = nil) {
+    func setAIData(confidence: Double, foodDatabaseId: String? = nil, capturedImage: UIImage? = nil) {
         self.aiConfidence = confidence
         self.foodDatabaseId = foodDatabaseId
         self.logMethod = .aiCamera
+        
+        // Store the captured image
+        if let image = capturedImage {
+            self.imageData = image.jpegData(compressionQuality: 0.8)
+        }
     }
     
     /// Set barcode data

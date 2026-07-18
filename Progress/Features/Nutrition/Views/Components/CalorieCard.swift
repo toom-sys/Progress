@@ -22,16 +22,20 @@ struct CalorieCard: View {
     }
     
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("\(Int(remaining))")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
                     .foregroundColor(.textPrimary)
+                    .minimumScaleFactor(0.7)
+                    .lineLimit(1)
                 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text("Calories left")
                         .font(.subheadline)
                         .foregroundColor(.textSecondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
                     
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill")
@@ -50,25 +54,22 @@ struct CalorieCard: View {
             // Calorie circle
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 6)
-                    .frame(width: 80, height: 80)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 5)
+                    .frame(width: 56, height: 56)
                 
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(.orange, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 80, height: 80)
+                    .stroke(.orange, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .frame(width: 56, height: 56)
                     .rotationEffect(.degrees(-90))
                     .animation(.easeInOut(duration: 0.5), value: consumed)
                 
                 Image(systemName: "flame.fill")
-                    .font(.title2)
+                    .font(.title3)
                     .foregroundColor(.orange)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .whiteCardStyle(cornerRadius: 16, padding: 20)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-        )
     }
 }

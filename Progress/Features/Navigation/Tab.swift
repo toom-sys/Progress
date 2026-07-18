@@ -11,13 +11,13 @@ import Foundation
 
 enum Tab: String, CaseIterable {
     case workouts = "workouts"
-    case progress = "progress"
+    case journey = "journey"
     case nutrition = "nutrition"
     
     var displayName: String {
         switch self {
         case .workouts: return "Workouts"
-        case .progress: return "Progress"
+        case .journey: return "Journey"
         case .nutrition: return "Nutrition"
         }
     }
@@ -25,7 +25,7 @@ enum Tab: String, CaseIterable {
     var icon: String {
         switch self {
         case .workouts: return "dumbbell"
-        case .progress: return "chart.line.uptrend.xyaxis"
+        case .journey: return "figure.walk"
         case .nutrition: return "leaf"
         }
     }
@@ -33,7 +33,7 @@ enum Tab: String, CaseIterable {
     var activeIcon: String {
         switch self {
         case .workouts: return "dumbbell.fill"
-        case .progress: return "chart.line.uptrend.xyaxis"
+        case .journey: return "figure.walk"
         case .nutrition: return "leaf.fill"
         }
     }

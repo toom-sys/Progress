@@ -13,6 +13,8 @@
 		E28E2E3F2E381A59005FB680 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E3E2E381A59005FB680 /* FirebaseAuth */; };
 		E28E2E412E381A59005FB680 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E402E381A59005FB680 /* FirebaseCore */; };
 		E28E2E432E381A59005FB680 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E422E381A59005FB680 /* FirebaseCrashlytics */; };
+		E2A3A63A2E54627000464F7A /* SQLite in Frameworks */ = {isa = PBXBuildFile; productRef = E2A3A6392E54627000464F7A /* SQLite */; };
+		E2B4F1012E739A01005FB681 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E2B4F1002E739A01005FB680 /* HealthKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,11 +39,26 @@
 		E2447FEB2E229AE4002FDA42 /* ProgressTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProgressTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E2447FF52E229AE4002FDA42 /* ProgressUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProgressUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E28E2D312E354990005FB680 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		E2B4F1002E739A01005FB680 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		E2C0F1A02E829A0100464F7A /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		E25E9C2F2E591EDF00F5B10B /* Exceptions for "Progress" folder in "Progress" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = E2447FD92E229AE1002FDA42 /* Progress */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E2447FDC2E229AE1002FDA42 /* Progress */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				E25E9C2F2E591EDF00F5B10B /* Exceptions for "Progress" folder in "Progress" target */,
+			);
 			path = Progress;
 			sourceTree = "<group>";
 		};
@@ -65,7 +82,9 @@
 				E28E2D392E354B82005FB680 /* RevenueCat in Frameworks */,
 				E28E2E412E381A59005FB680 /* FirebaseCore in Frameworks */,
 				E28E2D322E354991005FB680 /* StoreKit.framework in Frameworks */,
+				E2B4F1012E739A01005FB681 /* HealthKit.framework in Frameworks */,
 				E28E2E432E381A59005FB680 /* FirebaseCrashlytics in Frameworks */,
+				E2A3A63A2E54627000464F7A /* SQLite in Frameworks */,
 				E28E2E3D2E381A59005FB680 /* FirebaseAnalytics in Frameworks */,
 				E28E2E3F2E381A59005FB680 /* FirebaseAuth in Frameworks */,
 			);
@@ -91,6 +110,7 @@
 		E2447FD12E229AE1002FDA42 = {
 			isa = PBXGroup;
 			children = (
+				E2C0F1A02E829A0100464F7A /* Config.xcconfig */,
 				E2447FDC2E229AE1002FDA42 /* Progress */,
 				E2447FEE2E229AE4002FDA42 /* ProgressTests */,
 				E2447FF82E229AE4002FDA42 /* ProgressUITests */,
@@ -114,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				E28E2D312E354990005FB680 /* StoreKit.framework */,
+				E2B4F1002E739A01005FB680 /* HealthKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -151,6 +172,7 @@
 				E28E2E3E2E381A59005FB680 /* FirebaseAuth */,
 				E28E2E402E381A59005FB680 /* FirebaseCore */,
 				E28E2E422E381A59005FB680 /* FirebaseCrashlytics */,
+				E2A3A6392E54627000464F7A /* SQLite */,
 			);
 			productName = Progress;
 			productReference = E2447FDA2E229AE1002FDA42 /* Progress.app */;
@@ -210,7 +232,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1620;
-				LastUpgradeCheck = 1620;
+				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					E2447FD92E229AE1002FDA42 = {
 						CreatedOnToolsVersion = 16.2;
@@ -237,6 +259,7 @@
 			packageReferences = (
 				E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */,
 				E28E2E3B2E381A59005FB680 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				E2A3A6382E54627000464F7A /* XCRemoteSwiftPackageReference "SQLite.swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E2447FDB2E229AE1002FDA42 /* Products */;
@@ -368,7 +391,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = Z2942J63UA;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -390,6 +415,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -429,7 +455,9 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Z2942J63UA;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -444,12 +472,14 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
 		};
 		E24480002E229AE4002FDA42 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E2C0F1A02E829A0100464F7A /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -457,12 +487,16 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Progress/Preview Content\"";
-				DEVELOPMENT_TEAM = Z2942J63UA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Progress/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Progress;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan food barcodes for nutrition tracking.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -471,14 +505,15 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tom.progress;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomcameron.progress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -491,6 +526,7 @@
 		};
 		E24480012E229AE4002FDA42 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E2C0F1A02E829A0100464F7A /* Config.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -498,12 +534,16 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Progress/Preview Content\"";
-				DEVELOPMENT_TEAM = Z2942J63UA;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Progress/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Progress;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan food barcodes for nutrition tracking.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -512,14 +552,15 @@
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.tom.progress;
+				PRODUCT_BUNDLE_IDENTIFIER = com.tomcameron.progress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -536,9 +577,9 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Z2942J63UA;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myname.ProgressTests;
@@ -559,9 +600,9 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Z2942J63UA;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.myname.ProgressTests;
@@ -581,7 +622,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Z2942J63UA;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
@@ -603,7 +644,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Z2942J63UA;
+				DEAD_CODE_STRIPPING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				MACOSX_DEPLOYMENT_TARGET = 14.5;
@@ -678,6 +719,14 @@
 				minimumVersion = 12.0.0;
 			};
 		};
+		E2A3A6382E54627000464F7A /* XCRemoteSwiftPackageReference "SQLite.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stephencelis/SQLite.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.15.4;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -705,6 +754,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E28E2E3B2E381A59005FB680 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseCrashlytics;
+		};
+		E2A3A6392E54627000464F7A /* SQLite */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E2A3A6382E54627000464F7A /* XCRemoteSwiftPackageReference "SQLite.swift" */;
+			productName = SQLite;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
