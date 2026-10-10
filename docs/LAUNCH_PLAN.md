@@ -1,8 +1,8 @@
 # Progress — plan to launch
 
-Version 1.0 of this plan. It starts from the code on `main`, not from the README feature list.
+Version 1.1 of this plan. It starts from the code on `main`, not from the README feature list.
 
-Launch means an App Store release of a paid iPhone app (UK, iOS 18.2+) that a new user can subscribe to, log a workout, log a meal, and see that day on a progress screen, offline, with data that survives relaunch and syncs when iCloud is available.
+Launch means an App Store release of a paid iPhone app (UK, iOS 18.2+) with one membership. A member can log a workout, log a meal, and see that day on a progress screen, offline, with data that survives relaunch and syncs when iCloud is available. Someone who is not a member does not get a reduced app. They get the paywall.
 
 ## Where the app actually is
 
@@ -38,13 +38,25 @@ Concrete defects that block every later phase:
 
 ## What 1.0 sells
 
-Ship **Standard (£1/month)** only.
+One membership. Same access on every duration. The PRD’s Standard (£1) and AI Native (£3) tiers are dropped. `SubscriptionService` still models `standard` and `plusAI`; that split goes away with the paywall rewrite.
 
-Standard at launch is: workout planning and live logging, nutrition search and barcode, a daily snapshot, one weekly chart, a streak, iCloud sync, and data export.
+Price it the way [Cal AI](https://apps.apple.com/gb/app/cal-ai-calorie-tracker/id6480417616) prices Unlimited. Apple’s UK catalog, checked 7 October 2026, has one product at two durations:
 
-Do not offer **AI Native (£3/month)** until the tier does something a reviewer can complete. Camera logging is the feature that justifies the higher price; workout generation and weekly insights can follow in the same update or the one after. Hiding the tier is safer than a paywall that lists features the build does not contain.
+| Duration | Cal AI Unlimited (UK) | Progress membership |
+| --- | --- | --- |
+| Month | £9.99 | £9.99 |
+| Year | £19.99 | £19.99 |
 
-Referral stays in 1.0 in the smallest form that matches the PRD: a single-use App Store offer code for one free month, redeemed on the paywall. The inviter graph (generate a personal link, notify the inviter, rate-limit devices) is the release after launch.
+The year is two months of the monthly price (£119.88 if someone pays monthly all year). That is the offer. Annual is preselected on the paywall. Weekly and the other Unlimited prices on Cal AI’s listing (£2.99, £5.99, £24.95, £29.99) are experiments, not the launch pair. A £0.99 streak restore is also out of scope.
+
+Cal AI’s paywall shape, copied:
+
+- A short onboarding (goal, ability, age) and then the paywall. The tabs stay behind the membership.
+- One card for the product. Monthly and yearly are billing choices, not feature tiers. No comparison table.
+- Copy lists only what this build does. Camera logging, generated workouts, and written insights join the same membership when they exist. They do not create a second price.
+- Restore sits on the paywall.
+
+Referral stays a single-use App Store offer code for one free month of the same membership. The inviter graph is the release after launch.
 
 HealthKit import, workout share links, email-and-password accounts, push reminders, Rive, and Lottie stay off the 1.0 list. The README currently claims several of these. Store screenshots and the App Store description must describe the build that ships.
 
@@ -96,15 +108,15 @@ Replace the empty state in `ProgressDashboardView`.
 Paid-only means the main tabs stay behind an entitlement.
 
 1. Onboarding, in order: Sign in with Apple, age / goal / ability (writes `User`), then the paywall. Email-and-password auth is not required for 1.0. Sign in with Apple is the identity App Review expects, and iCloud already identifies the device for sync.
-2. One `SubscriptionService`, created in `ProgressApp` and passed in the environment. Delete the second instance inside `PaywallView`.
+2. One `SubscriptionService`, created in `ProgressApp` and passed in the environment. Delete the second instance inside `PaywallView`. Collapse `SubscriptionTier` to a single `member` state.
 3. `isSandboxMode` is true only in debug simulator builds. Release calls RevenueCat.
-4. App Store Connect subscriptions for `com.tom.progress.standard.monthly`, wired to a RevenueCat offering and an entitlement named `standard`. Localise the price from StoreKit. The hard-coded `£1` string is a fallback label, not the charged price.
-5. Gate the three tabs on `standard`. Restore purchases is on the paywall and in Settings, and it updates the same service.
-6. Offer-code field on the paywall for a one-month introductory offer. Single use, enforced by App Store offer codes rather than a custom code server.
+4. Two App Store Connect subscriptions, one RevenueCat entitlement named `member`: `com.tom.progress.member.monthly` at £9.99 and `com.tom.progress.member.yearly` at £19.99. The paywall reads the localized price from StoreKit. There is no £1 or £3 product.
+5. Gate the three tabs on `member`. Restore purchases is on the paywall and in Settings, and it updates the same service.
+6. Offer-code field on the paywall for a one-month introductory offer. Single use, enforced by App Store offer codes rather than a custom code server. The code grants `member`, not a separate tier.
 7. Replace the privacy and terms stubs with the real documents, and link to the hosted URLs from the paywall footer (those buttons are empty closures today).
 8. Export writes a JSON file of workouts and nutrition entries to the share sheet. Delete account wipes the SwiftData store, signs out, and tells the user how to cancel the subscription (Apple requires the cancellation to happen through the App Store).
 
-**Exit:** a sandbox account can buy Standard, kill the app, relaunch into the tabs, restore onto a second install, redeem an offer code, export a file, and delete local data. The reviewer notes describe that path.
+**Exit:** a sandbox account can buy the yearly membership, kill the app, relaunch into the tabs, restore onto a second install, redeem an offer code, export a file, and delete local data. The reviewer notes describe that path.
 
 ## Phase 3 — Sync and production services
 
@@ -125,9 +137,9 @@ Paid-only means the main tabs stay behind an entitlement.
 4. Localise the strings on those screens through the existing `Localizable.strings` and SwiftGen. The file already has onboarding and auth keys; the views do not use them.
 5. Replace hard-coded fonts on the workout detail screen with the tokens in `Typography.swift`.
 6. Measure cold launch on a device in the iPhone 12 class. The PRD bar is 500 ms. If the measurement is over that, the first place to look is SDK startup in `AppDelegate` (Firebase and RevenueCat on the launch path).
-7. App Store metadata that lists only Standard features. Screenshots of the workout logger, the meal logger, and the progress snapshot. Privacy nutrition labels that match the SDK list (RevenueCat, Firebase, CloudKit, camera, Open Food Facts). Subscription review notes and a sandbox account.
+7. App Store metadata for one membership. Screenshots of the workout logger, the meal logger, and the progress snapshot. Privacy nutrition labels that match the SDK list (RevenueCat, Firebase, CloudKit, camera, Open Food Facts). Subscription review notes and a sandbox account.
 
-**Exit:** CI is green on the Xcode 16 image, including the new tests. A teammate can complete the reviewer path on TestFlight without a “Coming Soon” screen and without an AI claim.
+**Exit:** CI is green on the Xcode 16 image, including the new tests. A teammate can complete the reviewer path on TestFlight without a “Coming Soon” screen and without a feature the build does not contain.
 
 ## Phase 5 — Ship
 
@@ -138,9 +150,9 @@ Paid-only means the main tabs stay behind an entitlement.
 
 ## The release after launch
 
-In this order, because each one unblocks the next sale or the next persona:
+In this order:
 
-1. **AI Native.** Camera logging with a confidence badge and an edit step, behind the `ai` entitlement. Then one weekly written insight on the progress tab, and an upgrade prompt for Standard subscribers. Only then turn on `com.tom.progress.plus_ai.monthly`.
+1. **Camera logging and insights, inside the same membership.** A confidence badge and an edit step on a meal photo, then one weekly written insight on the progress tab. No second product and no upgrade prompt.
 2. **Referral graph.** A personal invite link, a single redemption, and a notice to the inviter. Keep the offer-code path from 1.0 as the fallback.
 3. **HealthKit.** Import workouts (runs in particular) so the runner persona does not type them in. This needs usage strings and a privacy-label update, which is why it is not in the first review.
 4. **Reminders and share links.** A local notification if nothing is logged by late afternoon. A workout link that opens the app or the App Store.
@@ -150,7 +162,7 @@ In this order, because each one unblocks the next sale or the next persona:
 
 | PRD item | 1.0 | Later |
 | --- | --- | --- |
-| 1.0 Plan selection, 1.4 profile | Yes | Change tier stays on the paywall |
+| 1.0 Plan selection, 1.4 profile | Profile yes. Plan selection is month vs year of one membership | |
 | 1.1 Referral redemption | Offer code | Personal invite link and inviter notice |
 | 1.2 Email auth | No | If required |
 | 1.3 Sign in with Apple | Yes | |
@@ -160,18 +172,18 @@ In this order, because each one unblocks the next sale or the next persona:
 | 3.5–3.7 Reorder, undo, unsaved prompt | Undo yes; reorder and unsaved prompt if they fall out of the finish flow | Otherwise the next release |
 | 3.8 Finish workout | Yes | Share summary with the share-link work |
 | 3.9 Workout sharing | No | |
-| 3.10 AI exercises | No | With AI Native |
+| 3.10 AI exercises | No | Same membership, after launch |
 | 4.1–4.2 Search and barcode | Yes, Open Food Facts | |
-| 4.3 Camera AI | No | First AI Native feature |
+| 4.3 Camera AI | No | Same membership, first feature after launch |
 | 4.4–4.6 Quick-add, favourites, macro targets | Yes | |
 | 4.7 Intake reminder | No | With other notifications |
 | 5.1–5.3 Snapshot, weekly chart, streak | Yes | |
-| 5.4 Personalised insights | No | With AI Native |
+| 5.4 Personalised insights | No | Same membership, after camera logging |
 | 6.1–6.3 Offline store, CloudKit, export and delete | Yes | |
 | 6.4 Manual conflict resolution | Last writer wins, documented | Chooser if conflicts show up |
 | 7.x Motion, Lottie, shared elements | Tokens only | |
 | 8.1, 8.3–8.5 Pushes, units, theme, rating prompt | System theme only | The rest |
 | 8.2 Referral generation | No | Second item after launch |
 | 9.x Launch time, low-power sync, Crashlytics | Yes | |
-| 10.1–10.3 Dual paywall, purchase, restore | Standard only, restore yes | AI tier when the features exist |
+| 10.1–10.3 Dual paywall, purchase, restore | One membership, £9.99/month or £19.99/year, restore yes | |
 | 10.4–10.5 Remote paywall, promo codes | Offer codes yes | Remote copy experiments |
