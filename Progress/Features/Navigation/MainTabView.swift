@@ -12,7 +12,7 @@ import SwiftData
 
 struct MainTabView: View {
     @State private var selectedTab: Tab = .workouts
-    @StateObject private var subscriptionService = SubscriptionService()
+    @EnvironmentObject private var subscriptionService: SubscriptionService
     @State private var isInWorkoutDetail = false
     @State private var showingFoodSearch = false
     @State private var showingBarcodeScanner = false
@@ -33,8 +33,6 @@ struct MainTabView: View {
                     )
                 }
             }
-            .environmentObject(subscriptionService)
-            
             // Floating + Button for Nutrition Tab
             if selectedTab == .nutrition {
                 FloatingAddButton(
@@ -83,4 +81,5 @@ struct MainTabView: View {
 
 #Preview {
     MainTabView()
+        .environmentObject(SubscriptionService())
 }

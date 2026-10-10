@@ -50,8 +50,8 @@ struct ProgressDashboardView: View {
                         Image(systemName: "gearshape")
                             .foregroundColor(.textSecondary)
                         
-                        if let tier = subscriptionService.activeSubscription {
-                            Text(tier.displayName)
+                        if subscriptionService.isMember {
+                            Text(subscriptionService.membershipLabel)
                                 .font(.caption2)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)

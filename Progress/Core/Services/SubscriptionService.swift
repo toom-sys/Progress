@@ -10,384 +10,332 @@ import Combine
 
 import RevenueCat
 
-/// Service for managing subscriptions via RevenueCat
+/// Catalogue prices for the single Progress membership.
+/// Week £4.99, month £9.99, year £49.99. The year is the plan the paywall selects.
+enum MembershipPricing {
+    static let weekly = Decimal(string: "4.99")!
+    static let monthly = Decimal(string: "9.99")!
+    static let yearly = Decimal(string: "49.99")!
+
+    static var costOfPayingMonthlyForAYear: Decimal {
+        monthly * 12
+    }
+
+    static var yearlyEquivalentPerMonth: Decimal {
+        yearly / 12
+    }
+
+    static func price(for period: MembershipPeriod) -> Decimal {
+        switch period {
+        case .weekly: weekly
+        case .monthly: monthly
+        case .yearly: yearly
+        }
+    }
+
+    static func format(_ value: Decimal, currencyCode: String = "GBP", locale: Locale = Locale(identifier: "en_GB")) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.currencyCode = currencyCode
+        formatter.locale = locale
+        return formatter.string(from: value as NSDecimalNumber) ?? "\(value)"
+    }
+}
+
+enum MembershipPeriod: String, CaseIterable, Identifiable {
+    case weekly
+    case monthly
+    case yearly
+
+    var id: String { rawValue }
+
+    static let paywallOrder: [MembershipPeriod] = [.yearly, .monthly, .weekly]
+
+    var productIdentifier: String {
+        switch self {
+        case .weekly: "com.tom.progress.member.weekly"
+        case .monthly: "com.tom.progress.member.monthly"
+        case .yearly: "com.tom.progress.member.yearly"
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .weekly: String(localized: "subscription.weekly")
+        case .monthly: String(localized: "subscription.monthly")
+        case .yearly: String(localized: "subscription.yearly")
+        }
+    }
+
+    var cadence: String {
+        switch self {
+        case .weekly: String(localized: "paywall.a_week")
+        case .monthly: String(localized: "paywall.a_month")
+        case .yearly: String(localized: "paywall.a_year")
+        }
+    }
+
+    var renewalAdverb: String {
+        switch self {
+        case .weekly: "weekly"
+        case .monthly: "monthly"
+        case .yearly: "yearly"
+        }
+    }
+
+    var isBestValue: Bool { self == .yearly }
+}
+
+struct MembershipOffering: Identifiable {
+    let period: MembershipPeriod
+    let productId: String
+    let price: Decimal
+    let localizedPrice: String
+    let currencyCode: String
+    let isMockOffering: Bool
+    let package: Package?
+
+    var id: String { productId }
+
+    func formatted(_ value: Decimal) -> String {
+        MembershipPricing.format(value, currencyCode: currencyCode)
+    }
+}
+
+/// Service for the single Progress membership, billed weekly, monthly, or yearly.
 @MainActor
 class SubscriptionService: ObservableObject {
-    
-    // MARK: - Published Properties
-    
-    @Published var currentOfferings: [SubscriptionOffering] = []
-    @Published var activeSubscription: SubscriptionTier? = nil
+
+    static let entitlementID = "member"
+
+    @Published var currentOfferings: [MembershipOffering] = []
+    @Published var activePeriod: MembershipPeriod?
+    @Published var isMember = false
     @Published var isLoading = false
-    @Published var purchaseError: String? = nil
-    @Published var isSandboxMode = true // Enable sandbox testing mode
-    
-    // MARK: - Subscription Tiers
-    
-    enum SubscriptionTier: String, CaseIterable {
-        case standard = "standard_monthly"
-        case plusAI = "plus_ai_monthly"
-        
-        var displayName: String {
-            switch self {
-            case .standard: return "Standard"
-            case .plusAI: return "Plus AI"
-            }
-        }
-        
-        var monthlyPrice: String {
-            switch self {
-            case .standard: return "£1"
-            case .plusAI: return "£3"
-            }
-        }
-        
-        var features: [String] {
-            switch self {
-            case .standard:
-                return [
-                    "Unlimited workout tracking",
-                    "Nutrition logging with search",
-                    "Progress charts and analytics",
-                    "CloudKit sync across devices",
-                    "Export your data anytime"
-                ]
-            case .plusAI:
-                return [
-                    "Everything in Standard",
-                    "AI-powered workout generation",
-                    "Smart nutrition recommendations", 
-                    "Camera food logging with AI",
-                    "Personalized insights engine",
-                    "Priority customer support"
-                ]
-            }
-        }
-        
-        var tagline: String {
-            switch self {
-            case .standard: return "Perfect for focused tracking"
-            case .plusAI: return "Powered by artificial intelligence"
-            }
-        }
-    }
-    
-    // MARK: - Offering Model
-    
-    struct SubscriptionOffering {
-        let tier: SubscriptionTier
-        let productId: String
-        let price: String
-        let pricePerMonth: String
-        let isPopular: Bool
-        let isMockOffering: Bool
-        
-        let package: Package?
-    }
-    
-    // MARK: - Initialization
-    
+    @Published var purchaseError: String?
+    @Published var isSandboxMode = false
+
+    private let mockSubscriptionKey = "mock_membership_period"
+
     init() {
         setupMockOfferings()
-        // Don't check subscription status immediately - wait for RevenueCat to be configured
     }
-    
-    // MARK: - Public Methods
-    
+
+    var hasActiveSubscription: Bool { isMember }
+
+    var membershipLabel: String {
+        if let activePeriod {
+            return activePeriod.displayName
+        }
+        return isMember
+            ? String(localized: "subscription.member")
+            : String(localized: "subscription.subscribe")
+    }
+
+    func offering(for period: MembershipPeriod) -> MembershipOffering? {
+        currentOfferings.first { $0.period == period }
+    }
+
     func loadOfferings() async {
         isLoading = true
         purchaseError = nil
-        
-        // For sandbox testing, skip RevenueCat calls and use mock offerings directly
+
         #if DEBUG && targetEnvironment(simulator)
-        print("🧪 Simulator mode: Using mock offerings for sandbox testing")
         setupMockOfferings()
         isLoading = false
         return
         #else
-        
-        // Ensure RevenueCat is configured before making calls
         guard Purchases.isConfigured else {
-            print("⚠️ RevenueCat not configured yet, using mock offerings")
             setupMockOfferings()
             isLoading = false
             return
         }
         #endif
-        
+
         do {
             let offerings = try await Purchases.shared.offerings()
-            
             guard let currentOffering = offerings.current else {
-                print("⚠️ No current offering found, using mock data")
                 setupMockOfferings()
                 isLoading = false
                 return
             }
-            
-            var newOfferings: [SubscriptionOffering] = []
-            
-            // Look for packages by product identifier (matching StoreKit configuration)
-            let standardPackage = currentOffering.availablePackages.first { package in
-                package.storeProduct.productIdentifier == "com.tom.progress.standard.monthly"
-            } ?? currentOffering.monthly
-            
-            let aiPackage = currentOffering.availablePackages.first { package in
-                package.storeProduct.productIdentifier == "com.tom.progress.plus_ai.monthly"
+
+            let loaded = MembershipPeriod.paywallOrder.compactMap { period in
+                self.makeOffering(period, from: currentOffering)
             }
-            
-            if let standard = standardPackage {
-                newOfferings.append(SubscriptionOffering(
-                    tier: .standard,
-                    productId: standard.storeProduct.productIdentifier,
-                    price: standard.storeProduct.localizedPriceString,
-                    pricePerMonth: standard.storeProduct.localizedPriceString,
-                    isPopular: false,
-                    isMockOffering: false,
-                    package: standard
-                ))
-            }
-            
-            if let ai = aiPackage {
-                newOfferings.append(SubscriptionOffering(
-                    tier: .plusAI,
-                    productId: ai.storeProduct.productIdentifier,
-                    price: ai.storeProduct.localizedPriceString,
-                    pricePerMonth: ai.storeProduct.localizedPriceString,
-                    isPopular: true,
-                    isMockOffering: false,
-                    package: ai
-                ))
-            }
-            
-            // If no packages found, use mock data
-            if newOfferings.isEmpty {
-                print("⚠️ No packages found in offering, using mock data")
+
+            if loaded.isEmpty {
                 setupMockOfferings()
             } else {
-                currentOfferings = newOfferings
+                currentOfferings = loaded
                 isSandboxMode = false
-                print("✅ Loaded \(newOfferings.count) real offerings from RevenueCat")
             }
-            
         } catch {
-            print("❌ Failed to load offerings: \(error.localizedDescription)")
-            
-            // Provide helpful debug information for common configuration issues
-            if error.localizedDescription.contains("configuration") || 
-               error.localizedDescription.contains("OfferingsManager.Error") {
-                print("🔧 Configuration Issue Detected:")
-                print("   • Check that products are configured in RevenueCat dashboard")
-                print("   • Product IDs should match: com.tom.progress.standard.monthly, com.tom.progress.plus_ai.monthly")
-                print("   • Ensure offerings are set up with these products as packages")
-                print("   • See Scripts/REVENUECAT_SETUP.md for detailed setup instructions")
-            }
-            
-            // Don't show configuration errors to users in sandbox mode - use mock offerings instead
-            if !error.localizedDescription.contains("configuration") && 
-               !error.localizedDescription.contains("OfferingsManager.Error") {
+            if !error.localizedDescription.contains("configuration") &&
+                !error.localizedDescription.contains("OfferingsManager.Error") {
                 purchaseError = error.localizedDescription
             }
             setupMockOfferings()
         }
-        
+
         isLoading = false
     }
-    
-    func purchase(_ offering: SubscriptionOffering) async {
+
+    func purchase(_ offering: MembershipOffering) async {
         isLoading = true
         purchaseError = nil
-        
-        // Handle mock offerings in sandbox mode
+
         if offering.isMockOffering && isSandboxMode {
-            print("🧪 Simulating sandbox purchase for \(offering.tier.displayName)")
-            
-            // Simulate purchase delay
-            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
-            
-            // Simulate successful purchase
-            activeSubscription = offering.tier
-            print("🎉 Mock purchase successful: \(offering.tier.displayName)")
-            
-            // Store the mock subscription locally for this session
-            UserDefaults.standard.set(offering.tier.rawValue, forKey: "mock_subscription")
-            
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            grant(offering.period)
+            UserDefaults.standard.set(offering.period.rawValue, forKey: mockSubscriptionKey)
             isLoading = false
             return
         }
-        
+
         guard Purchases.isConfigured else {
-            print("⚠️ RevenueCat not configured yet, cannot purchase")
             purchaseError = "RevenueCat not configured"
             isLoading = false
             return
         }
-        
+
         do {
             guard let package = offering.package else {
-                print("❌ No package available for offering")
-                purchaseError = "This is a demo offering. Configure products in RevenueCat dashboard to enable real purchases."
+                purchaseError = "This plan is not available to purchase yet."
                 isLoading = false
                 return
             }
-            
+
             let (_, _, userCancelled) = try await Purchases.shared.purchase(package: package)
-            
             if !userCancelled {
                 checkSubscriptionStatus()
-                print("🎉 Purchase successful: \(offering.tier.displayName)")
-            } else {
-                print("🚫 Purchase cancelled by user")
             }
-            
         } catch {
-            print("❌ Purchase failed: \(error.localizedDescription)")
             purchaseError = error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func restorePurchases() async {
         isLoading = true
         purchaseError = nil
-        
-        // Check for mock subscription first
+
         if isSandboxMode {
-            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               let tier = SubscriptionTier(rawValue: mockSub) {
-                activeSubscription = tier
-                print("🔄 Restored mock subscription: \(tier.displayName)")
-                isLoading = false
-                return
+            if let stored = UserDefaults.standard.string(forKey: mockSubscriptionKey),
+               let period = MembershipPeriod(rawValue: stored) {
+                grant(period)
             }
+            isLoading = false
+            return
         }
-        
+
         guard Purchases.isConfigured else {
-            print("⚠️ RevenueCat not configured yet, cannot restore")
             purchaseError = "RevenueCat not configured"
             isLoading = false
             return
         }
-        
+
         do {
             _ = try await Purchases.shared.restorePurchases()
             checkSubscriptionStatus()
-            print("🔄 Purchases restored successfully")
-            
         } catch {
-            print("❌ Restore failed: \(error.localizedDescription)")
             purchaseError = error.localizedDescription
         }
-        
+
         isLoading = false
     }
-    
+
     func checkSubscriptionStatus() {
-        // Check for mock subscription first
         if isSandboxMode {
-            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               let tier = SubscriptionTier(rawValue: mockSub) {
-                activeSubscription = tier
-                print("ℹ️ Mock subscription active: \(tier.displayName)")
-                return
+            if let stored = UserDefaults.standard.string(forKey: mockSubscriptionKey),
+               let period = MembershipPeriod(rawValue: stored) {
+                grant(period)
             }
-        }
-        
-        guard Purchases.isConfigured else {
-            print("⚠️ RevenueCat not configured yet, skipping subscription status check")
-            activeSubscription = nil
             return
         }
-        
-        Purchases.shared.getCustomerInfo { [weak self] customerInfo, error in
-            DispatchQueue.main.async {
-                guard let info = customerInfo, error == nil else {
-                    print("❌ Failed to get customer info: \(error?.localizedDescription ?? "Unknown error")")
-                    self?.activeSubscription = nil
-                    return
-                }
-                
-                // Check entitlements for active subscriptions
-                if info.entitlements.active["standard"]?.isActive == true {
-                    self?.activeSubscription = .standard
-                    print("✅ Standard subscription active")
-                } else if info.entitlements.active["plus_ai"]?.isActive == true {
-                    self?.activeSubscription = .plusAI
-                    print("✅ Plus AI subscription active")
-                } else {
-                    self?.activeSubscription = nil
-                    print("ℹ️ No active subscription found")
-                }
+
+        guard Purchases.isConfigured else {
+            clearMembership()
+            return
+        }
+
+        Task {
+            do {
+                let info = try await Purchases.shared.customerInfo()
+                apply(customerInfo: info)
+            } catch {
+                clearMembership()
             }
         }
     }
-    
-    // MARK: - Helper Methods
-    
+
+    func isCurrentPeriod(_ period: MembershipPeriod) -> Bool {
+        isMember && activePeriod == period
+    }
+
+    private func grant(_ period: MembershipPeriod) {
+        activePeriod = period
+        isMember = true
+    }
+
+    private func clearMembership() {
+        activePeriod = nil
+        isMember = false
+    }
+
+    private func apply(customerInfo: CustomerInfo) {
+        let active = customerInfo.entitlements.active
+        let member = active[Self.entitlementID]
+        let legacy = active["standard"] ?? active["plus_ai"]
+        guard let entitlement = member ?? legacy, entitlement.isActive else {
+            clearMembership()
+            return
+        }
+
+        isMember = true
+        activePeriod = MembershipPeriod.allCases.first {
+            $0.productIdentifier == entitlement.productIdentifier
+        }
+    }
+
+    private func makeOffering(_ period: MembershipPeriod, from offering: Offering) -> MembershipOffering? {
+        let package = offering.availablePackages.first {
+            $0.storeProduct.productIdentifier == period.productIdentifier
+        } ?? offering.availablePackages.first { candidate in
+            switch period {
+            case .weekly: candidate.packageType == .weekly
+            case .monthly: candidate.packageType == .monthly
+            case .yearly: candidate.packageType == .annual
+            }
+        }
+
+        guard let package else { return nil }
+
+        return MembershipOffering(
+            period: period,
+            productId: package.storeProduct.productIdentifier,
+            price: package.storeProduct.price,
+            localizedPrice: package.storeProduct.localizedPriceString,
+            currencyCode: package.storeProduct.priceFormatter?.currencyCode ?? "GBP",
+            isMockOffering: false,
+            package: package
+        )
+    }
+
     private func setupMockOfferings() {
-        currentOfferings = [
-            SubscriptionOffering(
-                tier: .standard,
-                productId: "com.tom.progress.standard.monthly",
-                price: "£0.99",
-                pricePerMonth: "£0.99",
-                isPopular: false,
-                isMockOffering: true,
-                package: nil
-            ),
-            SubscriptionOffering(
-                tier: .plusAI,
-                productId: "com.tom.progress.plus_ai.monthly",
-                price: "£2.99",
-                pricePerMonth: "£2.99",
-                isPopular: true,
+        currentOfferings = MembershipPeriod.paywallOrder.map { period in
+            let price = MembershipPricing.price(for: period)
+            return MembershipOffering(
+                period: period,
+                productId: period.productIdentifier,
+                price: price,
+                localizedPrice: MembershipPricing.format(price),
+                currencyCode: "GBP",
                 isMockOffering: true,
                 package: nil
             )
-        ]
-        print("📝 Using mock offerings for development")
-        print("💡 To enable real purchases:")
-        print("   1. Configure products in RevenueCat dashboard (see Scripts/REVENUECAT_SETUP.md)")
-        print("   2. Set up offerings with product IDs: com.tom.progress.standard.monthly, com.tom.progress.plus_ai.monthly")
-        print("   3. Ensure products are approved in App Store Connect")
+        }
         isSandboxMode = true
     }
-    
-    // MARK: - Computed Properties
-    
-    var hasActiveSubscription: Bool {
-        activeSubscription != nil
-    }
-    
-    var isStandardUser: Bool {
-        activeSubscription == .standard
-    }
-    
-    var isAIUser: Bool {
-        activeSubscription == .plusAI
-    }
-    
-    func isActiveTier(_ tier: SubscriptionTier) -> Bool {
-        return activeSubscription == tier
-    }
 }
-
-// MARK: - Errors
-
-enum SubscriptionError: LocalizedError {
-    case noOfferingsFound
-    case purchaseFailed
-    case restoreFailed
-    
-    var errorDescription: String? {
-        switch self {
-        case .noOfferingsFound:
-            return "No subscription offerings available"
-        case .purchaseFailed:
-            return "Purchase failed. Please try again."
-        case .restoreFailed:
-            return "Failed to restore purchases"
-        }
-    }
-} 

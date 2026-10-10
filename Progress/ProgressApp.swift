@@ -14,6 +14,7 @@ struct ProgressApp: App {
     // MARK: - Properties
     
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @StateObject private var subscriptionService = SubscriptionService()
     
     // MARK: - SwiftData Container
     
@@ -53,6 +54,7 @@ struct ProgressApp: App {
         WindowGroup {
             MainTabView()
                 .environmentObject(appDelegate)
+                .environmentObject(subscriptionService)
                 .modelContainer(sharedModelContainer)
                 .onAppear {
                     // Additional setup can be done here if needed

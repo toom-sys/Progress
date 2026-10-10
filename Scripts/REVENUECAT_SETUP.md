@@ -1,6 +1,6 @@
 # RevenueCat Setup Guide for Progress iOS
 
-This guide will help you configure RevenueCat for the Progress iOS app's dual-tier subscription model.
+This guide configures RevenueCat for Progress’s single membership.
 
 ## 1. RevenueCat Dashboard Setup
 
@@ -11,67 +11,58 @@ This guide will help you configure RevenueCat for the Progress iOS app's dual-ti
 4. Select platform: **iOS**
 
 ### Configure Products
-Create these exact product IDs to match the app:
+Create these product IDs. Each one unlocks the same app.
 
-#### Standard Tier
-- **Product ID**: `com.tom.progress.standard.monthly`
+#### Weekly
+- **Product ID**: `com.tom.progress.member.weekly`
+- **Type**: Auto-renewable subscription
+- **Duration**: 1 week
+- **Price**: £4.99/week
+- **Display Name**: "Progress Weekly"
+
+#### Monthly
+- **Product ID**: `com.tom.progress.member.monthly`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 month
-- **Price**: £0.99/month
-- **Display Name**: "Progress Standard"
+- **Price**: £9.99/month
+- **Display Name**: "Progress Monthly"
 
-#### Plus AI Tier  
-- **Product ID**: `com.tom.progress.plus_ai.monthly`
+#### Yearly
+- **Product ID**: `com.tom.progress.member.yearly`
 - **Type**: Auto-renewable subscription
-- **Duration**: 1 month
-- **Price**: £2.99/month
-- **Display Name**: "Progress Plus AI"
+- **Duration**: 1 year
+- **Price**: £49.99/year
+- **Display Name**: "Progress Yearly"
 
 ### Create Offerings
 1. Go to **Offerings** in RevenueCat dashboard
-2. Create offering: **"Standard"** 
-   - Add package: `com.tom.progress.standard.monthly`
-   - Set as monthly package
-3. Create offering: **"Plus AI"**
-   - Add package: `com.tom.progress.plus_ai.monthly` 
-   - Set as monthly package
+2. Create one current offering: **"Membership"**
+3. Add three packages:
+   - Weekly: `com.tom.progress.member.weekly`
+   - Monthly: `com.tom.progress.member.monthly`
+   - Annual: `com.tom.progress.member.yearly`
 
 ### Configure Entitlements
-Create these entitlements to control feature access:
+Create one entitlement:
 
-1. **"standard"** entitlement
-   - Grant access to: Standard tier features
-   - Products: `com.tom.progress.standard.monthly`
-
-2. **"plus_ai"** entitlement  
-   - Grant access to: Plus AI tier features
-   - Products: `com.tom.progress.plus_ai.monthly`
+1. **"member"**
+   - Products: all three membership product IDs above
+   - Attach the same entitlement to weekly, monthly, and yearly
 
 ## 2. App Store Connect Setup
 
 ### Create In-App Purchases
 1. Go to [App Store Connect](https://appstoreconnect.apple.com)
-2. Navigate to your app → **Monetization** → **In-App Purchases**
-3. Create two auto-renewable subscriptions:
+2. Navigate to your app → **Monetization** → **Subscriptions**
+3. Create one subscription group, **Progress Membership**, with three durations:
 
-#### Standard Subscription
-- **Reference Name**: Progress Standard Monthly
-- **Product ID**: `com.tom.progress.standard.monthly`
-- **Subscription Group**: Progress Subscriptions
-- **Duration**: 1 month
-- **Price**: £0.99 (Tier 2)
+| Reference name | Product ID | Duration | UK price |
+| --- | --- | --- | --- |
+| Progress Membership Weekly | `com.tom.progress.member.weekly` | 1 week | £4.99 |
+| Progress Membership Monthly | `com.tom.progress.member.monthly` | 1 month | £9.99 |
+| Progress Membership Yearly | `com.tom.progress.member.yearly` | 1 year | £49.99 |
 
-#### Plus AI Subscription  
-- **Reference Name**: Progress Plus AI Monthly
-- **Product ID**: `com.tom.progress.plus_ai.monthly`
-- **Subscription Group**: Progress Subscriptions  
-- **Duration**: 1 month
-- **Price**: £2.99 (Tier 5)
-
-### Subscription Group Settings
-- **Reference Name**: Progress Subscriptions
-- **Rank products**: Progress Plus AI (higher rank), Standard (lower rank)
-- This allows users to upgrade from Standard to AI Native
+Rank yearly highest so a switch from week or month to year is an upgrade. `Progress/Configuration.storekit` carries the same three products for local StoreKit testing.
 
 ## 3. Get API Keys
 
@@ -96,7 +87,7 @@ export REVENUECAT_ENVIRONMENT="sandbox"  # or "production"
 ### Sandbox Testing
 1. Create sandbox test user in App Store Connect
 2. Sign in with sandbox account on device
-3. Test both subscription tiers
+3. Test weekly, monthly, and yearly purchases. All three grant the `member` entitlement.
 4. Verify purchase flow works correctly
 
 ### RevenueCat Testing
@@ -163,7 +154,7 @@ Track these in RevenueCat dashboard:
 - Conversion rate (free trial → paid)
 - Churn rate
 - Revenue per user
-- Upgrade rate (Standard → AI Native)
+- Mix of weekly, monthly, and yearly purchases
 
 ## 7. Troubleshooting
 

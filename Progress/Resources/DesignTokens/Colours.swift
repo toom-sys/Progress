@@ -8,6 +8,9 @@ public extension Color {
     
     /// Primary brand color - used for main actions and branding
     static let primary = Color.blue
+
+    /// Text drawn on a primary-coloured control
+    static let textOnPrimary = Color.white
     
     /// Secondary accent color for highlights and emphasis
     static let accent = Color.green

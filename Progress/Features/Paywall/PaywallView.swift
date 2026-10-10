@@ -9,436 +9,310 @@ import SwiftUI
 
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var subscriptionService = SubscriptionService()
-    @State private var selectedOffering: SubscriptionService.SubscriptionOffering?
-    @State private var showingAllFeatures = false
-    
+    @EnvironmentObject private var subscriptionService: SubscriptionService
+    @State private var selectedPeriod: MembershipPeriod = .yearly
+
+    private var selectedOffering: MembershipOffering? {
+        subscriptionService.offering(for: selectedPeriod)
+    }
+
+    private var monthlyOffering: MembershipOffering? {
+        subscriptionService.offering(for: .monthly)
+    }
+
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color.backgroundGradient
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Header
                         headerSection
-                        
-                        // Sandbox Mode Indicator
+
                         if subscriptionService.isSandboxMode {
                             sandboxModeIndicator
                         }
-                        
-                        // Active Subscription Status
-                        if subscriptionService.hasActiveSubscription {
-                            activeSubscriptionStatus
+
+                        if subscriptionService.isMember {
+                            activeMembershipStatus
                         }
-                        
-                        // Subscription Cards
-                        subscriptionCards
-                        
-                        // Features Comparison
-                        featuresSection
-                        
-                        // Footer
+
+                        planList
+                        featureList
+                        purchaseSection
                         footerSection
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 24)
                 }
             }
-            .navigationTitle("Choose Your Plan")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Close") {
+                    Button(String(localized: "paywall.close")) {
                         dismiss()
                     }
+                    .font(.buttonSecondary)
                     .foregroundColor(.textSecondary)
                 }
             }
         }
         .task {
-            // In simulator, skip RevenueCat delays and use mock offerings immediately
-            #if DEBUG && targetEnvironment(simulator)
             await subscriptionService.loadOfferings()
             subscriptionService.checkSubscriptionStatus()
-            #else
-            // Small delay to ensure RevenueCat is configured in production
-            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-            await subscriptionService.loadOfferings()
-            subscriptionService.checkSubscriptionStatus()
-            #endif
+            if subscriptionService.offering(for: .yearly) != nil {
+                selectedPeriod = .yearly
+            }
         }
     }
-    
-    // MARK: - Header Section
-    
+
     private var headerSection: some View {
-        VStack(spacing: 16) {
-            Text("Unlock Your Progress")
+        VStack(spacing: 12) {
+            Text(String(localized: "paywall.title"))
                 .font(.titleXL)
                 .foregroundColor(.textPrimary)
                 .multilineTextAlignment(.center)
-            
-            Text("Choose the plan that fits your fitness journey")
+
+            Text(String(localized: "paywall.subtitle"))
                 .font(.bodyLarge)
                 .foregroundColor(.textSecondary)
                 .multilineTextAlignment(.center)
         }
     }
-    
-    // MARK: - Sandbox Mode Indicator
-    
+
     private var sandboxModeIndicator: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(systemName: "flask.fill")
-                .foregroundColor(.orange)
-            
+                .foregroundColor(.warning)
+
             VStack(alignment: .leading, spacing: 4) {
-                Text("Sandbox Mode")
+                Text(String(localized: "paywall.sandbox_title"))
                     .font(.bodyLarge)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.orange)
-                
-                Text("Mock purchases enabled for testing")
-                    .font(.body)
+                    .foregroundColor(.warning)
+
+                Text(String(localized: "paywall.sandbox_body"))
+                    .font(.bodySmall)
                     .foregroundColor(.textSecondary)
             }
-            
+
             Spacer()
         }
         .padding(12)
-        .background(Color.orange.opacity(0.1))
-        .cornerRadius(12)
+        .background(Color.warning.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
-    
-    // MARK: - Active Subscription Status
-    
-    private var activeSubscriptionStatus: some View {
-        HStack {
+
+    private var activeMembershipStatus: some View {
+        HStack(spacing: 12) {
             Image(systemName: "checkmark.seal.fill")
-                .foregroundColor(.green)
-                .font(.title2)
-            
+                .foregroundColor(.success)
+                .font(.titleMedium)
+
             VStack(alignment: .leading, spacing: 4) {
-                Text("Active Subscription")
+                Text(String(localized: "paywall.active"))
                     .font(.bodyLarge)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.green)
-                
-                if let activeSubscription = subscriptionService.activeSubscription {
-                    Text("\(activeSubscription.displayName) - \(activeSubscription.monthlyPrice)/month")
-                        .font(.body)
-                        .foregroundColor(.textSecondary)
-                }
+                    .foregroundColor(.success)
+
+                Text(subscriptionService.membershipLabel)
+                    .font(.body)
+                    .foregroundColor(.textSecondary)
             }
-            
+
             Spacer()
         }
         .padding(16)
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.green.opacity(0.3), lineWidth: 1)
-        )
+        .background(Color.success.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
-    
-    // MARK: - Subscription Cards
-    
-    private var subscriptionCards: some View {
-        VStack(spacing: 16) {
-            ForEach(subscriptionService.currentOfferings, id: \.productId) { offering in
-                SubscriptionCard(
+
+    private var planList: some View {
+        VStack(spacing: 12) {
+            ForEach(subscriptionService.currentOfferings) { offering in
+                MembershipPlanRow(
                     offering: offering,
-                    isSelected: selectedOffering?.productId == offering.productId,
-                    isCurrentPlan: subscriptionService.isActiveTier(offering.tier),
-                    isLoading: subscriptionService.isLoading && selectedOffering?.productId == offering.productId,
-                    onSelect: {
-                        selectedOffering = offering
-                    },
-                    onPurchase: {
-                        selectedOffering = offering  // Ensure this card is selected when purchasing
-                        Task {
-                            await subscriptionService.purchase(offering)
-                            if subscriptionService.activeSubscription != nil {
-                                dismiss()
-                            }
-                        }
-                    }
-                )
-            }
-        }
-        .onAppear {
-            // Auto-select AI Native tier by default
-            if selectedOffering == nil, let aiOffering = subscriptionService.currentOfferings.first(where: { $0.tier == .plusAI }) {
-                selectedOffering = aiOffering
+                    monthlyOffering: monthlyOffering,
+                    isSelected: selectedPeriod == offering.period
+                ) {
+                    selectedPeriod = offering.period
+                }
             }
         }
     }
-    
-    // MARK: - Features Section
-    
-    private var featuresSection: some View {
+
+    private var featureList: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            featureRow("paywall.feature.workouts")
+            featureRow("paywall.feature.timer")
+            featureRow("paywall.feature.nutrition")
+            featureRow("paywall.feature.dashboard")
+            featureRow("paywall.feature.device")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(Color.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func featureRow(_ key: String.LocalizationValue) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark")
+                .font(.caption)
+                .foregroundColor(.success)
+            Text(String(localized: key))
+                .font(.body)
+                .foregroundColor(.textSecondary)
+            Spacer()
+        }
+    }
+
+    private var purchaseSection: some View {
         VStack(spacing: 16) {
-            Button("Restore Purchases") {
+            Button(action: purchaseSelected) {
+                HStack {
+                    if subscriptionService.isLoading {
+                        ProgressView()
+                            .tint(Color.textOnPrimary)
+                        Text(String(localized: "paywall.processing"))
+                            .font(.buttonPrimary)
+                    } else if subscriptionService.isCurrentPeriod(selectedPeriod) {
+                        Text(String(localized: "paywall.current_plan"))
+                            .font(.buttonPrimary)
+                    } else if let offering = selectedOffering {
+                        Text(continueTitle(for: offering))
+                            .font(.buttonPrimary)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 52)
+                .foregroundColor(subscriptionService.isCurrentPeriod(selectedPeriod) ? Color.textSecondary : Color.textOnPrimary)
+                .background(subscriptionService.isCurrentPeriod(selectedPeriod) ? Color.backgroundSecondary : Color.primary)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .disabled(subscriptionService.isLoading || selectedOffering == nil || subscriptionService.isCurrentPeriod(selectedPeriod))
+
+            Button(String(localized: "paywall.restore")) {
                 Task {
                     await subscriptionService.restorePurchases()
                 }
             }
             .font(.body)
-            .foregroundColor(Color.textSecondary)
+            .foregroundColor(.textSecondary)
             .disabled(subscriptionService.isLoading)
-            
-            // Simulator note
-            if subscriptionService.isSandboxMode {
-                Text("📱 Simulator purchases are simulated - real purchases need device + App Store Connect setup")
-                    .font(.caption)
-                    .foregroundColor(.textTertiary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-            }
-            
-            // Only show purchase errors, not configuration errors in sandbox mode
-            if let error = subscriptionService.purchaseError,
-               !subscriptionService.isSandboxMode,
-               !error.contains("configuration") {
+
+            if let error = subscriptionService.purchaseError, !subscriptionService.isSandboxMode {
                 Text(error)
-                    .font(.body)
-                    .foregroundColor(.red)
+                    .font(.bodySmall)
+                    .foregroundColor(.error)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal)
             }
         }
     }
-    
-    // MARK: - Footer Section
-    
+
     private var footerSection: some View {
         VStack(spacing: 12) {
-            Text("• Cancel anytime in Settings")
+            Text(String(format: String(localized: "paywall.renews"), selectedPeriod.renewalAdverb))
                 .font(.caption)
-                .foregroundColor(Color.textTertiary)
-            
-            Text("• Subscription auto-renews monthly")
+                .foregroundColor(.textTertiary)
+
+            Text(String(localized: "paywall.cancel_anytime"))
                 .font(.caption)
-                .foregroundColor(Color.textTertiary)
-            
+                .foregroundColor(.textTertiary)
+
             HStack(spacing: 20) {
-                Button("Terms of Service") {
-                    // TODO: Open terms
-                }
-                .font(.caption)
-                .foregroundColor(Color.textSecondary)
-                
-                Button("Privacy Policy") {
-                    // TODO: Open privacy policy
-                }
-                .font(.caption)
-                .foregroundColor(Color.textSecondary)
+                Button(String(localized: "paywall.terms")) {}
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+
+                Button(String(localized: "paywall.privacy")) {}
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
             }
         }
         .multilineTextAlignment(.center)
     }
-}
 
-// MARK: - Subscription Card
-
-struct SubscriptionCard: View {
-    let offering: SubscriptionService.SubscriptionOffering
-    let isSelected: Bool
-    let isCurrentPlan: Bool
-    let isLoading: Bool
-    let onSelect: () -> Void
-    let onPurchase: () -> Void
-    
-    @State private var showAllFeatures = false
-    
-    var body: some View {
-        Button(action: onSelect) {
-            VStack(spacing: 16) {
-            // Header with popular badge
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(offering.tier.displayName)
-                        .font(.titleMedium)
-                        .foregroundColor(Color.textPrimary)
-                    
-                    Text(offering.tier.tagline)
-                        .font(.bodySmall)
-                        .foregroundColor(Color.textSecondary)
-                }
-                
-                Spacer()
-                
-                if offering.isPopular {
-                    Text("POPULAR")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.primary)
-                        .clipShape(Capsule())
-                }
-            }
-            
-            // Price
-            HStack(alignment: .bottom) {
-                Text(offering.pricePerMonth)
-                    .font(.titleLarge)
-                    .fontWeight(.bold)
-                    .foregroundColor(Color.textPrimary)
-                
-                Text("/month")
-                    .font(.body)
-                    .foregroundColor(Color.textSecondary)
-                
-                Spacer()
-                
-                // Mock indicator
-                if offering.isMockOffering {
-                    Text("DEMO")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-            }
-            
-            // Key features preview
-            VStack(alignment: .leading, spacing: 8) {
-                let featuresToShow = showAllFeatures ? offering.tier.features : Array(offering.tier.features.prefix(3))
-                
-                ForEach(featuresToShow, id: \.self) { feature in
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark")
-                            .font(.caption)
-                            .foregroundColor(Color.success)
-                        
-                        Text(feature)
-                            .font(.body)
-                            .foregroundColor(Color.textSecondary)
-                        
-                        Spacer()
-                    }
-                }
-                
-                if offering.tier.features.count > 3 {
-                    Button(action: {
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showAllFeatures.toggle()
-                        }
-                    }) {
-                        HStack(spacing: 4) {
-                            Text(showAllFeatures ? "Show less" : "+ \(offering.tier.features.count - 3) more features")
-                                .font(.caption)
-                                .foregroundColor(Color.primary)
-                            
-                            Image(systemName: showAllFeatures ? "chevron.up" : "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(Color.primary)
-                        }
-                        .padding(.leading, 16)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            
-            // Purchase button
-            Button(action: onPurchase) {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                            .scaleEffect(0.8)
-                        
-                        Text("Processing...")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    } else if isCurrentPlan {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title3)
-                        
-                        Text("Current Plan")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    } else {
-                        Text("Start \(offering.tier.displayName)")
-                            .font(.buttonPrimary)
-                            .fontWeight(.semibold)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .foregroundColor(isCurrentPlan ? Color.textSecondary : .white)
-                .background(isCurrentPlan ? Color.backgroundSecondary : Color.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .disabled(isLoading || isCurrentPlan)
-        }
-        .padding(20)
-        .background(Color.surface)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(
-                    isSelected ? Color.primary : Color.border,
-                    lineWidth: isSelected ? 2 : 1
-                )
+    private func continueTitle(for offering: MembershipOffering) -> String {
+        String(
+            format: String(localized: "paywall.continue"),
+            offering.localizedPrice,
+            offering.period.cadence
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func purchaseSelected() {
+        guard let offering = selectedOffering else { return }
+        Task {
+            await subscriptionService.purchase(offering)
+            if subscriptionService.isMember {
+                dismiss()
+            }
         }
-        .buttonStyle(PlainButtonStyle())
     }
 }
 
-// MARK: - Previews
+private struct MembershipPlanRow: View {
+    let offering: MembershipOffering
+    let monthlyOffering: MembershipOffering?
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(alignment: .center, spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(offering.period.displayName)
+                            .font(.titleSmall)
+                            .foregroundColor(.textPrimary)
+
+                        if offering.period.isBestValue {
+                            Text(String(localized: "paywall.best_value"))
+                                .font(.caption)
+                                .foregroundColor(.textOnPrimary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.primary)
+                                .clipShape(Capsule())
+                        }
+                    }
+
+                    Text(detail)
+                        .font(.bodySmall)
+                        .foregroundColor(.textSecondary)
+                        .multilineTextAlignment(.leading)
+                }
+
+                Spacer()
+
+                Text(offering.localizedPrice)
+                    .font(.titleMedium)
+                    .foregroundColor(.textPrimary)
+            }
+            .padding(16)
+            .background(isSelected ? Color.primary.opacity(0.08) : Color.surface)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? Color.primary : Color.border, lineWidth: isSelected ? 2 : 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var detail: String {
+        if offering.period == .yearly, let monthlyOffering {
+            let perMonth = offering.formatted(offering.price / 12)
+            let yearOfMonthly = monthlyOffering.formatted(monthlyOffering.price * 12)
+            return String(format: String(localized: "paywall.yearly_detail"), perMonth, yearOfMonthly)
+        }
+        return offering.period.cadence
+    }
+}
 
 #Preview("Paywall") {
     PaywallView()
+        .environmentObject(SubscriptionService())
 }
-
-#Preview("Subscription Card") {
-    VStack(spacing: 16) {
-        SubscriptionCard(
-            offering: SubscriptionService.SubscriptionOffering(
-                tier: .standard,
-                productId: "standard",
-                price: "£0.99",
-                pricePerMonth: "£0.99",
-                isPopular: false,
-                isMockOffering: true,
-                package: nil
-            ),
-            isSelected: false,
-            isCurrentPlan: false,
-            isLoading: false,
-            onSelect: {},
-            onPurchase: {}
-        )
-        
-        SubscriptionCard(
-            offering: SubscriptionService.SubscriptionOffering(
-                tier: .plusAI,
-                productId: "plus_ai",
-                price: "£2.99",
-                pricePerMonth: "£2.99",
-                isPopular: true,
-                isMockOffering: true,
-                package: nil
-            ),
-            isSelected: true,
-            isCurrentPlan: true,
-            isLoading: false,
-            onSelect: {},
-            onPurchase: {}
-        )
-    }
-    .padding()
-                .background(Color.backgroundGradient)
-} 

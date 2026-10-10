@@ -38,21 +38,22 @@ Concrete defects that block every later phase:
 
 ## What 1.0 sells
 
-One membership. Same access on every duration. The PRD’s Standard (£1) and AI Native (£3) tiers are dropped. `SubscriptionService` still models `standard` and `plusAI`; that split goes away with the paywall rewrite.
+One membership. Same access on every duration. The PRD’s Standard (£1) and AI Native (£3) tiers are dropped. The paywall sells week, month, and year of one membership.
 
-Price it the way [Cal AI](https://apps.apple.com/gb/app/cal-ai-calorie-tracker/id6480417616) prices Unlimited. Apple’s UK catalog, checked 7 October 2026, has one product at two durations:
+Price it like [Cal AI](https://apps.apple.com/gb/app/cal-ai-calorie-tracker/id6480417616): one product, several durations, year selected first. Cal AI’s live UK pair is £9.99 a month and £19.99 a year. Progress uses a higher year because the membership covers workouts and nutrition:
 
-| Duration | Cal AI Unlimited (UK) | Progress membership |
-| --- | --- | --- |
-| Month | £9.99 | £9.99 |
-| Year | £19.99 | £19.99 |
+| Duration | Progress membership |
+| --- | --- |
+| Week | £4.99 |
+| Month | £9.99 |
+| Year | £49.99 |
 
-The year is two months of the monthly price (£119.88 if someone pays monthly all year). That is the offer. Annual is preselected on the paywall. Weekly and the other Unlimited prices on Cal AI’s listing (£2.99, £5.99, £24.95, £29.99) are experiments, not the launch pair. A £0.99 streak restore is also out of scope.
+The year is the plan the paywall selects. £49.99 is £69.89 less than paying £9.99 twelve times (£119.88). That comparison is the one on the yearly row. There is no struck-through £99.99. Weekly is on the paywall so the year is the obvious choice. All three durations unlock the same app.
 
 Cal AI’s paywall shape, copied:
 
 - A short onboarding (goal, ability, age) and then the paywall. The tabs stay behind the membership.
-- One card for the product. Monthly and yearly are billing choices, not feature tiers. No comparison table.
+- Three durations of one product. The year is selected. Week and month are the other ways to pay.
 - Copy lists only what this build does. Camera logging, generated workouts, and written insights join the same membership when they exist. They do not create a second price.
 - Restore sits on the paywall.
 
@@ -110,7 +111,7 @@ Paid-only means the main tabs stay behind an entitlement.
 1. Onboarding, in order: Sign in with Apple, age / goal / ability (writes `User`), then the paywall. Email-and-password auth is not required for 1.0. Sign in with Apple is the identity App Review expects, and iCloud already identifies the device for sync.
 2. One `SubscriptionService`, created in `ProgressApp` and passed in the environment. Delete the second instance inside `PaywallView`. Collapse `SubscriptionTier` to a single `member` state.
 3. `isSandboxMode` is true only in debug simulator builds. Release calls RevenueCat.
-4. Two App Store Connect subscriptions, one RevenueCat entitlement named `member`: `com.tom.progress.member.monthly` at £9.99 and `com.tom.progress.member.yearly` at £19.99. The paywall reads the localized price from StoreKit. There is no £1 or £3 product.
+4. Three App Store Connect subscriptions, one RevenueCat entitlement named `member`: `com.tom.progress.member.weekly` at £4.99, `com.tom.progress.member.monthly` at £9.99, and `com.tom.progress.member.yearly` at £49.99. The paywall reads the localized price from StoreKit and preselects the year. There is no £1 or £3 product.
 5. Gate the three tabs on `member`. Restore purchases is on the paywall and in Settings, and it updates the same service.
 6. Offer-code field on the paywall for a one-month introductory offer. Single use, enforced by App Store offer codes rather than a custom code server. The code grants `member`, not a separate tier.
 7. Replace the privacy and terms stubs with the real documents, and link to the hosted URLs from the paywall footer (those buttons are empty closures today).
@@ -185,5 +186,5 @@ In this order:
 | 8.1, 8.3–8.5 Pushes, units, theme, rating prompt | System theme only | The rest |
 | 8.2 Referral generation | No | Second item after launch |
 | 9.x Launch time, low-power sync, Crashlytics | Yes | |
-| 10.1–10.3 Dual paywall, purchase, restore | One membership, £9.99/month or £19.99/year, restore yes | |
+| 10.1–10.3 Dual paywall, purchase, restore | One membership: £4.99/week, £9.99/month, £49.99/year. Restore yes | |
 | 10.4–10.5 Remote paywall, promo codes | Offer codes yes | Remote copy experiments |

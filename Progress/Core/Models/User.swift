@@ -61,7 +61,7 @@ final class User {
         age: Int,
         fitnessGoal: FitnessGoal = .generalFitness,
         fitnessLevel: FitnessLevel = .beginner,
-        subscriptionTier: SubscriptionTier = .standard,
+        subscriptionTier: SubscriptionTier = .none,
         preferredUnits: UnitSystem = .metric
     ) {
         self.id = UUID()
@@ -135,20 +135,25 @@ enum FitnessLevel: String, CaseIterable, Codable {
 }
 
 enum SubscriptionTier: String, CaseIterable, Codable {
-    case standard = "standard"
-    case plusAI = "plus_ai"
-    
+    case none = "none"
+    case member = "member"
+
+    /// Older builds stored a two-tier plan on the user record. Billing now lives in RevenueCat, so those values read back as no local membership.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+        self = rawValue == SubscriptionTier.member.rawValue ? .member : .none
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
     var displayName: String {
         switch self {
-        case .standard: return "Standard"
-        case .plusAI: return "Plus AI"
-        }
-    }
-    
-    var monthlyPrice: String {
-        switch self {
-        case .standard: return "£1"
-        case .plusAI: return "£3"
+        case .none: return "Not a member"
+        case .member: return "Member"
         }
     }
 }

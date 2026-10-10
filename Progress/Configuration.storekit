@@ -76,21 +76,21 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "0.99",
+          "displayPrice" : "4.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6479096571",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "Track workouts and nutrition with core features",
-              "displayName" : "Progress Standard",
+              "description" : "Full Progress membership, billed every week",
+              "displayName" : "Progress Weekly",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.tom.progress.standard.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Progress Standard Monthly",
+          "productID" : "com.tom.progress.member.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Progress Membership Weekly",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         },
@@ -101,21 +101,46 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "2.99",
+          "displayPrice" : "9.99",
           "familyShareable" : false,
           "groupNumber" : 2,
           "internalID" : "6479096572",
           "introductoryOffer" : null,
           "localizations" : [
             {
-              "description" : "All standard features plus AI-powered workout generation and nutrition insights",
-              "displayName" : "Progress Plus AI",
+              "description" : "Full Progress membership, billed every month",
+              "displayName" : "Progress Monthly",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.tom.progress.plus_ai.monthly",
+          "productID" : "com.tom.progress.member.monthly",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Progress Plus AI Monthly",
+          "referenceName" : "Progress Membership Monthly",
+          "subscriptionGroupID" : "21484467",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "49.99",
+          "familyShareable" : false,
+          "groupNumber" : 3,
+          "internalID" : "6479096573",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Full Progress membership, billed every year",
+              "displayName" : "Progress Yearly",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.tom.progress.member.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Progress Membership Yearly",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         }

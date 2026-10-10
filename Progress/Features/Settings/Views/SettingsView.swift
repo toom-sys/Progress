@@ -31,19 +31,13 @@ struct SettingsView: View {
                             
                             Spacer()
                             
-                            if let tier = subscriptionService.activeSubscription {
-                                Text(tier.displayName)
-                                    .font(.caption)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.primary.opacity(0.1))
-                                    .clipShape(Capsule())
-                            } else {
-                                Text("Free")
-                                    .font(.caption)
-                                    .foregroundColor(.textTertiary)
-                            }
+                            Text(subscriptionService.membershipLabel)
+                                .font(.caption)
+                                .foregroundColor(subscriptionService.isMember ? Color.primary : Color.textTertiary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(subscriptionService.isMember ? Color.primary.opacity(0.1) : Color.clear)
+                                .clipShape(Capsule())
                         }
                     }
                 }
@@ -89,6 +83,7 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
+                .environmentObject(subscriptionService)
         }
     }
 }

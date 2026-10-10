@@ -12,7 +12,7 @@ Progress closes the behaviour loop—*Activity → Nutrition → Insight*—so u
 - **Workout Planning & Tracking** - Plan workouts, track sets live with rest timer
 - **Nutrition Logging** - Search foods, scan barcodes, AI-powered camera logging (AI tier)
 - **Progress Visualization** - Daily snapshots, weekly charts, streak tracking
-- **Dual-Tier Subscriptions** - Standard (£1/mo) and AI Native (£3/mo)
+- **Membership** - £4.99/week, £9.99/month, or £49.99/year. One plan unlocks the whole app
 - **Referral System** - One-month free via referral invites
 
 ### Technical Features
@@ -149,19 +149,17 @@ xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platf
 xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platform=iOS Simulator,name=iPhone 15' -only-testing:ProgressUITests
 ```
 
-## 📱 Subscription Tiers
+## 📱 Membership
 
-### Standard (£1/month)
-- Workout planning and tracking
-- Basic nutrition logging
-- Progress charts and snapshots
-- Rest timer functionality
+One membership unlocks the whole app. There is no reduced plan.
 
-### AI Native (£3/month)
-- Everything in Standard
-- AI workout generation
-- Camera-based food logging
-- Personalised insights and recommendations
+| Duration | Price |
+| --- | --- |
+| Weekly | £4.99 |
+| Monthly | £9.99 |
+| Yearly | £49.99 |
+
+The year is selected on the paywall. £49.99 is £69.89 less than paying the monthly price for a year.
 
 ## 🔒 Privacy & Security
 

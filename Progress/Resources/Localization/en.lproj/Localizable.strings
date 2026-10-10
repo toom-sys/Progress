@@ -23,8 +23,8 @@
 "onboarding.welcome.title" = "Welcome to Progress";
 "onboarding.welcome.subtitle" = "Track workouts, log nutrition, and visualize your progress";
 "onboarding.plan_selection.title" = "Choose Your Plan";
-"onboarding.plan_selection.standard" = "Standard - £1/month";
-"onboarding.plan_selection.plus_ai" = "Plus AI - £3/month";
+"onboarding.plan_selection.standard" = "Membership";
+"onboarding.plan_selection.plus_ai" = "Membership";
 "onboarding.profile.title" = "Set Up Your Profile";
 "onboarding.profile.age" = "Age";
 "onboarding.profile.goal" = "Fitness Goal";
@@ -90,11 +90,41 @@
 "settings.delete_account" = "Delete Account";
 
 // MARK: - Subscription
-"subscription.standard.title" = "Standard";
-"subscription.plus_ai.title" = "Plus AI";
-"subscription.upgrade" = "Upgrade";
+"subscription.standard.title" = "Membership";
+"subscription.plus_ai.title" = "Membership";
+"subscription.upgrade" = "Subscribe";
 "subscription.manage" = "Manage Subscription";
 "subscription.restore" = "Restore Purchases";
+"subscription.member" = "Member";
+"subscription.subscribe" = "Subscribe";
+"subscription.weekly" = "Weekly";
+"subscription.monthly" = "Monthly";
+"subscription.yearly" = "Yearly";
+
+"paywall.title" = "Unlock Progress";
+"paywall.subtitle" = "One membership. Workouts, nutrition, and progress.";
+"paywall.close" = "Close";
+"paywall.best_value" = "Best value";
+"paywall.yearly_detail" = "%1$@ a month · %2$@ if you pay monthly";
+"paywall.a_week" = "a week";
+"paywall.a_month" = "a month";
+"paywall.a_year" = "a year";
+"paywall.continue" = "Continue · %1$@ %2$@";
+"paywall.current_plan" = "Current plan";
+"paywall.processing" = "Processing...";
+"paywall.restore" = "Restore Purchases";
+"paywall.cancel_anytime" = "Cancel anytime in Settings";
+"paywall.renews" = "Renews %1$@ until you cancel.";
+"paywall.active" = "You're a member";
+"paywall.sandbox_title" = "Sandbox";
+"paywall.sandbox_body" = "Purchases on the simulator are simulated.";
+"paywall.terms" = "Terms of Service";
+"paywall.privacy" = "Privacy Policy";
+"paywall.feature.workouts" = "Plan and log workouts";
+"paywall.feature.timer" = "Rest timer between sets";
+"paywall.feature.nutrition" = "Search foods and scan barcodes";
+"paywall.feature.dashboard" = "See the day's nutrition";
+"paywall.feature.device" = "Logs stay on this iPhone";
 
 // MARK: - Errors
 "error.network" = "Network connection error";
