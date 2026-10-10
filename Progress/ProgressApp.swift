@@ -26,21 +26,27 @@ struct ProgressApp: App {
             NutritionEntry.self
         ])
         
-        let modelConfiguration = ModelConfiguration(
+        let cloudConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic // Enable CloudKit sync
+            cloudKitDatabase: .automatic
         )
-        
-        do {
-            let container = try ModelContainer(
-                for: schema,
-                configurations: [modelConfiguration]
-            )
-            
+
+        if let container = try? ModelContainer(for: schema, configurations: [cloudConfiguration]) {
             print("✅ SwiftData container initialized with CloudKit sync")
             return container
-            
+        }
+
+        let localConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+
+        do {
+            let container = try ModelContainer(for: schema, configurations: [localConfiguration])
+            print("✅ SwiftData container initialized locally")
+            return container
         } catch {
             print("❌ Failed to create SwiftData container: \(error)")
             fatalError("Could not create ModelContainer: \(error)")
