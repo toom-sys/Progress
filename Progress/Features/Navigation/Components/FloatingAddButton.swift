@@ -12,6 +12,7 @@ import SwiftUI
 struct FloatingAddButton: View {
     @Binding var showingFoodSearch: Bool
     @Binding var showingBarcodeScanner: Bool
+    @Binding var showingFoodPhoto: Bool
     
     var body: some View {
         VStack {
@@ -34,6 +35,12 @@ struct FloatingAddButton: View {
                         showingBarcodeScanner = true
                     }) {
                         Label("Scan Barcode", systemImage: "barcode.viewfinder")
+                    }
+
+                    Button(action: {
+                        showingFoodPhoto = true
+                    }) {
+                        Label("Take Photo", systemImage: "camera.fill")
                     }
                 } label: {
                     Image(systemName: "plus")

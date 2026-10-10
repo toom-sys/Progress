@@ -6,9 +6,7 @@
 //
 
 import SwiftUI
-@preconcurrency import AVFoundation
 import SwiftData
-import AudioToolbox
 
 struct BarcodeScannerView: View {
     @Environment(\.dismiss) private var dismiss
@@ -19,29 +17,37 @@ struct BarcodeScannerView: View {
     @State private var showingAddFood = false
     @State private var scannedProduct: BarcodeResult?
     @State private var hasScannedSuccessfully = false
+    @State private var cameraError: String?
+    @State private var rescanToken = 0
     
     var body: some View {
         NavigationStack {
             ZStack {
-                // Camera View
-                CameraView { barcode in
-                    guard !hasScannedSuccessfully else { return }
-                    
-                    Task {
-                        if let result = await barcodeService.searchByBarcode(barcode) {
-                            scannedProduct = result
-                            showingAddFood = true
-                            hasScannedSuccessfully = true
-                            
-                            // Provide haptic feedback
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
+                BarcodeCameraPreview(
+                    rescanToken: rescanToken,
+                    onBarcodeDetected: { barcode in
+                        guard !hasScannedSuccessfully else { return }
+
+                        Task {
+                            if let result = await barcodeService.searchByBarcode(barcode) {
+                                scannedProduct = result
+                                showingAddFood = true
+                                hasScannedSuccessfully = true
+
+                                let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                                impactFeedback.impactOccurred()
+                            }
                         }
+                    },
+                    onFailure: { message in
+                        cameraError = message
                     }
-                }
+                )
                 .ignoresSafeArea()
-                
-                // Scanning Overlay
+
+                if let cameraError {
+                    cameraFailure(cameraError)
+                } else {
                 VStack {
                     Spacer()
                     
@@ -80,6 +86,7 @@ struct BarcodeScannerView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 50)
                 }
+                }
                 
                 // Loading Overlay
                 if barcodeService.isLoading {
@@ -113,12 +120,22 @@ struct BarcodeScannerView: View {
                     }
                 }
             }
-            .alert("Scan Error", isPresented: .constant(barcodeService.errorMessage != nil)) {
-                Button("Try Again") {
-                    barcodeService.errorMessage = nil
-                    hasScannedSuccessfully = false
+            .alert(
+                "Scan Error",
+                isPresented: Binding(
+                    get: { barcodeService.errorMessage != nil },
+                    set: { isPresented in
+                        if !isPresented {
+                            barcodeService.errorMessage = nil
+                            hasScannedSuccessfully = false
+                        }
+                    }
+                )
+            ) {
+                Button("Try Again", role: .cancel) {
+                    rescanToken += 1
                 }
-                Button("Cancel") {
+                Button("Close") {
                     dismiss()
                 }
             } message: {
@@ -134,82 +151,23 @@ struct BarcodeScannerView: View {
             }
         }
     }
-}
 
-// MARK: - Camera View
-
-struct CameraView: UIViewRepresentable {
-    let onBarcodeDetected: (String) -> Void
-    
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: UIScreen.main.bounds)
-        
-        let captureSession = AVCaptureSession()
-        
-        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else {
-            return view
-        }
-        
-        let videoInput: AVCaptureDeviceInput
-        
-        do {
-            videoInput = try AVCaptureDeviceInput(device: videoCaptureDevice)
-        } catch {
-            return view
-        }
-        
-        if captureSession.canAddInput(videoInput) {
-            captureSession.addInput(videoInput)
-        } else {
-            return view
-        }
-        
-        let metadataOutput = AVCaptureMetadataOutput()
-        
-        if captureSession.canAddOutput(metadataOutput) {
-            captureSession.addOutput(metadataOutput)
-            
-            metadataOutput.setMetadataObjectsDelegate(context.coordinator, queue: DispatchQueue.main)
-            metadataOutput.metadataObjectTypes = [.ean8, .ean13, .pdf417, .upce]
-        } else {
-            return view
-        }
-        
-        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-        previewLayer.frame = view.layer.bounds
-        previewLayer.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(previewLayer)
-        
-        DispatchQueue.global(qos: .background).async {
-            captureSession.startRunning()
-        }
-        
-        return view
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
-    final class Coordinator: NSObject, @preconcurrency AVCaptureMetadataOutputObjectsDelegate {
-        var parent: CameraView
-        
-        init(_ parent: CameraView) {
-            self.parent = parent
-        }
-        
-        @MainActor
-        func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-            if let metadataObject = metadataObjects.first {
-                guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
-                guard let stringValue = readableObject.stringValue else { return }
-                
-                AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-                parent.onBarcodeDetected(stringValue)
+    private func cameraFailure(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "camera.fill")
+                .font(.titleLarge)
+            Text(message)
+                .font(.body)
+                .multilineTextAlignment(.center)
+            Button("Close") {
+                dismiss()
             }
         }
+        .foregroundColor(.textPrimary)
+        .padding(24)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(24)
     }
 }
 
