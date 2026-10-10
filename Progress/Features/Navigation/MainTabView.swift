@@ -16,6 +16,7 @@ struct MainTabView: View {
     @State private var isInWorkoutDetail = false
     @State private var showingFoodSearch = false
     @State private var showingBarcodeScanner = false
+    @State private var showingFoodPhoto = false
     
     var body: some View {
         ZStack {
@@ -33,13 +34,12 @@ struct MainTabView: View {
                     )
                 }
             }
-            .environmentObject(subscriptionService)
-            
             // Floating + Button for Nutrition Tab
             if selectedTab == .nutrition {
                 FloatingAddButton(
                     showingFoodSearch: $showingFoodSearch,
-                    showingBarcodeScanner: $showingBarcodeScanner
+                    showingBarcodeScanner: $showingBarcodeScanner,
+                    showingFoodPhoto: $showingFoodPhoto
                 )
             }
             
@@ -50,6 +50,7 @@ struct MainTabView: View {
                 onTabSelected: handleTabSelection
             )
         }
+        .environmentObject(subscriptionService)
         .task {
             // Load subscription status when app starts
             await subscriptionService.loadOfferings()
@@ -66,6 +67,9 @@ struct MainTabView: View {
         }
         .sheet(isPresented: $showingBarcodeScanner) {
             BarcodeScannerView()
+        }
+        .sheet(isPresented: $showingFoodPhoto) {
+            FoodPhotoLogView()
         }
     }
     
