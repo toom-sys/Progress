@@ -9,74 +9,129 @@ platform :ios do
   # Constants
   SCHEME = "Progress"
   PROJECT = "Progress.xcodeproj"
-  BUNDLE_ID = "com.myname.Progress"
+  BUNDLE_ID = "com.tom.progress"
+  TEAM_ID = ENV.fetch("APPLE_TEAM_ID", "Z2942J63UA")
   
   before_all do
-    setup_circle_ci if ENV["CI"]
+    setup_ci if ENV["CI"]
   end
 
   # MARK: - Beta Lane
   desc "Build and upload to TestFlight"
   lane :beta do
-    # Pre-flight checks
-    ensure_git_status_clean(show_uncommitted_changes: true)
-    
-    # Inject secrets into configuration files
+    key_id = ENV["APP_STORE_CONNECT_API_KEY_ID"]
+    issuer_id = ENV["APP_STORE_CONNECT_ISSUER_ID"]
+    key_content = ENV["APP_STORE_CONNECT_API_KEY_CONTENT"]
+    if key_id.to_s.empty? || issuer_id.to_s.empty? || key_content.to_s.empty?
+      UI.user_error!(
+        "Missing App Store Connect API credentials. Add GitHub secrets " \
+        "APP_STORE_CONNECT_API_KEY_ID, APP_STORE_CONNECT_ISSUER_ID, and " \
+        "APP_STORE_CONNECT_API_KEY_CONTENT, then re-run the TestFlight workflow."
+      )
+    end
+
+    api_key = app_store_connect_api_key(
+      key_id: key_id,
+      issuer_id: issuer_id,
+      key_content: key_content,
+      is_key_content_base64: !key_content.include?("BEGIN PRIVATE KEY"),
+      duration: 1200,
+      in_house: false
+    )
+
+    begin
+      produce(
+        api_key: api_key,
+        app_identifier: BUNDLE_ID,
+        app_name: "Progress",
+        language: "English",
+        sku: "progress-ios",
+        team_id: TEAM_ID
+      )
+    rescue StandardError => exception
+      UI.important("App Store Connect app already exists or could not be created: #{exception.message}")
+    end
+
+    unless ENV["CI"]
+      ensure_git_status_clean(show_uncommitted_changes: true)
+    end
+
     UI.message "🔐 Injecting secrets into configuration files..."
     sh("../Scripts/inject-secrets.sh inject")
-    
-    # Increment build number based on git commits
+
+    build_number = latest_testflight_build_number(
+      api_key: api_key,
+      app_identifier: BUNDLE_ID,
+      initial_build_number: 0
+    ) + 1
     increment_build_number(
       xcodeproj: PROJECT,
-      build_number: latest_testflight_build_number(
+      build_number: build_number
+    )
+
+    if ENV["MATCH_GIT_URL"].to_s.empty?
+      cert(api_key: api_key, team_id: TEAM_ID)
+      sigh(api_key: api_key, app_identifier: BUNDLE_ID, team_id: TEAM_ID)
+      profile_name = lane_context[SharedValues::SIGH_NAME]
+    else
+      match(
+        type: "appstore",
+        readonly: true,
         app_identifier: BUNDLE_ID,
-        initial_build_number: 1
-      ) + 1
+        git_url: ENV["MATCH_GIT_URL"],
+        team_id: TEAM_ID,
+        api_key: api_key
+      )
+      profile_name = lane_context[SharedValues::MATCH_PROVISIONING_PROFILE_MAPPING][BUNDLE_ID]
+    end
+
+    update_code_signing_settings(
+      use_automatic_signing: false,
+      path: PROJECT,
+      team_id: TEAM_ID,
+      targets: ["Progress"],
+      bundle_identifier: BUNDLE_ID,
+      profile_name: profile_name,
+      code_sign_identity: "Apple Distribution"
     )
-    
-    # Match for code signing
-    match(
-      type: "appstore",
-      readonly: true,
-      app_identifier: BUNDLE_ID
-    )
-    
-    # Build the app
+
     build_app(
       scheme: SCHEME,
       configuration: "Release",
+      sdk: "iphoneos",
+      destination: "generic/platform=iOS",
       export_method: "app-store",
       clean: true,
-      include_bitcode: false,
       include_symbols: true,
+      xcargs: "CODE_SIGN_ENTITLEMENTS=Progress/Progress-iOS.entitlements",
       export_options: {
+        signingStyle: "manual",
+        teamID: TEAM_ID,
         provisioningProfiles: {
-          BUNDLE_ID => "match AppStore #{BUNDLE_ID}"
+          BUNDLE_ID => profile_name
         }
       }
     )
-    
-    # Upload to TestFlight
+
+    changelog = "Latest Progress build"
+    begin
+      changelog = sh("git log -1 --pretty=%s", log: false).strip
+    rescue StandardError
+      UI.important("Using the default TestFlight changelog")
+    end
+
     upload_to_testflight(
-      skip_waiting_for_build_processing: false,
+      api_key: api_key,
+      app_identifier: BUNDLE_ID,
+      skip_waiting_for_build_processing: true,
       notify_external_testers: false,
-      changelog: "Latest build from CI/CD pipeline",
-      distribute_external: false
+      distribute_external: false,
+      changelog: changelog
     )
-    
-    # Clean up configuration files
+
     UI.message "🧹 Cleaning up configuration files..."
     sh("../Scripts/inject-secrets.sh restore")
-    
-    # Clean up
     clean_build_artifacts
-    
-    # Send notification
-    notification(
-      title: "Progress iOS",
-      subtitle: "Beta Build Complete",
-      message: "Successfully uploaded build #{get_build_number} to TestFlight"
-    )
   end
 
   # MARK: - Lint Lane
