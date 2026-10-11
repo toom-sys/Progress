@@ -495,7 +495,7 @@
 				INFOPLIST_FILE = Progress/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Progress;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan food barcodes for nutrition tracking.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph meals and scan food barcodes for nutrition tracking.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -542,7 +542,7 @@
 				INFOPLIST_FILE = Progress/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Progress;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
-				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to scan food barcodes for nutrition tracking.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph meals and scan food barcodes for nutrition tracking.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
