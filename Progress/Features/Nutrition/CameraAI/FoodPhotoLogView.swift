@@ -96,8 +96,12 @@ struct FoodPhotoLogView: View {
 
             PhotosPicker(selection: $pickerItem, matching: .images) {
                 Text("Choose Photo")
+                    .primaryButtonStyle()
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.primary)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
             }
-            .primaryButtonStyle()
 
             Button("Take Photo") {
                 openCamera()
