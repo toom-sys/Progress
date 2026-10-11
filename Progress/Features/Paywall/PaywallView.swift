@@ -114,7 +114,7 @@ struct PaywallView: View {
                 Text("You're on Progress Pro")
                     .font(.bodyLarge).fontWeight(.semibold)
                     .foregroundColor(.green)
-                Text("All features unlocked")
+                Text(subscriptionService.activePlanDetail ?? "All features unlocked")
                     .font(.body)
                     .foregroundColor(.textSecondary)
             }
@@ -310,6 +310,13 @@ struct PaywallView: View {
         VStack(spacing: 12) {
             Button("Restore Purchases") {
                 Task { await subscriptionService.restorePurchases() }
+            }
+            .font(.body)
+            .foregroundColor(.textSecondary)
+            .disabled(subscriptionService.isLoading)
+
+            Button("Redeem an annual code") {
+                subscriptionService.redeemAnnualCode()
             }
             .font(.body)
             .foregroundColor(.textSecondary)

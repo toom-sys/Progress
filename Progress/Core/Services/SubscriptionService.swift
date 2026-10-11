@@ -19,6 +19,8 @@ class SubscriptionService: ObservableObject {
     /// The plan the user currently has selected in the paywall. Annual is default (best value).
     @Published var selectedPlan: Plan = .annual
     @Published var isSubscribed: Bool = false
+    /// The price the member is actually on. Nil when they are not subscribed.
+    @Published var activePlan: Plan?
     @Published var isLoading = false
     @Published var purchaseError: String? = nil
     @Published var isSandboxMode = true
@@ -145,6 +147,21 @@ class SubscriptionService: ObservableObject {
         offerings[selectedPlan]
     }
 
+    /// Short membership label for the Journey chip and Settings.
+    var membershipLabel: String {
+        guard isSubscribed else { return "See plans" }
+        return activePlan?.title ?? "Subscribed"
+    }
+
+    /// Billing line for the active price, when one is loaded.
+    var activePlanDetail: String? {
+        guard let activePlan else { return nil }
+        if let offering = offerings[activePlan] {
+            return offering.plan.detailLine(pricePerMonth: offering.pricePerMonth)
+        }
+        return "Billed \(activePlan.renewalAdverb)"
+    }
+
     // MARK: - Public Methods
 
     func loadOfferings() async {
@@ -214,6 +231,7 @@ class SubscriptionService: ObservableObject {
             print("🧪 Simulating sandbox purchase for Progress Pro (\(offering.plan.title))")
             try? await Task.sleep(nanoseconds: 1_500_000_000)
             isSubscribed = true
+            activePlan = offering.plan
             UserDefaults.standard.set(offering.plan.rawValue, forKey: "mock_subscription")
             print("🎉 Mock purchase successful: Progress Pro (\(offering.plan.title))")
             isLoading = false
@@ -254,9 +272,10 @@ class SubscriptionService: ObservableObject {
 
         if isSandboxMode {
             if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               Plan(rawValue: mockSub) != nil {
+               let plan = Plan(rawValue: mockSub) {
                 isSubscribed = true
-                print("🔄 Restored mock subscription: Progress Pro")
+                activePlan = plan
+                print("🔄 Restored mock subscription: Progress Pro (\(plan.title))")
                 isLoading = false
                 return
             }
@@ -280,12 +299,24 @@ class SubscriptionService: ObservableObject {
         isLoading = false
     }
 
+    /// Presents Apple's code sheet. Codes are created in App Store Connect
+    /// against the yearly product, so a redeemed code starts that price.
+    func redeemAnnualCode() {
+        purchaseError = nil
+        guard Purchases.isConfigured else {
+            purchaseError = "Annual codes redeem through the App Store once subscriptions are connected."
+            return
+        }
+        Purchases.shared.presentCodeRedemptionSheet()
+    }
+
     func checkSubscriptionStatus() async {
         if isSandboxMode {
             if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               Plan(rawValue: mockSub) != nil {
+               let plan = Plan(rawValue: mockSub) {
                 isSubscribed = true
-                print("ℹ️ Mock subscription active: Progress Pro")
+                activePlan = plan
+                print("ℹ️ Mock subscription active: Progress Pro (\(plan.title))")
                 return
             }
         }
@@ -297,11 +328,15 @@ class SubscriptionService: ObservableObject {
 
         do {
             let info = try await Purchases.shared.customerInfo(fetchPolicy: .cachedOrFetched)
-            if info.entitlements.active["pro"]?.isActive == true {
+            let entitlement = info.entitlements.active["pro"]
+            if entitlement?.isActive == true {
                 isSubscribed = true
-                print("✅ Progress Pro subscription active")
+                activePlan = plan(matching: entitlement?.productIdentifier)
+                    ?? Plan.allCases.first { info.activeSubscriptions.contains($0.productId) }
+                print("✅ Progress Pro subscription active (\(activePlan?.title ?? "price unknown"))")
             } else {
                 isSubscribed = false
+                activePlan = nil
                 print("ℹ️ No active subscription found")
             }
         } catch {
@@ -337,6 +372,11 @@ class SubscriptionService: ObservableObject {
             isMockOffering: false,
             package: pkg
         )
+    }
+
+    private func plan(matching productId: String?) -> Plan? {
+        guard let productId else { return nil }
+        return Plan.allCases.first { $0.productId == productId }
     }
 
     private func package(for plan: Plan, in offering: Offering) -> Package? {

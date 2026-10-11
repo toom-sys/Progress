@@ -13,6 +13,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var subscriptionService: SubscriptionService
     @Query private var users: [User]
     @State private var showingPaywall = false
@@ -40,20 +41,24 @@ struct SettingsView: View {
                             
                             Spacer()
                             
-                            if subscriptionService.isSubscribed {
-                                Text("Progress Pro")
-                                    .font(.caption)
-                                    .foregroundColor(.primary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(Color.primary.opacity(0.1))
-                                    .clipShape(Capsule())
-                            } else {
-                                Text("Not subscribed")
-                                    .font(.caption)
-                                    .foregroundColor(.textTertiary)
-                            }
+                            Text(subscriptionService.membershipLabel)
+                                .font(.caption)
+                                .foregroundColor(subscriptionService.isSubscribed ? .primary : .textTertiary)
                         }
+                    }
+
+                    Button(action: {
+                        HapticFeedback.workoutButtonTap()
+                        subscriptionService.redeemAnnualCode()
+                    }) {
+                        Label("Redeem annual code", systemImage: "gift")
+                            .foregroundColor(.textPrimary)
+                    }
+
+                    if let error = subscriptionService.purchaseError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundColor(.red)
                     }
                 }
                 
@@ -120,6 +125,10 @@ struct SettingsView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await subscriptionService.checkSubscriptionStatus() }
         }
         #if DEBUG
         .alert("Reset Onboarding?", isPresented: $showingOnboardingResetConfirmation) {

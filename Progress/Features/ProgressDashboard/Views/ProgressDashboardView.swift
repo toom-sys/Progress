@@ -60,16 +60,17 @@ struct ProgressDashboardView: View {
                             .font(.system(size: 20, weight: .medium))
                             .foregroundColor(.textPrimary)
 
-                        if let tier = subscriptionService.activeSubscription {
-                            Text(tier.displayName)
-                                .font(.caption2)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.primary.opacity(0.1))
-                                .clipShape(Capsule())
-                        }
+                        Text(subscriptionService.membershipLabel)
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundColor(subscriptionService.isSubscribed ? .primary : .textSecondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                (subscriptionService.isSubscribed ? Color.primary : Color.textSecondary)
+                                    .opacity(0.1)
+                            )
+                            .clipShape(Capsule())
                     }
                 }
             }

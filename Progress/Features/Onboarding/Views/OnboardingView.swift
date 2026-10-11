@@ -34,6 +34,7 @@ struct OnboardingView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.requestReview) private var requestReview
+    @Environment(\.scenePhase) private var scenePhase
     @Query private var users: [User]
     private var currentUser: User? { users.first }
     @EnvironmentObject private var subscriptionService: SubscriptionService
@@ -94,6 +95,10 @@ struct OnboardingView: View {
         .task {
             await subscriptionService.loadOfferings()
             await subscriptionService.checkSubscriptionStatus()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            Task { await subscriptionService.checkSubscriptionStatus() }
         }
         .onAppear {
             restoreOnboardingState()
@@ -1059,7 +1064,7 @@ struct OnboardingView: View {
             VStack(spacing: 22) {
                 // Pro badge + headline
                 VStack(spacing: 14) {
-                    Text("PROGRESS PRO")
+                    Text("ONE MEMBERSHIP")
                         .font(.system(size: 11, weight: .heavy))
                         .tracking(0.5)
                         .foregroundColor(OnboardingPalette.onInk)
@@ -1081,7 +1086,11 @@ struct OnboardingView: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                // Plan selector
+                Text("Yearly, monthly, or weekly. Same access on each.")
+                    .font(.system(size: 13.5, weight: .semibold))
+                    .foregroundColor(OnboardingPalette.muted)
+                    .multilineTextAlignment(.center)
+
                 VStack(spacing: 12) {
                     ForEach(SubscriptionService.Plan.allCases) { plan in
                         if let offering = subscriptionService.offerings[plan] {
@@ -1089,7 +1098,13 @@ struct OnboardingView: View {
                         }
                     }
                 }
-                .padding(.top, 11)
+                .padding(.top, 4)
+
+                Button("Redeem an annual code") {
+                    subscriptionService.redeemAnnualCode()
+                }
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(OnboardingPalette.ink)
 
                 // Feature list
                 VStack(alignment: .leading, spacing: 0) {

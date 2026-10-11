@@ -12,6 +12,7 @@ import SwiftData
 
 struct ProfileView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var subscriptionService: SubscriptionService
     @Query private var users: [User]
     
     private var currentUser: User? { users.first }
@@ -603,23 +604,20 @@ struct ProfileView: View {
                 Divider()
                     .background(Color.border.opacity(0.5))
                 
-                // Subscription Tier (Read-only)
                 enhancedProfileRow(
                     icon: "star.circle",
                     title: "Subscription",
                     subtitle: "Current plan",
                     content: {
-                        HStack(spacing: 8) {
-                            Text(user.subscriptionTier.displayName)
-                                .font(.body)
-                                .fontWeight(.medium)
-                                .foregroundColor(.accent)
-                            Image(systemName: "bolt.fill")
-                                .foregroundColor(.accent)
-                                .font(.caption)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Subscription: \(user.subscriptionTier.displayName)")
+                        Text(subscriptionService.isSubscribed ? (subscriptionService.activePlan?.title ?? "Subscribed") : "Not subscribed")
+                            .font(.body)
+                            .fontWeight(.medium)
+                            .foregroundColor(subscriptionService.isSubscribed ? .accent : .textSecondary)
+                            .accessibilityLabel(
+                                subscriptionService.isSubscribed
+                                    ? "Subscription: \(subscriptionService.activePlan?.title ?? "active")"
+                                    : "Subscription: not subscribed"
+                            )
                     }
                 )
             }
@@ -936,5 +934,6 @@ struct ProfileView: View {
 
 #Preview {
     ProfileView()
+        .environmentObject(SubscriptionService())
         .modelContainer(for: [User.self, Workout.self, NutritionEntry.self], inMemory: true)
 }
