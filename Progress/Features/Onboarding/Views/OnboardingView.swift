@@ -58,6 +58,7 @@ struct OnboardingView: View {
     @State private var planWorkouts: [GeneratedWorkout] = []
     @State private var hasSavedTrainingPlan = false
     @State private var welcomeHeroVisible = false
+    @State private var presentedLegalDocument: LegalDocument?
 
     @AppStorage("onboarding_current_step") private var savedStep: String = "welcome"
     @AppStorage("onboarding_age") private var savedAge: String = ""
@@ -133,6 +134,18 @@ struct OnboardingView: View {
         }
         .onChange(of: selectedWorkoutCount) { _, _ in
             resetPlanState()
+        }
+        .sheet(item: $presentedLegalDocument) { document in
+            NavigationStack {
+                document.destination
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Close") {
+                                presentedLegalDocument = nil
+                            }
+                        }
+                    }
+            }
         }
     }
 
@@ -1149,6 +1162,17 @@ struct OnboardingView: View {
                     .font(.system(size: 11.5))
                     .foregroundColor(OnboardingPalette.muted)
                     .multilineTextAlignment(.center)
+
+                HStack(spacing: 20) {
+                    Button("Terms of Service") {
+                        presentedLegalDocument = .terms
+                    }
+                    Button("Privacy Policy") {
+                        presentedLegalDocument = .privacy
+                    }
+                }
+                .font(.system(size: 11.5, weight: .semibold))
+                .foregroundColor(OnboardingPalette.ink)
 
                 Spacer(minLength: 20)
             }

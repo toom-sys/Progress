@@ -326,11 +326,19 @@ struct PaywallView: View {
                 Text("• Cancel anytime in Settings")
                 Text(renewalNote)
                 HStack(spacing: 20) {
-                    Button("Terms of Service") {}
-                        .foregroundColor(.textSecondary)
-                    Button("Privacy Policy") {}
-                        .foregroundColor(.textSecondary)
+                    NavigationLink {
+                        TermsOfServiceView()
+                    } label: {
+                        Text("Terms of Service")
+                    }
+                    NavigationLink {
+                        PrivacyPolicyView()
+                    } label: {
+                        Text("Privacy Policy")
+                    }
                 }
+                .buttonStyle(.plain)
+                .foregroundColor(.textSecondary)
             }
             .font(.caption)
             .foregroundColor(.textTertiary)
