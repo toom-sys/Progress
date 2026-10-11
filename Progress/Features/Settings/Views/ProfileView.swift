@@ -682,6 +682,30 @@ struct ProfileView: View {
                 .font(.caption)
                 .foregroundColor(.textTertiary)
                 .multilineTextAlignment(.leading)
+
+            DeleteAccountButton(usesPlainStyle: true) {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.crop.circle.badge.minus")
+                        .foregroundColor(.red)
+                    Text("Delete Account")
+                        .font(.body)
+                        .fontWeight(.medium)
+                        .foregroundColor(.red)
+                    Spacer()
+                }
+                .padding(16)
+                .background(Color.red.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                )
+            }
+
+            Text("Deletes your account and the data saved in Progress, including the iCloud copy. Cannot be undone.")
+                .font(.caption)
+                .foregroundColor(.textTertiary)
+                .multilineTextAlignment(.leading)
         }
         .padding(.vertical, 24)
         .whiteCardStyle()

@@ -110,6 +110,19 @@ struct SettingsView: View {
                         Label("Terms of Service", systemImage: "doc.text")
                     }
                 }
+
+                Section {
+                    DeleteAccountButton(usesPlainStyle: true) {
+                        Label("Delete Account", systemImage: "person.crop.circle.badge.minus")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } footer: {
+                    Text(
+                        "Permanently deletes the account created for this install and the profile, "
+                        + "workouts, nutrition, water, and weight history saved in Progress. "
+                        + "An App Store subscription is not cancelled."
+                    )
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)

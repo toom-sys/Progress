@@ -9,6 +9,7 @@ import SwiftUI
 /// The tab bar remains visible so users can explore tabs, but all content is gated.
 struct SubscriptionGateView: View {
     @State private var showingPaywall = false
+    @State private var showingExport = false
 
     var body: some View {
         ZStack {
@@ -52,6 +53,19 @@ struct SubscriptionGateView: View {
                         .background(Color.primary)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                 }
+
+                VStack(spacing: 12) {
+                    Button("Export Data") {
+                        showingExport = true
+                    }
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+
+                    DeleteAccountButton(usesPlainStyle: true) {
+                        Text("Delete Account")
+                            .font(.subheadline)
+                    }
+                }
             }
             .padding(32)
             .background(.regularMaterial)
@@ -61,6 +75,16 @@ struct SubscriptionGateView: View {
         }
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
+        }
+        .sheet(isPresented: $showingExport) {
+            NavigationStack {
+                DataExportView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") { showingExport = false }
+                        }
+                    }
+            }
         }
     }
 }
