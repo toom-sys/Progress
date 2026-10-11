@@ -8,7 +8,7 @@
   ],
   "settings" : {
     "_applicationInternalID" : "6479095018",
-    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_developerTeamID" : "Z2942J63UA",
     "_failTransactionsEnabled" : false,
     "_lastSynchronizedDate" : 763156234.26999998,
     "_locale" : "en_GB",
@@ -76,7 +76,7 @@
           "codeOffers" : [
 
           ],
-          "displayPrice" : "35.00",
+          "displayPrice" : "49.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "6479096574",
@@ -89,13 +89,37 @@
           "localizations" : [
             {
               "description" : "Unlimited workout tracking, AI coaching, nutrition logging and personalised insights",
-              "displayName" : "Progress Pro (Annual)",
+              "displayName" : "Progress Pro Yearly",
               "locale" : "en_GB"
             }
           ],
           "productID" : "com.tom.progress.pro.annual",
           "recurringSubscriptionPeriod" : "P1Y",
-          "referenceName" : "Progress Pro Annual",
+          "referenceName" : "Progress Pro Yearly",
+          "subscriptionGroupID" : "21484467",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6479096573",
+          "localizations" : [
+            {
+              "description" : "Unlimited workout tracking, AI coaching, nutrition logging and personalised insights",
+              "displayName" : "Progress Pro Monthly",
+              "locale" : "en_GB"
+            }
+          ],
+          "productID" : "com.tom.progress.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Progress Pro Monthly",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         },
@@ -109,17 +133,17 @@
           "displayPrice" : "4.99",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "6479096573",
+          "internalID" : "6479096575",
           "localizations" : [
             {
               "description" : "Unlimited workout tracking, AI coaching, nutrition logging and personalised insights",
-              "displayName" : "Progress Pro (Monthly)",
+              "displayName" : "Progress Pro Weekly",
               "locale" : "en_GB"
             }
           ],
-          "productID" : "com.tom.progress.pro.monthly",
-          "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "Progress Pro Monthly",
+          "productID" : "com.tom.progress.pro.weekly",
+          "recurringSubscriptionPeriod" : "P1W",
+          "referenceName" : "Progress Pro Weekly",
           "subscriptionGroupID" : "21484467",
           "type" : "RecurringSubscription"
         }

@@ -151,7 +151,7 @@ xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platf
 
 ## 📱 Subscription
 
-### Progress Pro (£2.99/month — 7-day free trial)
+### Progress Pro (one membership: £4.99/week, £9.99/month, £49.99/year — 3-day trial on yearly)
 - Unlimited workout tracking and planning
 - Nutrition logging and search
 - AI-powered workout generation

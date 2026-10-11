@@ -236,7 +236,7 @@ enum SubscriptionTier: String, CaseIterable, Codable {
     case pro = "pro"
 
     var displayName: String { "Progress Pro" }
-    var monthlyPrice: String { "£2.99" }
+    var monthlyPrice: String { "£9.99" }
 
     // Map legacy raw values stored in SwiftData to the current single tier.
     init(from decoder: Decoder) throws {

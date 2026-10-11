@@ -222,26 +222,14 @@ struct PaywallView: View {
                         }
                     }
 
-                    if offering.plan == .annual {
-                        Text("\(offering.pricePerMonth)/mo · billed yearly")
-                            .font(.body)
-                            .foregroundColor(.textSecondary)
-                    } else {
-                        Text("Billed monthly")
-                            .font(.body)
-                            .foregroundColor(.textSecondary)
-                    }
+                    Text(offering.plan.detailLine(pricePerMonth: offering.pricePerMonth))
+                        .font(.body)
+                        .foregroundColor(.textSecondary)
                 }
 
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 2) {
-                    if let original = offering.originalPrice {
-                        Text(original)
-                            .font(.caption)
-                            .foregroundColor(.textTertiary)
-                            .strikethrough()
-                    }
                     Text(offering.price)
                         .font(.bodyLarge)
                         .fontWeight(.bold)
@@ -268,7 +256,7 @@ struct PaywallView: View {
         if offering.hasTrial {
             return "Start \(offering.trialDays)-Day Free Trial"
         }
-        return "Subscribe · \(offering.price)/\(offering.plan == .annual ? "yr" : "mo")"
+        return "Subscribe · \(offering.price)/\(offering.plan.priceSuffix)"
     }
 
     @ViewBuilder
@@ -311,7 +299,7 @@ struct PaywallView: View {
         guard let offering = subscriptionService.currentOffering else {
             return "• Subscription auto-renews until cancelled"
         }
-        let period = offering.plan == .annual ? "yearly" : "monthly"
+        let period = offering.plan.renewalAdverb
         if offering.hasTrial {
             return "• Auto-renews \(period) at \(offering.price) after the free trial"
         }

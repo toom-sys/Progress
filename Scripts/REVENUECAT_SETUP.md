@@ -1,7 +1,7 @@
 # RevenueCat Setup Guide for Progress iOS
 
-This guide walks through configuring RevenueCat for the **Progress Pro** subscription, which is
-offered as two billing plans (annual and monthly) sharing a single `pro` entitlement.
+This guide walks through configuring RevenueCat for the **Progress Pro** subscription.
+It is one membership with three prices (yearly, monthly, weekly) sharing a single `pro` entitlement.
 
 ## 1. RevenueCat Dashboard Setup
 
@@ -12,56 +12,72 @@ offered as two billing plans (annual and monthly) sharing a single `pro` entitle
 4. Select platform: **iOS**
 
 ### Configure Products
-Create two products to match the app:
+Create three auto-renewable subscriptions in one subscription group. Same access on every price.
 
-#### Progress Pro (Annual)
+#### Progress Pro Yearly
 - **Product ID**: `com.tom.progress.pro.annual`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 year
-- **Price**: £35.00/year (sale price; £49.00 is shown struck-through in-app as the reference price)
-- **Display Name**: "Progress Pro (Annual)"
+- **Price**: £49.99/year
+- **Display Name**: "Progress Pro Yearly"
 - **Introductory Offer**: 3-day free trial (Free Trial type, P3D period)
 
-#### Progress Pro (Monthly)
+#### Progress Pro Monthly
 - **Product ID**: `com.tom.progress.pro.monthly`
 - **Type**: Auto-renewable subscription
 - **Duration**: 1 month
-- **Price**: £4.99/month
-- **Display Name**: "Progress Pro (Monthly)"
+- **Price**: £9.99/month
+- **Display Name**: "Progress Pro Monthly"
+- **Introductory Offer**: none
+
+#### Progress Pro Weekly
+- **Product ID**: `com.tom.progress.pro.weekly`
+- **Type**: Auto-renewable subscription
+- **Duration**: 1 week
+- **Price**: £4.99/week
+- **Display Name**: "Progress Pro Weekly"
 - **Introductory Offer**: none
 
 ### Create Offering
 1. Go to **Offerings** in RevenueCat dashboard
 2. Create offering: **"Pro"** (set as the default/current offering)
-   - Add package `com.tom.progress.pro.annual` as the **Annual** package
-   - Add package `com.tom.progress.pro.monthly` as the **Monthly** package
+   - Add `com.tom.progress.pro.annual` as the **Annual** package
+   - Add `com.tom.progress.pro.monthly` as the **Monthly** package
+   - Add `com.tom.progress.pro.weekly` as the **Weekly** package
 
 ### Configure Entitlement
 Create one entitlement to control feature access:
 
 1. **"pro"** entitlement
    - Grant access to: All Progress Pro features
-   - Products: `com.tom.progress.pro.annual`, `com.tom.progress.pro.monthly`
+   - Products: `com.tom.progress.pro.annual`, `com.tom.progress.pro.monthly`, `com.tom.progress.pro.weekly`
 
 ## 2. App Store Connect Setup
 
 ### Create In-App Purchases
 1. Go to [App Store Connect](https://appstoreconnect.apple.com)
 2. Navigate to your app → **Monetization** → **In-App Purchases**
-3. Create two auto-renewable subscriptions in the same group:
+3. Create three auto-renewable subscriptions in the same group, at the same level:
 
-#### Progress Pro Annual
-- **Reference Name**: Progress Pro Annual
+#### Progress Pro Yearly
+- **Reference Name**: Progress Pro Yearly
 - **Product ID**: `com.tom.progress.pro.annual`
 - **Subscription Group**: Progress Subscriptions
 - **Duration**: 1 year
-- **Price**: £35.00
+- **Price**: £49.99
 
 #### Progress Pro Monthly
 - **Reference Name**: Progress Pro Monthly
 - **Product ID**: `com.tom.progress.pro.monthly`
 - **Subscription Group**: Progress Subscriptions
 - **Duration**: 1 month
+- **Price**: £9.99
+
+#### Progress Pro Weekly
+- **Reference Name**: Progress Pro Weekly
+- **Product ID**: `com.tom.progress.pro.weekly`
+- **Subscription Group**: Progress Subscriptions
+- **Duration**: 1 week
 - **Price**: £4.99
 
 ### Introductory Offer
@@ -74,8 +90,9 @@ Configure a free trial on the **annual** product:
 > for the free trial once across the group.
 
 ### StoreKit Configuration
-The local `Configuration.storekit` file already mirrors this setup: an annual product with a
-3-day free trial and a monthly product with no trial.
+The local `Progress/Configuration.storekit` file mirrors this setup: yearly £49.99 with a
+3-day free trial, monthly £9.99, and weekly £4.99. The Progress scheme uses that file, so a
+run from Xcode can load the three prices before App Store Connect has them.
 
 ## 3. Get API Keys
 
@@ -157,7 +174,7 @@ Track these in the RevenueCat dashboard:
 ### Common Issues
 
 #### "No offering found"
-- Check the product ID matches exactly: `com.tom.progress.pro.monthly`
+- Check the product IDs match exactly: `com.tom.progress.pro.annual`, `com.tom.progress.pro.monthly`, `com.tom.progress.pro.weekly`
 - Verify the product is approved in App Store Connect
 - Ensure the "Pro" offering is set as current/default in RevenueCat
 
@@ -167,7 +184,7 @@ Track these in the RevenueCat dashboard:
 - Ensure the correct product ID is used
 
 #### "Entitlement not granted"
-- Check the **"pro"** entitlement is mapped to `com.tom.progress.pro.monthly`
+- Check the **"pro"** entitlement is mapped to all three product IDs
 - Verify webhook delivery if using a server
 - Check RevenueCat customer info for active entitlements
 

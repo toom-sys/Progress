@@ -7,7 +7,8 @@ import Foundation
 import Combine
 import RevenueCat
 
-/// Service for managing the "Progress Pro" subscription (annual + monthly) via RevenueCat.
+/// Service for managing the "Progress Pro" subscription via RevenueCat.
+/// One membership, three prices: yearly, monthly, and weekly.
 @MainActor
 class SubscriptionService: ObservableObject {
 
@@ -24,10 +25,12 @@ class SubscriptionService: ObservableObject {
 
     // MARK: - Plan
 
-    /// The two purchasable billing plans for Progress Pro.
+    /// The three prices for the single Progress Pro membership.
+    /// Yearly is first so the paywall leads with it.
     enum Plan: String, CaseIterable, Identifiable {
         case annual
         case monthly
+        case weekly
 
         var id: String { rawValue }
 
@@ -35,13 +38,15 @@ class SubscriptionService: ObservableObject {
             switch self {
             case .annual: return "com.tom.progress.pro.annual"
             case .monthly: return "com.tom.progress.pro.monthly"
+            case .weekly: return "com.tom.progress.pro.weekly"
             }
         }
 
         var title: String {
             switch self {
-            case .annual: return "Annual"
+            case .annual: return "Yearly"
             case .monthly: return "Monthly"
+            case .weekly: return "Weekly"
             }
         }
 
@@ -49,14 +54,39 @@ class SubscriptionService: ObservableObject {
             switch self {
             case .annual: return "per year"
             case .monthly: return "per month"
+            case .weekly: return "per week"
             }
         }
 
-        /// Free-trial length for the plan (0 = no trial).
+        var renewalAdverb: String {
+            switch self {
+            case .annual: return "yearly"
+            case .monthly: return "monthly"
+            case .weekly: return "weekly"
+            }
+        }
+
+        var priceSuffix: String {
+            switch self {
+            case .annual: return "yr"
+            case .monthly: return "mo"
+            case .weekly: return "wk"
+            }
+        }
+
+        /// Free-trial length for the plan (0 = no trial). The trial is on the yearly price only.
         var trialDays: Int {
             switch self {
             case .annual: return 3
-            case .monthly: return 0
+            case .monthly, .weekly: return 0
+            }
+        }
+
+        func detailLine(pricePerMonth: String) -> String {
+            switch self {
+            case .annual: return "\(pricePerMonth)/mo · billed yearly"
+            case .monthly: return "Billed monthly"
+            case .weekly: return "Billed weekly"
             }
         }
     }
@@ -90,12 +120,10 @@ class SubscriptionService: ObservableObject {
     struct SubscriptionOffering: Identifiable {
         let plan: Plan
         let productId: String
-        /// The full price for the billing period, e.g. "£35.00" (annual) or "£4.99" (monthly).
+        /// The full price for the billing period, e.g. "£49.99" (yearly) or "£4.99" (weekly).
         let price: String
-        /// Normalised per-month price, e.g. "£2.92" for the annual plan.
+        /// Normalised per-month price for the yearly plan. Equals `price` for the other plans.
         let pricePerMonth: String
-        /// Original (pre-sale) price shown struck through, e.g. "£49.00". Nil when not on sale.
-        let originalPrice: String?
         let hasTrial: Bool
         let trialDays: Int
         let isMockOffering: Bool
@@ -150,11 +178,7 @@ class SubscriptionService: ObservableObject {
             var loaded: [Plan: SubscriptionOffering] = [:]
 
             for plan in Plan.allCases {
-                let package = current.availablePackages.first {
-                    $0.storeProduct.productIdentifier == plan.productId
-                } ?? (plan == .annual ? current.annual : current.monthly)
-
-                guard let pkg = package else { continue }
+                guard let pkg = package(for: plan, in: current) else { continue }
                 loaded[plan] = makeOffering(for: plan, from: pkg)
             }
 
@@ -164,11 +188,10 @@ class SubscriptionService: ObservableObject {
             } else {
                 offerings = loaded
                 isSandboxMode = false
-                // Keep a sensible selection if the previously selected plan is unavailable.
                 if offerings[selectedPlan] == nil {
-                    selectedPlan = offerings[.annual] != nil ? .annual : .monthly
+                    selectedPlan = Plan.allCases.first { offerings[$0] != nil } ?? .annual
                 }
-                print("✅ Loaded \(loaded.count) Pro offering(s) from RevenueCat")
+                print("✅ Loaded \(loaded.count) Pro price(s) from RevenueCat")
             }
         } catch {
             print("❌ Failed to load offerings: \(error.localizedDescription)")
@@ -296,16 +319,11 @@ class SubscriptionService: ObservableObject {
         let trialDays = hasTrial ? plan.trialDays : 0
 
         let pricePerMonth: String
-        switch plan {
-        case .annual:
-            // Show the annual price normalised per month using the product's own currency formatter.
-            if let monthly = product.pricePerMonth,
-               let formatted = product.priceFormatter?.string(from: monthly) {
-                pricePerMonth = formatted
-            } else {
-                pricePerMonth = product.localizedPriceString
-            }
-        case .monthly:
+        if plan == .annual,
+           let monthly = product.pricePerMonth,
+           let formatted = product.priceFormatter?.string(from: monthly) {
+            pricePerMonth = formatted
+        } else {
             pricePerMonth = product.localizedPriceString
         }
 
@@ -314,7 +332,6 @@ class SubscriptionService: ObservableObject {
             productId: product.productIdentifier,
             price: product.localizedPriceString,
             pricePerMonth: pricePerMonth,
-            originalPrice: plan == .annual ? "£49.00" : nil,
             hasTrial: hasTrial,
             trialDays: trialDays,
             isMockOffering: false,
@@ -322,14 +339,26 @@ class SubscriptionService: ObservableObject {
         )
     }
 
+    private func package(for plan: Plan, in offering: Offering) -> Package? {
+        if let match = offering.availablePackages.first(where: {
+            $0.storeProduct.productIdentifier == plan.productId
+        }) {
+            return match
+        }
+        switch plan {
+        case .annual: return offering.annual
+        case .monthly: return offering.monthly
+        case .weekly: return offering.weekly
+        }
+    }
+
     private func setupMockOfferings() {
         offerings = [
             .annual: SubscriptionOffering(
                 plan: .annual,
                 productId: Plan.annual.productId,
-                price: "£35.00",
-                pricePerMonth: "£2.92",
-                originalPrice: "£49.00",
+                price: "£49.99",
+                pricePerMonth: "£4.17",
                 hasTrial: true,
                 trialDays: 3,
                 isMockOffering: true,
@@ -338,9 +367,18 @@ class SubscriptionService: ObservableObject {
             .monthly: SubscriptionOffering(
                 plan: .monthly,
                 productId: Plan.monthly.productId,
+                price: "£9.99",
+                pricePerMonth: "£9.99",
+                hasTrial: false,
+                trialDays: 0,
+                isMockOffering: true,
+                package: nil
+            ),
+            .weekly: SubscriptionOffering(
+                plan: .weekly,
+                productId: Plan.weekly.productId,
                 price: "£4.99",
                 pricePerMonth: "£4.99",
-                originalPrice: nil,
                 hasTrial: false,
                 trialDays: 0,
                 isMockOffering: true,

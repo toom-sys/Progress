@@ -1171,9 +1171,7 @@ struct OnboardingView: View {
                         }
                     }
 
-                    Text(offering.plan == .annual
-                         ? "\(offering.pricePerMonth)/mo · billed yearly"
-                         : "Billed monthly")
+                    Text(offering.plan.detailLine(pricePerMonth: offering.pricePerMonth))
                         .font(.system(size: 11.5))
                         .foregroundColor(OnboardingPalette.muted)
 
@@ -1187,12 +1185,6 @@ struct OnboardingView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 1) {
-                    if let original = offering.originalPrice {
-                        Text(original)
-                            .font(.system(size: 11.5))
-                            .foregroundColor(OnboardingPalette.muted)
-                            .strikethrough()
-                    }
                     Text(offering.price)
                         .font(.system(size: 19, weight: .heavy, design: .rounded))
                         .foregroundColor(OnboardingPalette.ink)
