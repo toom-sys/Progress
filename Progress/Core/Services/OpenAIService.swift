@@ -221,7 +221,7 @@ class OpenAIService: ObservableObject {
     // MARK: - Initialization
     
     init() {
-        // Proxy URL or dev key from Secrets.xcconfig — see AIBackend.
+        // Release uses the production proxy; Debug may use Secrets.xcconfig.
         self.backend = AIBackend.resolve()
         if backend == nil {
             print("⚠️ OpenAIService: No AI backend configured — see Secrets.example.xcconfig")

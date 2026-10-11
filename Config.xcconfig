@@ -1,7 +1,12 @@
 // Base build configuration for the Progress app target.
-// Secrets live in Secrets.xcconfig, which is gitignored — copy
-// Secrets.example.xcconfig to Secrets.xcconfig and fill in your keys.
-// The optional include means a fresh clone still builds (AI features
-// will just report a missing key at runtime).
+//
+// The production AI proxy URL is public — the OpenAI key stays in
+// Secret Manager — so Release builds must not depend on the gitignored
+// Secrets.xcconfig to reach it. Assigned before the optional include so a
+// fresh clone still has a backend. Secrets.xcconfig may override this for
+// local Debug builds; Release.xcconfig sets it again afterwards.
+
+// The $() stops xcconfig from treating // as a comment.
+AI_PROXY_URL = https:/$()/europe-west2-progress-d601c.cloudfunctions.net/aiProxy
 
 #include? "Secrets.xcconfig"

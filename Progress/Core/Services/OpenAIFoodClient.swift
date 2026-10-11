@@ -58,7 +58,7 @@ class OpenAIFoodClient: ObservableObject {
     private let minimumRequestInterval: TimeInterval = 2.0 // 2 seconds between requests
     
     init() {
-        // Proxy URL or dev key from Secrets.xcconfig — see AIBackend.
+        // Release uses the production proxy; Debug may use Secrets.xcconfig.
         self.backend = AIBackend.resolve()
         if backend == nil {
             print("⚠️ OpenAIFoodClient: No AI backend configured — see Secrets.example.xcconfig")

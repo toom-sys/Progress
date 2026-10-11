@@ -1,0 +1,8 @@
+// Release builds always talk to the production AI proxy.
+// Included after Config.xcconfig so a gitignored Secrets.xcconfig cannot
+// clear or replace this URL. The OpenAI key stays in Secret Manager.
+
+#include "Config.xcconfig"
+
+// The $() stops xcconfig from treating // as a comment.
+AI_PROXY_URL = https:/$()/europe-west2-progress-d601c.cloudfunctions.net/aiProxy

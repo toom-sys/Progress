@@ -14,7 +14,7 @@ enum AIBackendError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConfigured:
-            return "No AI backend configured — set AI_PROXY_URL or OPENAI_API_KEY in Secrets.xcconfig"
+            return "No AI backend configured — Debug builds can set OPENAI_API_KEY in Secrets.xcconfig"
         case .notAuthenticated:
             return "Not signed in to Firebase — AI requests need an auth token"
         }
@@ -23,32 +23,49 @@ enum AIBackendError: LocalizedError {
 
 /// How the app reaches OpenAI.
 ///
-/// Release builds go through the server-side proxy (`AI_PROXY_URL` in
-/// Secrets.xcconfig), authenticated with the user's Firebase ID token so the
-/// OpenAI key never ships in the app. When no proxy URL is configured the
-/// app falls back to calling OpenAI directly with a local development key.
+/// Release builds always use the production proxy (`AI_PROXY_URL` from
+/// `Release.xcconfig`), authenticated with the user's Firebase ID token so
+/// the OpenAI key never ships in the app. Debug builds use that same proxy
+/// unless `Secrets.xcconfig` points elsewhere or clears it and supplies a
+/// local `OPENAI_API_KEY`.
 enum AIBackend {
     case proxy(URL)
     case direct(apiKey: String)
 
-    /// Resolves the backend from build configuration. Proxy wins when both
-    /// are configured.
+    /// Public Cloud Function. The OpenAI key lives in Secret Manager.
+    /// Keep this in sync with `Release.xcconfig`.
+    static let productionProxyURL = URL(string: "https://europe-west2-progress-d601c.cloudfunctions.net/aiProxy")!
+
+    /// Resolves the backend from build configuration. A real proxy URL wins.
+    /// Release builds fall back to `productionProxyURL` when the plist value
+    /// is missing, unsubstituted, or still the example placeholder.
     static func resolve() -> AIBackend? {
-        if let urlString = Bundle.main.infoDictionary?["AI_PROXY_URL"] as? String,
-           !urlString.isEmpty,
-           let url = URL(string: urlString),
-           url.scheme == "https" {
+        if let url = proxyURL(from: Bundle.main.infoDictionary?["AI_PROXY_URL"] as? String) {
             return .proxy(url)
         }
 
+        #if DEBUG
         if let key = Bundle.main.infoDictionary?["OPENAI_API_KEY"] as? String, !key.isEmpty {
             return .direct(apiKey: key)
         }
         if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !envKey.isEmpty {
             return .direct(apiKey: envKey)
         }
-
         return nil
+        #else
+        return .proxy(productionProxyURL)
+        #endif
+    }
+
+    /// Accepts an https proxy URL. Rejects empty values, unsubstituted
+    /// `$(AI_PROXY_URL)` build settings, and the example placeholder host.
+    static func proxyURL(from raw: String?) -> URL? {
+        guard let raw else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !trimmed.contains("$(") else { return nil }
+        guard let url = URL(string: trimmed), url.scheme == "https", let host = url.host else { return nil }
+        guard !host.contains("your-project") else { return nil }
+        return url
     }
 
     /// Endpoint that accepts an OpenAI chat-completions request body.
