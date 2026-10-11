@@ -108,7 +108,7 @@ class SubscriptionService: ObservableObject {
                 "Camera food logging with AI",
                 "Progress charts and analytics",
                 "Smart nutrition recommendations",
-                "CloudKit sync across devices",
+                "Apple Health step tracking",
                 "Personalised insights engine",
                 "Export your data anytime"
             ]

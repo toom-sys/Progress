@@ -158,7 +158,7 @@ xcodebuild test -project Progress.xcodeproj -scheme Progress -destination 'platf
 - Camera food logging with AI recognition
 - Progress charts and analytics
 - Smart nutrition recommendations
-- CloudKit sync across devices
+- Apple Health step tracking
 - Personalised insights engine
 - Export your data anytime
 
