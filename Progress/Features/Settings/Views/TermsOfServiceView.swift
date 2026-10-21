@@ -10,7 +10,7 @@ import SwiftUI
 struct TermsOfServiceView: View {
     var body: some View {
         LegalDocumentView(
-            lastUpdated: "11 October 2026",
+            lastUpdated: "15 October 2026",
             intro: "These terms are an agreement between you and Progress for the Progress iOS app. By using the app you agree to them and to the Privacy Policy. If you do not agree, do not use the app.",
             sections: Self.sections
         )
@@ -23,7 +23,7 @@ struct TermsOfServiceView: View {
             title: "The service",
             paragraphs: [
                 "Progress helps you log workouts, nutrition, water, and body weight, see your progress, and build a training plan. Some features, including AI workout and meal tools, require an active Progress Pro subscription.",
-                "Logging on your device is designed to work without an internet connection. iCloud sync, barcode lookup, subscriptions, and AI features need a connection and can be unavailable or delayed."
+                "Logging on your device is designed to work without an internet connection. Barcode lookup, subscriptions, and AI features need a connection and can be unavailable or delayed."
             ]
         ),
         LegalSection(
@@ -35,7 +35,7 @@ struct TermsOfServiceView: View {
         LegalSection(
             title: "Your logs",
             paragraphs: [
-                "You keep ownership of the workouts, meals, photos, and other content you add. You allow Progress to store that content on your device, sync it with iCloud when you use iCloud, and send the portions described in the Privacy Policy to the services that power barcode lookup and AI features.",
+                "You keep ownership of the workouts, meals, photos, and other content you add. You allow Progress to store that content on your device and to send the portions described in the Privacy Policy to the services that power barcode lookup and AI features.",
                 "You are responsible for what you enter. Progress does not check that a workout or meal log is accurate."
             ]
         ),

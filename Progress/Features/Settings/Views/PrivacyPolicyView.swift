@@ -10,7 +10,7 @@ import SwiftUI
 struct PrivacyPolicyView: View {
     var body: some View {
         LegalDocumentView(
-            lastUpdated: "11 October 2026",
+            lastUpdated: "15 October 2026",
             intro: "Progress is a workout and nutrition app. This policy explains what information the app handles, where it goes, and the choices you have. We do not sell your personal information.",
             sections: Self.sections
         )
@@ -27,10 +27,9 @@ struct PrivacyPolicyView: View {
             ]
         ),
         LegalSection(
-            title: "On your device and in iCloud",
+            title: "On your device",
             paragraphs: [
-                "Progress is local-first. Your profile, workouts, nutrition, water, body weight, meal photos you save, and training plan are stored on your device.",
-                "If you are signed in to iCloud, that information can sync across your devices through Apple's CloudKit. It stays in your iCloud account. We do not run a separate server that holds your training log."
+                "Progress is local-first. Your profile, workouts, nutrition, water, body weight, meal photos you save, and training plan are stored on your device. We do not run a separate server that holds your training log."
             ]
         ),
         LegalSection(
@@ -43,7 +42,7 @@ struct PrivacyPolicyView: View {
         LegalSection(
             title: "Camera, photos, and barcodes",
             paragraphs: [
-                "The camera is used to photograph meals and scan food barcodes. You can also pick a meal photo from your library. A photo you keep with a logged meal is stored with that entry on your device, and in iCloud if sync is on.",
+                "The camera is used to photograph meals and scan food barcodes. You can also pick a meal photo from your library. A photo you keep with a logged meal is stored with that entry on your device.",
                 "Meal photos can be recognised on your device. If you use a feature that identifies food with a cloud model, the photo is sent so the app can suggest foods and nutrition values. That is described under AI features.",
                 "When you scan a barcode, the barcode number is sent to Open Food Facts to look up the public product record. Open Food Facts returns the product name and nutrition information shown in the app."
             ]
@@ -86,14 +85,14 @@ struct PrivacyPolicyView: View {
         LegalSection(
             title: "Who else processes it",
             paragraphs: [
-                "Apple, for iCloud, Health, the App Store, and on-device notifications. OpenAI, for AI generation. Google Firebase, for anonymous authentication of AI requests, onboarding analytics, and crash reports. RevenueCat, for subscription status. Open Food Facts, for barcode lookups.",
+                "Apple, for Health, the App Store, and on-device notifications. OpenAI, for AI generation. Google Firebase, for anonymous authentication of AI requests, onboarding analytics, and crash reports. RevenueCat, for subscription status. Open Food Facts, for barcode lookups.",
                 "Some of these providers are outside the United Kingdom. Where information is transferred, it is handled under their terms and the safeguards they offer for international transfers."
             ]
         ),
         LegalSection(
             title: "Your choices",
             paragraphs: [
-                "You can edit your profile in Settings. From Profile you can clear your workouts, nutrition, and profile on this device. That cannot be undone here. Copies already synced to your other devices through iCloud can remain until you remove them there or turn off iCloud for Progress.",
+                "You can edit your profile in Settings. From Profile you can clear your workouts, nutrition, and profile on this device. That cannot be undone.",
                 "You can turn Health, Camera, Photos, and Notifications access off in iOS Settings. You can cancel a subscription in your Apple ID subscription settings. Deleting the app does not cancel the subscription."
             ]
         ),

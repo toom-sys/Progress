@@ -31,8 +31,8 @@ enum AccountDeletionService {
     static let confirmationTitle = "Delete Account?"
     static let confirmationMessage = """
     This permanently deletes your Progress account and the profile, workouts, \
-    nutrition, water, and weight history saved in the app, including the copy \
-    synced through iCloud. This cannot be undone.
+    nutrition, water, and weight history saved in the app on this device. \
+    This cannot be undone.
 
     An App Store subscription is not cancelled. Manage that in the App Store.
     """

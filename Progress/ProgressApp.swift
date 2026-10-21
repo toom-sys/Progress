@@ -32,28 +32,21 @@ struct ProgressApp: App {
             TrainingPlan.self
         ])
         
-        // Disable CloudKit in simulator to prevent crashes
-        #if targetEnvironment(simulator)
-        let cloudKitDatabase: ModelConfiguration.CloudKitDatabase = .none
-        print("🔄 Running in simulator - CloudKit disabled")
-        #else
-        let cloudKitDatabase: ModelConfiguration.CloudKitDatabase = .automatic
-        print("🔄 Running on device - CloudKit enabled")
-        #endif
-        
+        // v1 keeps the store on this device. CloudKit stays off until the
+        // app has an iCloud entitlement and container.
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: cloudKitDatabase
+            cloudKitDatabase: .none
         )
         
         do {
-            print("🔄 Attempting to create SwiftData container with CloudKit sync...")
+            print("🔄 Creating local SwiftData container...")
             let container = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]
             )
-            print("✅ SwiftData container initialized with CloudKit sync")
+            print("✅ SwiftData container initialized")
             return container
             
         } catch {

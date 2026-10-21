@@ -702,7 +702,7 @@ struct ProfileView: View {
                 )
             }
 
-            Text("Deletes your account and the data saved in Progress, including the iCloud copy. Cannot be undone.")
+            Text("Deletes your account and the data saved in Progress on this device. Cannot be undone.")
                 .font(.caption)
                 .foregroundColor(.textTertiary)
                 .multilineTextAlignment(.leading)
