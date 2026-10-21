@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import RevenueCatUI
 
 // MARK: - Settings View
 
@@ -44,6 +45,17 @@ struct SettingsView: View {
                             Text(subscriptionService.membershipLabel)
                                 .font(.caption)
                                 .foregroundColor(subscriptionService.isSubscribed ? .primary : .textTertiary)
+                        }
+                    }
+
+                    if subscriptionService.isSubscribed {
+                        NavigationLink {
+                            CustomerCenterView()
+                                .onCustomerCenterRestoreCompleted { customerInfo in
+                                    subscriptionService.apply(customerInfo)
+                                }
+                        } label: {
+                            Label("Manage Subscription", systemImage: "creditcard")
                         }
                     }
 

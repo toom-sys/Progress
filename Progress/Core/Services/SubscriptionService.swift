@@ -25,7 +25,12 @@ class SubscriptionService: ObservableObject {
     @Published var purchaseError: String? = nil
     @Published var isSandboxMode = true
 
+    private var customerInfoTask: Task<Void, Never>?
+
     // MARK: - Plan
+
+    /// RevenueCat entitlement that unlocks Progress Pro.
+    static let entitlementID = "progress_train_and_log_pro"
 
     /// The three prices for the single Progress Pro membership.
     /// Yearly is first so the paywall leads with it.
@@ -36,13 +41,16 @@ class SubscriptionService: ObservableObject {
 
         var id: String { rawValue }
 
-        var productId: String {
+        /// RevenueCat Test Store identifier, then the App Store product ID.
+        var productIds: [String] {
             switch self {
-            case .annual: return "com.tom.progress.pro.annual"
-            case .monthly: return "com.tom.progress.pro.monthly"
-            case .weekly: return "com.tom.progress.pro.weekly"
+            case .annual: return ["yearly", "com.tom.progress.pro.annual"]
+            case .monthly: return ["monthly", "com.tom.progress.pro.monthly"]
+            case .weekly: return ["weekly", "com.tom.progress.pro.weekly"]
             }
         }
+
+        var productId: String { productIds[0] }
 
         var title: String {
             switch self {
@@ -138,6 +146,7 @@ class SubscriptionService: ObservableObject {
 
     init() {
         setupMockOfferings()
+        startObservingCustomerInfo()
     }
 
     // MARK: - Convenience Accessors
@@ -168,19 +177,14 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
 
-        #if DEBUG && targetEnvironment(simulator)
-        print("🧪 Simulator mode: Using mock offerings for sandbox testing")
-        setupMockOfferings()
-        isLoading = false
-        return
-        #else
         guard Purchases.isConfigured else {
             print("⚠️ RevenueCat not configured yet, using mock offerings")
             setupMockOfferings()
             isLoading = false
             return
         }
-        #endif
+
+        startObservingCustomerInfo()
 
         do {
             let offeringsResponse = try await Purchases.shared.offerings()
@@ -209,6 +213,7 @@ class SubscriptionService: ObservableObject {
                     selectedPlan = Plan.allCases.first { offerings[$0] != nil } ?? .annual
                 }
                 print("✅ Loaded \(loaded.count) Pro price(s) from RevenueCat")
+                await checkSubscriptionStatus()
             }
         } catch {
             print("❌ Failed to load offerings: \(error.localizedDescription)")
@@ -328,17 +333,7 @@ class SubscriptionService: ObservableObject {
 
         do {
             let info = try await Purchases.shared.customerInfo(fetchPolicy: .cachedOrFetched)
-            let entitlement = info.entitlements.active["pro"]
-            if entitlement?.isActive == true {
-                isSubscribed = true
-                activePlan = plan(matching: entitlement?.productIdentifier)
-                    ?? Plan.allCases.first { info.activeSubscriptions.contains($0.productId) }
-                print("✅ Progress Pro subscription active (\(activePlan?.title ?? "price unknown"))")
-            } else {
-                isSubscribed = false
-                activePlan = nil
-                print("ℹ️ No active subscription found")
-            }
+            apply(info)
         } catch {
             // Network unavailable or transient error — keep the existing isSubscribed
             // value so a paid user is not locked out while offline.
@@ -374,14 +369,46 @@ class SubscriptionService: ObservableObject {
         )
     }
 
+    /// Updates subscription state from RevenueCat customer info.
+    /// An inactive result is ignored while mock offerings are in use, so a
+    /// failed store fetch does not clear a simulated purchase.
+    func apply(_ info: CustomerInfo) {
+        let entitlement = info.entitlements.active[Self.entitlementID]
+        guard entitlement?.isActive == true else {
+            if !isSandboxMode {
+                isSubscribed = false
+                activePlan = nil
+                print("ℹ️ No active \(Self.entitlementID) entitlement")
+            }
+            return
+        }
+
+        isSubscribed = true
+        isSandboxMode = false
+        activePlan = plan(matching: entitlement?.productIdentifier)
+            ?? Plan.allCases.first { plan in
+                plan.productIds.contains { info.activeSubscriptions.contains($0) }
+            }
+        print("✅ Progress Pro subscription active (\(activePlan?.title ?? "price unknown"))")
+    }
+
+    private func startObservingCustomerInfo() {
+        guard Purchases.isConfigured, customerInfoTask == nil else { return }
+        customerInfoTask = Task { [weak self] in
+            for await info in Purchases.shared.customerInfoStream {
+                self?.apply(info)
+            }
+        }
+    }
+
     private func plan(matching productId: String?) -> Plan? {
         guard let productId else { return nil }
-        return Plan.allCases.first { $0.productId == productId }
+        return Plan.allCases.first { $0.productIds.contains(productId) }
     }
 
     private func package(for plan: Plan, in offering: Offering) -> Package? {
         if let match = offering.availablePackages.first(where: {
-            $0.storeProduct.productIdentifier == plan.productId
+            plan.productIds.contains($0.storeProduct.productIdentifier)
         }) {
             return match
         }

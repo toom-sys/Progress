@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		E28E2D322E354991005FB680 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E28E2D312E354990005FB680 /* StoreKit.framework */; };
 		E28E2D392E354B82005FB680 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2D382E354B82005FB680 /* RevenueCat */; };
+		E28E2D3B2E354B82005FB681 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2D3A2E354B82005FB681 /* RevenueCatUI */; };
 		E28E2E3D2E381A59005FB680 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E3C2E381A59005FB680 /* FirebaseAnalytics */; };
 		E28E2E3F2E381A59005FB680 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E3E2E381A59005FB680 /* FirebaseAuth */; };
 		E28E2E412E381A59005FB680 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = E28E2E402E381A59005FB680 /* FirebaseCore */; };
@@ -81,6 +82,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E28E2D392E354B82005FB680 /* RevenueCat in Frameworks */,
+				E28E2D3B2E354B82005FB681 /* RevenueCatUI in Frameworks */,
 				E28E2E412E381A59005FB680 /* FirebaseCore in Frameworks */,
 				E28E2D322E354991005FB680 /* StoreKit.framework in Frameworks */,
 				E2B4F1012E739A01005FB681 /* HealthKit.framework in Frameworks */,
@@ -170,6 +172,7 @@
 			name = Progress;
 			packageProductDependencies = (
 				E28E2D382E354B82005FB680 /* RevenueCat */,
+				E28E2D3A2E354B82005FB681 /* RevenueCatUI */,
 				E28E2E3C2E381A59005FB680 /* FirebaseAnalytics */,
 				E28E2E3E2E381A59005FB680 /* FirebaseAuth */,
 				E28E2E402E381A59005FB680 /* FirebaseCore */,
@@ -736,6 +739,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */;
 			productName = RevenueCat;
+		};
+		E28E2D3A2E354B82005FB681 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E28E2D372E354B82005FB680 /* XCRemoteSwiftPackageReference "purchases-ios" */;
+			productName = RevenueCatUI;
 		};
 		E28E2E3C2E381A59005FB680 /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
