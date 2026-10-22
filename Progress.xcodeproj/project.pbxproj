@@ -713,7 +713,7 @@
 			repositoryURL = "https://github.com/RevenueCat/purchases-ios";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 5.33.1;
+				minimumVersion = 5.43.0;
 			};
 		};
 		E28E2E3B2E381A59005FB680 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
