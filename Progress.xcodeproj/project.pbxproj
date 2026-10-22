@@ -491,7 +491,7 @@
 				CODE_SIGN_ENTITLEMENTS = Progress/Progress.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Progress/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -499,9 +499,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Progress/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Progress;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph meals and scan food barcodes for nutrition tracking.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Progress does not write workouts, nutrition, or other data to Apple Health. It only reads your step count.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -521,10 +523,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomcameron.progress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -538,7 +540,7 @@
 				CODE_SIGN_ENTITLEMENTS = Progress/Progress.entitlements;
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_ASSET_PATHS = "\"Progress/Preview Content\"";
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -546,9 +548,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Progress/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Progress;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSCameraUsageDescription = "This app uses the camera to photograph meals and scan food barcodes for nutrition tracking.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Progress reads your step count from Apple Health to show daily progress toward your step goal.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Progress does not write workouts, nutrition, or other data to Apple Health. It only reads your step count.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -568,10 +572,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.tomcameron.progress;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
