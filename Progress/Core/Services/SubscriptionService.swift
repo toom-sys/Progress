@@ -26,6 +26,9 @@ class SubscriptionService: ObservableObject {
     @Published var isSandboxMode = true
 
     private var customerInfoTask: Task<Void, Never>?
+    /// Newest CustomerInfo applied. A cached "active" snapshot cannot unlock
+    /// the app after a later fetch says the entitlement has expired.
+    private var latestCustomerInfoRequestDate: Date?
 
     // MARK: - Plan
 
@@ -275,19 +278,12 @@ class SubscriptionService: ObservableObject {
         isLoading = true
         purchaseError = nil
 
-        if isSandboxMode {
-            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               let plan = Plan(rawValue: mockSub) {
-                isSubscribed = true
-                activePlan = plan
-                print("🔄 Restored mock subscription: Progress Pro (\(plan.title))")
-                isLoading = false
-                return
-            }
-        }
-
         guard Purchases.isConfigured else {
-            purchaseError = "RevenueCat not configured"
+            if applyMockSubscriptionIfPresent() {
+                print("🔄 Restored mock subscription: Progress Pro (\(activePlan?.title ?? "price unknown"))")
+            } else {
+                purchaseError = "RevenueCat not configured"
+            }
             isLoading = false
             return
         }
@@ -316,28 +312,25 @@ class SubscriptionService: ObservableObject {
     }
 
     func checkSubscriptionStatus() async {
-        if isSandboxMode {
-            if let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
-               let plan = Plan(rawValue: mockSub) {
-                isSubscribed = true
-                activePlan = plan
-                print("ℹ️ Mock subscription active: Progress Pro (\(plan.title))")
-                return
-            }
-        }
-
         guard Purchases.isConfigured else {
-            print("⚠️ RevenueCat not configured yet, skipping subscription status check")
+            if applyMockSubscriptionIfPresent() {
+                print("ℹ️ Mock subscription active: Progress Pro (\(activePlan?.title ?? "price unknown"))")
+            } else {
+                print("⚠️ RevenueCat not configured yet, skipping subscription status check")
+            }
             return
         }
 
         do {
-            let info = try await Purchases.shared.customerInfo(fetchPolicy: .cachedOrFetched)
+            let info = try await Purchases.shared.customerInfo(fetchPolicy: .fetchCurrent)
             apply(info)
         } catch {
-            // Network unavailable or transient error — keep the existing isSubscribed
-            // value so a paid user is not locked out while offline.
+            // Network unavailable. Fall back to the cached record so a paid
+            // member is not locked out while offline.
             print("⚠️ Could not verify subscription status (offline?): \(error.localizedDescription)")
+            if let cached = try? await Purchases.shared.customerInfo(fetchPolicy: .fromCacheOnly) {
+                apply(cached)
+            }
         }
     }
 
@@ -370,16 +363,20 @@ class SubscriptionService: ObservableObject {
     }
 
     /// Updates subscription state from RevenueCat customer info.
-    /// An inactive result is ignored while mock offerings are in use, so a
-    /// failed store fetch does not clear a simulated purchase.
+    /// An expired entitlement always locks the app. Older cached snapshots
+    /// are ignored so they cannot undo a newer fetch.
     func apply(_ info: CustomerInfo) {
+        if let latestCustomerInfoRequestDate, info.requestDate < latestCustomerInfoRequestDate {
+            return
+        }
+        latestCustomerInfoRequestDate = info.requestDate
+        UserDefaults.standard.removeObject(forKey: "mock_subscription")
+
         let entitlement = info.entitlements.active[Self.entitlementID]
         guard entitlement?.isActive == true else {
-            if !isSandboxMode {
-                isSubscribed = false
-                activePlan = nil
-                print("ℹ️ No active \(Self.entitlementID) entitlement")
-            }
+            isSubscribed = false
+            activePlan = nil
+            print("ℹ️ No active \(Self.entitlementID) entitlement")
             return
         }
 
@@ -390,6 +387,15 @@ class SubscriptionService: ObservableObject {
                 plan.productIds.contains { info.activeSubscriptions.contains($0) }
             }
         print("✅ Progress Pro subscription active (\(activePlan?.title ?? "price unknown"))")
+    }
+
+    /// Unlocks from a local simulated purchase. Used only before RevenueCat is configured.
+    private func applyMockSubscriptionIfPresent() -> Bool {
+        guard let mockSub = UserDefaults.standard.string(forKey: "mock_subscription"),
+              let plan = Plan(rawValue: mockSub) else { return false }
+        isSubscribed = true
+        activePlan = plan
+        return true
     }
 
     private func startObservingCustomerInfo() {
