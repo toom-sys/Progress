@@ -75,8 +75,8 @@ struct LegalDocumentView: View {
                         .font(.body)
                         .foregroundColor(.textSecondary)
 
-                    Link(destination: URL(string: "mailto:support@progressapp.com")!) {
-                        Text("support@progressapp.com")
+                    Link(destination: URL(string: "mailto:Tom.progressapp.support@gmail.com")!) {
+                        Text("Tom.progressapp.support@gmail.com")
                             .font(.body)
                             .foregroundColor(.primary)
                     }

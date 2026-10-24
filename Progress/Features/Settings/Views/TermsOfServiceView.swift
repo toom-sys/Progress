@@ -10,7 +10,7 @@ import SwiftUI
 struct TermsOfServiceView: View {
     var body: some View {
         LegalDocumentView(
-            lastUpdated: "15 October 2026",
+            lastUpdated: "24 October 2026",
             intro: "These terms are an agreement between you and Progress for the Progress iOS app. By using the app you agree to them and to the Privacy Policy. If you do not agree, do not use the app.",
             sections: Self.sections
         )

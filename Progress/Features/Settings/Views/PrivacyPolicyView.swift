@@ -10,7 +10,7 @@ import SwiftUI
 struct PrivacyPolicyView: View {
     var body: some View {
         LegalDocumentView(
-            lastUpdated: "15 October 2026",
+            lastUpdated: "24 October 2026",
             intro: "Progress is a workout and nutrition app. This policy explains what information the app handles, where it goes, and the choices you have. We do not sell your personal information.",
             sections: Self.sections
         )
@@ -105,7 +105,7 @@ struct PrivacyPolicyView: View {
         LegalSection(
             title: "Changes",
             paragraphs: [
-                "If this policy changes, the updated version will appear in the app. The date at the top is the latest version."
+                "If this policy changes, the updated version will appear on the public policy page and in the app. The date at the top is the latest version."
             ]
         )
     ]
