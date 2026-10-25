@@ -60,8 +60,7 @@ struct WorkoutListView: View {
 
     var body: some View {
         ZStack {
-            AdaptiveGradientBackground()
-                .ignoresSafeArea()
+            AppBackground()
 
             VStack(spacing: 0) {
                 WorkoutListHeader(
@@ -74,21 +73,15 @@ struct WorkoutListView: View {
                     }
                 )
 
-                if let activePlan {
-                    TrainingPlanCard(
-                        plan: activePlan,
-                        onStartWorkout: { workout in
-                            planWorkoutToOpen = workout
-                        }
-                    )
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 8)
-                }
-
                 WorkoutListContent(
                     workouts: sortedWorkouts,
+                    plan: activePlan,
+                    history: allWorkouts,
                     onDeleteWorkout: deleteWorkout,
-                    onShareWorkout: shareWorkout
+                    onShareWorkout: shareWorkout,
+                    onStartPlanWorkout: { workout in
+                        planWorkoutToOpen = workout
+                    }
                 )
             }
         }
