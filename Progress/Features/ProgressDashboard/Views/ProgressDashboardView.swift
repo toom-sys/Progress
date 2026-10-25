@@ -21,9 +21,6 @@ struct ProgressDashboardView: View {
     @Query private var allWeightEntries: [BodyWeightEntry]
     @Query private var users: [User]
 
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-
     private var currentUser: User? { users.first }
 
     private var weeklyWorkoutGoal: Int {
@@ -41,82 +38,33 @@ struct ProgressDashboardView: View {
         )
     }
 
-    private var isCompact: Bool {
-        horizontalSizeClass == .compact || verticalSizeClass == .compact
-    }
-
-    private var adaptiveSpacing: CGFloat { isCompact ? 12 : 16 }
-    private var adaptivePadding: CGFloat { 24 }
-
     var body: some View {
         VStack(spacing: 0) {
-            // Custom title header
-            HStack {
-                Text("Journey")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.textPrimary)
-
-                Spacer()
-
-                Button(action: { showingSettings = true }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.textPrimary)
-
-                        Text(subscriptionService.membershipLabel)
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .foregroundColor(subscriptionService.isSubscribed ? .primary : .textSecondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(
-                                (subscriptionService.isSubscribed ? Color.primary : Color.textSecondary)
-                                    .opacity(0.1)
-                            )
-                            .clipShape(Capsule())
-                    }
-                }
-            }
-            .padding(.horizontal, adaptivePadding)
-            .padding(.top, 12)
-            .padding(.bottom, 12)
+            journeyHeader
 
             ScrollView {
                 // VStack (not LazyVStack) so height changes animate sibling
                 // positions in sync with expand/collapse.
-                VStack(spacing: adaptiveSpacing) {
-                    // Personal hero card
-                    JourneyHeroCard(user: currentUser, dashboardData: dashboardData)
-
-                    // Streak cards
-                    StreakCardsView(dashboardData: dashboardData)
-
-                    // Daily Steps progress bar
+                VStack(spacing: 12) {
                     DailyStepsCardView()
 
-                    // Body weight progression chart
-                    WeightTrendCard()
-
                     if dashboardData.hasData {
-                        // Body Map Visualization
                         BodyMapSection()
                     } else {
                         EmptyJourneyCallToAction()
                     }
 
-                    // Achievement badges
+                    WeightTrendCard()
+
                     AchievementsRowView(dashboardData: dashboardData)
 
-                    Rectangle()
-                        .fill(Color.clear)
+                    Color.clear
                         .frame(height: 32)
                 }
-                .padding(.horizontal, adaptivePadding)
+                .padding(.horizontal, 20)
             }
         }
-        .background(AdaptiveGradientBackground())
+        .background(AppBackground())
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingSettings) {
@@ -124,226 +72,81 @@ struct ProgressDashboardView: View {
                 .environmentObject(subscriptionService)
         }
     }
-}
 
-// MARK: - Shared Widget Styling
-
-/// Single card treatment shared by every Journey widget so the page reads
-/// as one coherent surface (matches the body map card's `whiteCardStyle`).
-private extension View {
-    func journeyCardStyle(padding: CGFloat = 14) -> some View {
-        whiteCardStyle(cornerRadius: 14, padding: padding)
-    }
-}
-
-/// Consistent header used at the top of Journey widgets:
-/// tinted icon chip, title, and an optional trailing detail.
-struct JourneyCardHeader: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    var trailing: String? = nil
-
-    var body: some View {
+    private var journeyHeader: some View {
         HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(iconColor)
-                .frame(width: 24, height: 24)
-                .background(iconColor.opacity(0.14))
-                .clipShape(RoundedRectangle(cornerRadius: 7))
-
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
-
-            Spacer()
-
-            if let trailing {
-                Text(trailing)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textSecondary)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(Color.backgroundSecondary)
-                    .clipShape(Capsule())
-            }
-        }
-    }
-}
-
-// MARK: - Journey Hero Card
-
-struct JourneyHeroCard: View {
-    let user: User?
-    let dashboardData: DashboardData
-
-    private var initials: String {
-        let name = user?.name ?? "Me"
-        let parts = name.split(separator: " ")
-        if parts.count >= 2 {
-            return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
-        }
-        return String(name.prefix(2)).uppercased()
-    }
-
-    private var memberSince: String {
-        let date = user?.createdAt ?? Date()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM yyyy"
-        return formatter.string(from: date)
-    }
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Avatar
-            ZStack {
-                Circle()
-                    .fill(LinearGradient(
-                        colors: [.brand, .purple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-
-                Text(initials)
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(.white)
-            }
-            .frame(width: 48, height: 48)
-            .overlay(
-                Circle()
-                    .stroke(Color.brand.opacity(0.25), lineWidth: 2)
-                    .padding(-3)
-            )
-
-            // Info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(user?.name ?? "My Journey")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
-                    .lineLimit(1)
-
-                if let user = user {
-                    Label(user.fitnessGoal.displayName, systemImage: "target")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.brand)
-                        .lineLimit(2)
-                }
-
-                Text("Member since \(memberSince)")
-                    .font(.caption2)
-                    .foregroundColor(.textTertiary)
-            }
+            Text("Journey")
+                .font(.appScreenTitle)
+                .tracking(-0.5)
+                .foregroundColor(AppPalette.ink)
 
             Spacer(minLength: 8)
 
-            // Active streak badge
-            VStack(spacing: 1) {
-                HStack(spacing: 3) {
-                    Image(systemName: "flame.fill")
-                        .font(.caption2)
-                        .foregroundColor(.orange)
+            Text("🔥 \(dashboardData.currentStreak)")
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(AppPalette.ink)
+                .frame(height: 36)
+                .padding(.horizontal, 12)
+                .background(
+                    Capsule()
+                        .fill(AppPalette.surface)
+                        .overlay(Capsule().strokeBorder(AppPalette.line, lineWidth: 1))
+                )
+                .accessibilityLabel("\(dashboardData.currentStreak) day streak")
 
-                    Text("\(dashboardData.currentStreak)")
-                        .font(.numberMedium)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
-                }
-
-                Text("Day Streak")
-                    .font(.caption2)
-                    .foregroundColor(.textSecondary)
+            Button {
+                showingSettings = true
+            } label: {
+                Text(subscriptionService.membershipLabel)
+                    .font(.system(size: 14, weight: .heavy))
+                    .foregroundColor(subscriptionService.isSubscribed ? Color.brand : AppPalette.muted)
+                    .frame(height: 36)
+                    .padding(.horizontal, 12)
+                    .background(
+                        Capsule().fill(
+                            subscriptionService.isSubscribed ? AppPalette.accentSoft : AppPalette.optionFill
+                        )
+                    )
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 8)
-            .background(Color.orange.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .buttonStyle(.plain)
+
+            CircleIconButton(
+                systemName: "gearshape",
+                style: .plain,
+                size: 38,
+                accessibilityLabel: "Settings",
+                action: { showingSettings = true }
+            )
         }
-        .journeyCardStyle()
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 12)
     }
 }
 
-// MARK: - Streak Cards
+// MARK: - Card header
 
-struct StreakCardsView: View {
-    let dashboardData: DashboardData
+struct JourneyCardHeader<Trailing: View>: View {
+    let emoji: String
+    let tint: Color
+    let title: String
+    @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         HStack(spacing: 10) {
-            StreakCard(
-                title: "Foods Logged",
-                value: dashboardData.foodPhotosLogged,
-                unit: "photos",
-                icon: "camera.fill",
-                color: .green,
-                description: dashboardData.foodPhotosLogged == 0 ? "Snap a meal to start" : "Keep logging!"
-            )
+            EmojiTile(emoji: emoji, size: 34, background: AppPalette.tint(tint))
 
-            StreakCard(
-                title: "This Week",
-                value: dashboardData.workoutsThisWeek,
-                unit: "/ \(dashboardData.weeklyWorkoutGoal)",
-                icon: "dumbbell.fill",
-                color: .brand,
-                description: dashboardData.workoutsThisWeek >= dashboardData.weeklyWorkoutGoal ? "Goal reached!" : "\(dashboardData.weeklyWorkoutGoal - dashboardData.workoutsThisWeek) more to goal"
-            )
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-struct StreakCard: View {
-    let title: String
-    let value: Int
-    let unit: String
-    let icon: String
-    let color: Color
-    let description: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(color)
-                    .frame(width: 22, height: 22)
-                    .background(color.opacity(0.14))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                Text(title)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textSecondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-
-                Spacer(minLength: 0)
-            }
-
-            HStack(alignment: .lastTextBaseline, spacing: 3) {
-                Text("\(value)")
-                    .font(.numberMedium)
-                    .fontWeight(.bold)
-                    .foregroundColor(.textPrimary)
-                Text(unit)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textSecondary)
-            }
-
-            Text(description)
-                .font(.caption2)
-                .foregroundColor(value > 0 ? color : .textTertiary)
+            Text(title)
+                .font(.appCardTitle)
+                .foregroundColor(AppPalette.ink)
                 .lineLimit(1)
-                .minimumScaleFactor(0.8)
+
+            Spacer(minLength: 8)
+
+            HStack(spacing: 8) {
+                trailing()
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .journeyCardStyle(padding: 12)
     }
 }
 
@@ -556,12 +359,22 @@ struct AchievementsRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             let unlocked = achievements.filter(\.isUnlocked).count
-            JourneyCardHeader(
-                icon: "trophy.fill",
-                iconColor: .yellow,
-                title: "Achievements",
-                trailing: "\(unlocked)/\(achievements.count)"
-            )
+            JourneyCardHeader(emoji: "🏆", tint: .yellow, title: "Achievements") {
+                HStack(spacing: 4) {
+                    Text("\(unlocked)")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundColor(AppPalette.ink)
+                    Text(" / \(achievements.count)")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppPalette.muted)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppPalette.muted)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("\(unlocked) of \(achievements.count) unlocked")
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -588,7 +401,7 @@ struct AchievementsRowView: View {
                     )
             }
         }
-        .journeyCardStyle()
+        .appCard(cornerRadius: 22, padding: 14)
     }
 
     private func selectAchievement(_ id: String) {
@@ -611,52 +424,52 @@ struct AchievementBadge: View {
         Button {
             onTap?()
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 ZStack {
                     if achievement.isUnlocked {
                         Circle()
                             .fill(LinearGradient(
-                                colors: [achievement.color.opacity(0.28), achievement.color.opacity(0.12)],
+                                colors: [
+                                    achievement.color.opacity(0.14),
+                                    achievement.color.opacity(0.30)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ))
-                            .overlay(
-                                Circle()
-                                    .stroke(
-                                        isSelected ? achievement.color : achievement.color.opacity(0.35),
-                                        lineWidth: isSelected ? 2 : 1
-                                    )
-                            )
+                            .overlay(Circle().strokeBorder(AppPalette.surface, lineWidth: 2))
+                            .shadow(color: achievement.color.opacity(0.22), radius: 7, y: 6)
+
+                        Image(systemName: achievement.icon)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundColor(achievement.color)
                     } else {
                         Circle()
-                            .fill(Color.backgroundSecondary)
+                            .fill(AppPalette.optionFill)
                             .overlay(
-                                Circle()
-                                    .stroke(
-                                        isSelected ? Color.textSecondary.opacity(0.5) : Color.border.opacity(0.25),
-                                        lineWidth: isSelected ? 2 : 1
-                                    )
+                                Circle().strokeBorder(
+                                    AppPalette.line,
+                                    style: StrokeStyle(lineWidth: 2, dash: [4, 4])
+                                )
                             )
-                    }
 
-                    Image(systemName: achievement.icon)
-                        .font(.subheadline)
-                        .foregroundColor(achievement.isUnlocked ? achievement.color : .textTertiary)
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(AppPalette.muted)
+                    }
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: 58, height: 58)
+                .overlay {
+                    if isSelected {
+                        Circle().strokeBorder(Color.brand, lineWidth: 2)
+                    }
+                }
                 .scaleEffect(isSelected ? 1.08 : 1)
-                .opacity(achievement.isUnlocked ? 1 : 0.7)
 
                 Text(achievement.title)
-                    .font(.caption2)
-                    .fontWeight(isSelected || achievement.isUnlocked ? .medium : .regular)
+                    .font(.system(size: 11, weight: .bold))
                     .multilineTextAlignment(.center)
-                    .foregroundColor(
-                        isSelected
-                            ? .textPrimary
-                            : (achievement.isUnlocked ? .textPrimary : .textTertiary)
-                    )
-                    .frame(width: 56)
+                    .foregroundColor(achievement.isUnlocked ? AppPalette.ink : AppPalette.muted)
+                    .frame(width: 72)
                     .lineLimit(2)
             }
         }
@@ -813,7 +626,7 @@ struct EmptyJourneyCallToAction: View {
                 }
             }
         }
-        .journeyCardStyle()
+        .appCard(cornerRadius: 22, padding: 14)
     }
 }
 

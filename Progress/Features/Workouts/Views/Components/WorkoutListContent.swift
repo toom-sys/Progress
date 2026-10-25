@@ -79,6 +79,7 @@ struct WorkoutListContent: View {
                     ForEach(workouts, id: \.id) { workout in
                         WorkoutSwipeRow(
                             workout: workout,
+                            onOpen: { onOpenWorkout(workout) },
                             onShare: { onShareWorkout(workout) },
                             onDelete: { onDeleteWorkout(workout) }
                         )
@@ -105,6 +106,7 @@ struct WorkoutListContent: View {
 /// Leading share and trailing delete, without putting the row in a list cell.
 private struct WorkoutSwipeRow: View {
     let workout: Workout
+    let onOpen: () -> Void
     let onShare: () -> Void
     let onDelete: () -> Void
 
@@ -120,32 +122,18 @@ private struct WorkoutSwipeRow: View {
 
             row
                 .offset(x: offset)
+                .contentShape(Rectangle())
                 .simultaneousGesture(swipeGesture)
-                .overlay {
-                    if offset != 0 {
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                settle(to: 0)
-                            }
-                    }
-                }
         }
+        .accessibilityAction(.default, onOpen)
         .accessibilityAction(named: Text("Share"), onShare)
         .accessibilityAction(named: Text("Delete"), onDelete)
     }
 
     private var row: some View {
-        ZStack {
-            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
-                EmptyView()
-            }
-            .opacity(0)
-
-            WorkoutRowView(workout: workout)
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 6)
+        WorkoutRowView(workout: workout)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 6)
     }
 
     @ViewBuilder
@@ -202,22 +190,35 @@ private struct WorkoutSwipeRow: View {
     }
 
     private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 16, coordinateSpace: .local)
+        DragGesture(minimumDistance: 0, coordinateSpace: .local)
             .onChanged { value in
+                let translation = value.translation
+                let distance = hypot(translation.width, translation.height)
                 if dragAxis == nil {
-                    let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
+                    guard distance >= 12 else { return }
+                    let isHorizontal = abs(translation.width) > abs(translation.height)
                     dragAxis = isHorizontal ? .horizontal : .vertical
                     dragStart = offset
                 }
                 guard dragAxis == .horizontal else { return }
-                let next = dragStart + value.translation.width
+                let next = dragStart + translation.width
                 offset = min(max(next, -revealWidth), revealWidth)
             }
             .onEnded { value in
+                let translation = value.translation
+                let distance = hypot(translation.width, translation.height)
                 let wasHorizontal = dragAxis == .horizontal
                 dragAxis = nil
+                if !wasHorizontal && distance < 12 {
+                    if offset != 0 {
+                        settle(to: 0)
+                    } else {
+                        onOpen()
+                    }
+                    return
+                }
                 guard wasHorizontal else { return }
-                let next = dragStart + value.translation.width
+                let next = dragStart + translation.width
                 let target: CGFloat
                 if next > revealWidth * 0.45 {
                     target = revealWidth

@@ -38,13 +38,6 @@ struct DailyStepsCardView: View {
         progressTracker.currentSteps >= progressTracker.dailyStepGoal
     }
 
-    private var progressColor: Color {
-        let percentage = progress * 100
-        if percentage >= 100 { return .yellow }
-        if percentage >= 80 { return .orange }
-        return .brand
-    }
-
     private var stepsDelta: Int {
         progressTracker.stepsDeltaVsYesterday
     }
@@ -78,7 +71,7 @@ struct DailyStepsCardView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .journeyCardStyle()
+        .appCard(cornerRadius: 22, padding: 14)
         .accessibilityElement(children: .contain)
         .onAppear {
             progressTracker.setModelContext(modelContext)
@@ -104,83 +97,38 @@ struct DailyStepsCardView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Button(action: toggleExpanded) {
-                HStack(spacing: 8) {
-                    Image(systemName: isGoalMet ? "figure.walk.motion" : "figure.walk")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(progressColor)
-                        .frame(width: 24, height: 24)
-                        .background(progressColor.opacity(0.14))
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
-
-                    Text("Daily Steps")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
-
-                    Spacer(minLength: 8)
-
-                    if !isExpanded {
-                        compactSummary
+        JourneyCardHeader(emoji: "🚶", tint: .orange, title: "Daily steps") {
+            HStack(spacing: 8) {
+                if !isExpanded {
+                    HStack(spacing: 0) {
+                        Text(formatSteps(progressTracker.currentSteps))
+                            .font(.system(size: 15, weight: .heavy))
+                            .foregroundColor(AppPalette.ink)
+                        Text(" / \(abbreviatedGoal)")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(AppPalette.muted)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(formatSteps(progressTracker.currentSteps)) of \(formatSteps(progressTracker.dailyStepGoal)) steps")
                 }
-            }
-            .buttonStyle(.plain)
 
-            Button(action: toggleExpanded) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.textSecondary)
-                    .frame(width: 24, height: 24)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? "Collapse daily steps" : "Expand daily steps")
-        }
-    }
-
-    private var compactSummary: some View {
-        HStack(spacing: 4) {
-            Text("\(formatSteps(progressTracker.currentSteps)) / \(formatSteps(progressTracker.dailyStepGoal))")
-                .fontWeight(.semibold)
-                .foregroundColor(isGoalMet ? .green : .textPrimary)
-
-            if progressTracker.yesterdaysStepsAtSameTime > 0 || progressTracker.currentSteps > 0 {
-                Image(systemName: deltaSymbol)
-                    .font(.caption2.bold())
-                    .foregroundColor(deltaColor)
+                ChevronToggleButton(
+                    isExpanded: isExpanded,
+                    size: 30,
+                    accessibilityLabel: isExpanded ? "Collapse daily steps" : "Expand daily steps",
+                    action: toggleExpanded
+                )
             }
         }
-        .font(.caption)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.backgroundSecondary)
-        .clipShape(Capsule())
     }
 
     // MARK: - Progress Bar
 
     private var progressBar: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.border.opacity(0.2))
-                    .frame(height: 6)
-
-                Capsule()
-                    .fill(LinearGradient(
-                        colors: [progressColor.opacity(0.75), progressColor],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ))
-                    .frame(width: geometry.size.width * progress, height: 6)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
-            }
-        }
-        .frame(height: 6)
-        .accessibilityLabel("Daily steps progress")
-        .accessibilityValue("\(formatSteps(progressTracker.currentSteps)) of \(formatSteps(progressTracker.dailyStepGoal)) steps\(isGoalMet ? ". Goal achieved!" : "")")
+        AppProgressBar(progress: progress, height: 8)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Daily steps progress")
+            .accessibilityValue("\(formatSteps(progressTracker.currentSteps)) of \(formatSteps(progressTracker.dailyStepGoal)) steps\(isGoalMet ? ". Goal achieved!" : "")")
     }
 
     // MARK: - Comparison
@@ -252,7 +200,7 @@ struct DailyStepsCardView: View {
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [Color.brand.opacity(0.22), Color.brand.opacity(0.02)],
+                        colors: [AppPalette.brandLight.opacity(0.45), Color.brand.opacity(0.02)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
@@ -282,7 +230,7 @@ struct DailyStepsCardView: View {
         }
         .chartForegroundStyleScale([
             StepCumulativePoint.Day.today.rawValue: Color.brand,
-            StepCumulativePoint.Day.yesterday.rawValue: Color.textTertiary
+            StepCumulativePoint.Day.yesterday.rawValue: AppPalette.brandLight
         ])
         .chartLegend(position: .bottom, alignment: .leading, spacing: 8)
         .frame(height: 160)
@@ -333,6 +281,16 @@ struct DailyStepsCardView: View {
         numberFormatter.string(from: NSNumber(value: steps)) ?? "\(steps)"
     }
 
+    /// Goals of 1,000 or more read as "10k".
+    private var abbreviatedGoal: String {
+        let goal = progressTracker.dailyStepGoal
+        guard goal >= 1000 else { return formatSteps(goal) }
+        if goal.isMultiple(of: 1000) {
+            return "\(goal / 1000)k"
+        }
+        return String(format: "%.1fk", Double(goal) / 1000)
+    }
+
     private var deltaSymbol: String {
         if stepsDelta > 0 { return "arrow.up.right" }
         if stepsDelta < 0 { return "arrow.down.right" }
@@ -368,14 +326,6 @@ struct DailyStepsCardView: View {
         case 24: return "12a"
         default: return "\(Int(hour))"
         }
-    }
-}
-
-// MARK: - Shared card chrome (mirrors ProgressDashboardView)
-
-private extension View {
-    func journeyCardStyle(padding: CGFloat = 14) -> some View {
-        whiteCardStyle(cornerRadius: 14, padding: padding)
     }
 }
 

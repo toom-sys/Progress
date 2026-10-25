@@ -100,7 +100,7 @@ struct WeightTrendCard: View {
                 .padding(.top, 12)
             }
         }
-        .whiteCardStyle(cornerRadius: 14, padding: 14)
+        .appCard(cornerRadius: 22, padding: 14)
         .sheet(isPresented: $showingLogSheet) {
             WeightLogSheet()
         }
@@ -126,84 +126,69 @@ struct WeightTrendCard: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Button(action: toggleExpanded) {
-                HStack(spacing: 8) {
-                    Image(systemName: "scalemass.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.purple)
-                        .frame(width: 24, height: 24)
-                        .background(Color.purple.opacity(0.14))
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
-
-                    Text("Body Weight")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
-
-                    Spacer(minLength: 8)
-
-                    if !isExpanded {
-                        compactSummary
-                    }
+        JourneyCardHeader(emoji: "⚖️", tint: .purple, title: "Weight") {
+            HStack(spacing: 8) {
+                if !isExpanded, allEntries.last != nil {
+                    valueChip
                 }
-            }
-            .buttonStyle(.plain)
 
-            Button(action: {
-                HapticFeedback.workoutButtonTap()
-                showingLogSheet = true
-            }) {
-                Image(systemName: "plus")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white)
-                    .frame(width: 26, height: 26)
-                    .background(Color.brand)
-                    .clipShape(Circle())
-            }
-            .accessibilityLabel("Log weight")
+                CircleIconButton(
+                    systemName: "plus",
+                    style: .ink,
+                    size: 32,
+                    accessibilityLabel: "Log weight",
+                    action: {
+                        HapticFeedback.workoutButtonTap()
+                        showingLogSheet = true
+                    }
+                )
 
-            Button(action: toggleExpanded) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.textSecondary)
-                    .frame(width: 24, height: 24)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                ChevronToggleButton(
+                    isExpanded: isExpanded,
+                    size: 30,
+                    accessibilityLabel: isExpanded ? "Collapse weight" : "Expand weight",
+                    action: toggleExpanded
+                )
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? "Collapse body weight" : "Expand body weight")
         }
     }
 
-    private var compactSummary: some View {
-        Group {
-            if let latest = allEntries.last {
-                HStack(spacing: 4) {
-                    Text(units.formatWeight(latest.weightKg))
-                        .fontWeight(.semibold)
-                    Text(units.weightUnit)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textSecondary)
-
-                    if let change = rangeChange {
-                        Image(systemName: change < 0 ? "arrow.down.right" : (change > 0 ? "arrow.up.right" : "arrow.right"))
-                            .font(.caption2.bold())
-                            .foregroundColor(changeColor(for: change))
-                    }
-                }
-                .font(.caption)
-                .foregroundColor(.textPrimary)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.backgroundSecondary)
-                .clipShape(Capsule())
-            } else {
-                Text("Tap to log")
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textTertiary)
-            }
+    private var valueChip: some View {
+        let latest = allEntries.last
+        return HStack(spacing: 4) {
+            Text(latest.map { units.formatWeight($0.weightKg) } ?? "")
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(AppPalette.ink)
+            Text(valueChipDetail)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(AppPalette.muted)
         }
+        .lineLimit(1)
+        .fixedSize(horizontal: true, vertical: false)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(AppPalette.optionFill))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(valueChipAccessibility)
+    }
+
+    private var valueChipDetail: String {
+        guard let change = rangeChange else { return units.weightUnit }
+        return "\(units.weightUnit) \(trendArrow(for: change))"
+    }
+
+    private var valueChipAccessibility: String {
+        guard let latest = allEntries.last else { return "No weight logged" }
+        let weight = "\(units.formatWeight(latest.weightKg)) \(units.weightUnit)"
+        guard let change = rangeChange, change != 0 else { return weight }
+        let direction = change < 0 ? "down" : "up"
+        return "\(weight), trending \(direction)"
+    }
+
+    private func trendArrow(for change: Double) -> String {
+        if change < 0 { return "↘" }
+        if change > 0 { return "↗" }
+        return "→"
     }
 
     private func toggleExpanded() {
@@ -250,6 +235,8 @@ struct WeightTrendCard: View {
                             .fontWeight(.medium)
                             .foregroundColor(.textSecondary)
                     }
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
                 }
             }
 
@@ -339,7 +326,7 @@ struct WeightTrendCard: View {
                     .foregroundColor(.textTertiary)
             }
         }
-        .accessibilityLabel("Body weight chart for the selected period")
+        .accessibilityLabel("Weight chart for the selected period")
     }
 
     // MARK: - Empty State

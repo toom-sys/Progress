@@ -85,7 +85,7 @@ struct BodyMapSection: View {
                 .padding(.top, 10)
             }
         }
-        .whiteCardStyle(cornerRadius: 14, padding: 14)
+        .appCard(cornerRadius: 22, padding: 14)
         .onAppear {
             progressService.setModelContext(modelContext)
             Task {
@@ -108,65 +108,26 @@ struct BodyMapSection: View {
     // MARK: - Header
     
     private var header: some View {
-        HStack(spacing: 8) {
-            Button(action: toggleExpanded) {
-                HStack(spacing: 8) {
-                    Image(systemName: "figure.stand")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.brand)
-                        .frame(width: 24, height: 24)
-                        .background(Color.brand.opacity(0.14))
-                        .clipShape(RoundedRectangle(cornerRadius: 7))
-                    
-                    Text("Body Map")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
-                    
-                    Spacer(minLength: 8)
-                    
-                    if !isExpanded {
-                        compactSummary
+        JourneyCardHeader(emoji: "🧍", tint: Color.brand, title: "Body map") {
+            HStack(spacing: 8) {
+                if isExpanded {
+                    Button("Legend") {
+                        showingLegend = true
                     }
+                    .buttonStyle(AppPillButtonStyle(.outline, .compact))
+                    .frame(height: 30)
+                    .accessibilityLabel("Show progress tier legend")
+                    .accessibilityHint("Double tap to view explanations of progress levels")
                 }
+
+                ChevronToggleButton(
+                    isExpanded: isExpanded,
+                    size: 30,
+                    accessibilityLabel: isExpanded ? "Collapse body map" : "Expand body map",
+                    action: toggleExpanded
+                )
             }
-            .buttonStyle(.plain)
-            
-            if isExpanded {
-                legendButton
-            }
-            
-            Button(action: toggleExpanded) {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.textSecondary)
-                    .frame(width: 24, height: 24)
-                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(isExpanded ? "Collapse body map" : "Expand body map")
         }
-    }
-    
-    private var compactSummary: some View {
-        Text(compactSummaryText)
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundColor(.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.backgroundSecondary)
-            .clipShape(Capsule())
-    }
-    
-    private var compactSummaryText: String {
-        guard hasAnyProgress else { return "No activity yet" }
-        let count = activeMuscleCount
-        return count == 1 ? "1 muscle active" : "\(count) muscles active"
-    }
-    
-    private var activeMuscleCount: Int {
-        optimizedProgress.values.filter { $0 != .dormant }.count
     }
     
     private func toggleExpanded() {
@@ -193,6 +154,18 @@ struct BodyMapSection: View {
             onMuscleGroupTap: handleMuscleGroupTap
         )
         .frame(maxWidth: .infinity)
+        .overlay(alignment: .topLeading) {
+            if let leader = topTrainedGroups.first {
+                trainingChip(leader, caption: "on fire")
+                    .offset(x: 6, y: 8)
+            }
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if topTrainedGroups.count > 1 {
+                trainingChip(topTrainedGroups[1], caption: "lighting up")
+                    .offset(x: -6, y: -8)
+            }
+        }
         .clipped()
         .scaleEffect(1.0)
         .animation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0), value: progressService.currentProgress)
@@ -302,27 +275,40 @@ struct BodyMapSection: View {
         !optimizedProgress.isEmpty && 
         optimizedProgress.values.contains { $0 != .dormant }
     }
-    
-    // MARK: - Legend Button
-    
-    private var legendButton: some View {
-        Button(action: {
-            showingLegend = true
-        }) {
-            HStack(spacing: 4) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 13))
-                Text("Legend")
-                    .font(.caption)
+
+    /// Highest training tiers on the map, then the stronger tint. Dormant groups are omitted.
+    private var topTrainedGroups: [MuscleGroup] {
+        optimizedProgress
+            .filter { $0.value != .dormant }
+            .sorted { lhs, rhs in
+                let leftRank = ProgressTier.allCases.firstIndex(of: lhs.value) ?? 0
+                let rightRank = ProgressTier.allCases.firstIndex(of: rhs.value) ?? 0
+                if leftRank != rightRank {
+                    return leftRank > rightRank
+                }
+                let leftOpacity = optimizedOpacity[lhs.key] ?? 0
+                let rightOpacity = optimizedOpacity[rhs.key] ?? 0
+                if leftOpacity != rightOpacity {
+                    return leftOpacity > rightOpacity
+                }
+                return lhs.key.displayName < rhs.key.displayName
             }
-            .foregroundColor(.textSecondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.backgroundSecondary.opacity(0.8))
-            .clipShape(Capsule())
+            .prefix(2)
+            .map(\.key)
+    }
+
+    private func trainingChip(_ group: MuscleGroup, caption: String) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(group.displayName)
+                .font(.system(size: 14, weight: .heavy))
+                .foregroundColor(AppPalette.ink)
+            Text(caption)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(AppPalette.muted)
         }
-        .accessibilityLabel("Show progress tier legend")
-        .accessibilityHint("Double tap to view explanations of progress levels")
+        .appFloatingChip()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Most trained: \(group.displayName)")
     }
     
 }
