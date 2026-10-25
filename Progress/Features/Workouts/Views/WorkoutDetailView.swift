@@ -10,7 +10,6 @@ import SwiftData
 
 struct WorkoutDetailView: View {
     @Environment(\.modelContext) private var modelContext
-    @Environment(\.dismiss) private var dismiss
     @Query private var users: [User]
     
     let workout: Workout
@@ -178,19 +177,10 @@ struct WorkoutDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            NotificationCenter.default.post(name: .showWorkoutDetail, object: nil)
+            WorkoutDetailPresentation.didAppear()
         }
         .onDisappear {
-            // Add a small delay to prevent circular dismissal during navigation transitions
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                // Only post dismissal if we're not in the middle of a deep link navigation
-                if !DeepLinkService.shared.isDeepLinkInProgress {
-                    NotificationCenter.default.post(name: .dismissWorkoutDetail, object: nil)
-                }
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .dismissWorkoutDetail)) { _ in
-            dismiss()
+            WorkoutDetailPresentation.didDisappear()
         }
         .overlay(
             Group {
@@ -560,6 +550,25 @@ struct WorkoutDetailView: View {
         workout.status = .planned
         workout.startedAt = nil
         workout.completedAt = nil
+    }
+}
+
+/// Tracks how many workout screens are visible so a closing screen cannot
+/// tell the tab bar that every workout is gone while another is opening.
+@MainActor
+private enum WorkoutDetailPresentation {
+    private static var visibleCount = 0
+
+    static func didAppear() {
+        visibleCount += 1
+        NotificationCenter.default.post(name: .showWorkoutDetail, object: nil)
+    }
+
+    static func didDisappear() {
+        visibleCount = max(0, visibleCount - 1)
+        guard visibleCount == 0 else { return }
+        guard !DeepLinkService.shared.isDeepLinkInProgress else { return }
+        NotificationCenter.default.post(name: .dismissWorkoutDetail, object: nil)
     }
 }
 
