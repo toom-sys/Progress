@@ -39,10 +39,26 @@ struct WorkoutRowView: View {
 
             Spacer(minLength: 0)
 
-            Image(systemName: "chevron.right")
-                .font(.system(size: 15, weight: .bold))
-                .foregroundColor(AppPalette.muted.opacity(0.7))
-                .accessibilityHidden(true)
+            if workout.isInProgress {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(AppPalette.live)
+                        .frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
+                    Text("In progress")
+                        .font(.system(size: 12, weight: .heavy))
+                }
+                .foregroundColor(AppPalette.liveText)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(AppPalette.tint(AppPalette.live)))
+                .accessibilityLabel("In progress")
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppPalette.muted.opacity(0.7))
+                    .accessibilityHidden(true)
+            }
         }
         .appCard(cornerRadius: 22, padding: 14)
     }

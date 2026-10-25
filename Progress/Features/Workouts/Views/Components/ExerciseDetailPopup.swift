@@ -468,8 +468,10 @@ struct ExerciseDetailPopup: View {
         withAnimation(.easeInOut(duration: 0.2)) {
             if set.isCompleted {
                 set.reset()
+                exercise.workout?.revertToPlannedIfNoSetsTicked()
             } else {
                 set.complete()
+                exercise.workout?.start()
             }
             
             do {

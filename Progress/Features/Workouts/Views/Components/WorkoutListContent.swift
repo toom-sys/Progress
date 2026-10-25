@@ -12,20 +12,21 @@ struct WorkoutListContent: View {
     let workouts: [Workout]
     var plan: TrainingPlan?
     var history: [Workout] = []
+    var activeWorkout: Workout?
     let onDeleteWorkout: (Workout) -> Void
     let onShareWorkout: (Workout) -> Void
-    var onStartPlanWorkout: (Workout) -> Void = { _ in }
+    var onOpenWorkout: (Workout) -> Void = { _ in }
 
     var body: some View {
-        if workouts.isEmpty {
+        if workouts.isEmpty && activeWorkout == nil {
             emptyState
         } else {
             workoutList
         }
     }
 
-    /// Plan card stays above the unchanged empty state when there are no custom workouts.
-    /// Once custom workouts exist, the plan scrolls with them as the first list row.
+    /// Plan card stays above the unchanged empty state when there are no custom workouts
+    /// and nothing is in progress.
     private var emptyState: some View {
         VStack(spacing: 0) {
             if let plan {
@@ -47,70 +48,192 @@ struct WorkoutListContent: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Cards sit in a normal stack, not list rows. A list cell under the live card
+    /// cannot animate its height without fighting the cell above it.
     private var workoutList: some View {
-        List {
-            if let plan {
-                planCard(plan)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 18, trailing: 20))
-                    .listRowSeparator(.hidden)
-                    .listRowBackground(Color.clear)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let activeWorkout {
+                    ActiveWorkoutCard(workout: activeWorkout, onResume: onOpenWorkout)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 18)
+                }
+
+                if let plan {
+                    planCard(plan)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 18)
+                }
+
+                if !workouts.isEmpty {
+                    Text("YOUR WORKOUTS")
+                        .font(.system(size: 13, weight: .heavy))
+                        .tracking(0.4)
+                        .foregroundColor(AppPalette.muted)
+                        .padding(.leading, 24)
+                        .padding(.trailing, 20)
+                        .padding(.bottom, 8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityAddTraits(.isHeader)
+
+                    ForEach(workouts, id: \.id) { workout in
+                        WorkoutSwipeRow(
+                            workout: workout,
+                            onShare: { onShareWorkout(workout) },
+                            onDelete: { onDeleteWorkout(workout) }
+                        )
+                    }
+                }
+
+                Color.clear
+                    .frame(height: 100)
             }
-
-            Text("YOUR WORKOUTS")
-                .font(.system(size: 13, weight: .heavy))
-                .tracking(0.4)
-                .foregroundColor(AppPalette.muted)
-                .padding(.leading, 4)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .accessibilityAddTraits(.isHeader)
-                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-
-            ForEach(workouts, id: \.id) { workout in
-                ZStack {
-                    NavigationLink(destination: WorkoutDetailView(workout: workout)) {
-                        EmptyView()
-                    }
-                    .opacity(0)
-
-                    WorkoutRowView(workout: workout)
-                }
-                .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button {
-                        onShareWorkout(workout)
-                    } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                    }
-                    .tint(Color.brand)
-                }
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                    Button("Delete", role: .destructive) {
-                        onDeleteWorkout(workout)
-                    }
-                }
-            }
-
-            Color.clear
-                .frame(height: 100)
-                .listRowInsets(EdgeInsets())
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
         }
-        .listStyle(.plain)
-        .scrollContentBackground(.hidden)
-        .environment(\.defaultMinListRowHeight, 0)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func planCard(_ plan: TrainingPlan) -> some View {
         TrainingPlanCard(
             plan: plan,
             history: history,
-            onStartWorkout: onStartPlanWorkout
+            activeWorkoutId: activeWorkout?.id,
+            onStartWorkout: onOpenWorkout
         )
+    }
+}
+
+/// Leading share and trailing delete, without putting the row in a list cell.
+private struct WorkoutSwipeRow: View {
+    let workout: Workout
+    let onShare: () -> Void
+    let onDelete: () -> Void
+
+    @State private var offset: CGFloat = 0
+    @State private var dragAxis: Axis?
+    @State private var dragStart: CGFloat = 0
+
+    private let revealWidth: CGFloat = 88
+
+    var body: some View {
+        ZStack {
+            actions
+
+            row
+                .offset(x: offset)
+                .simultaneousGesture(swipeGesture)
+                .overlay {
+                    if offset != 0 {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                settle(to: 0)
+                            }
+                    }
+                }
+        }
+        .accessibilityAction(named: Text("Share"), onShare)
+        .accessibilityAction(named: Text("Delete"), onDelete)
+    }
+
+    private var row: some View {
+        ZStack {
+            NavigationLink(destination: WorkoutDetailView(workout: workout)) {
+                EmptyView()
+            }
+            .opacity(0)
+
+            WorkoutRowView(workout: workout)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var actions: some View {
+        HStack(spacing: 0) {
+            if offset > 0 {
+                swipeButton(
+                    title: "Share",
+                    systemImage: "square.and.arrow.up",
+                    tint: Color.brand,
+                    action: {
+                        settle(to: 0)
+                        onShare()
+                    }
+                )
+                .frame(width: revealWidth)
+                Spacer(minLength: 0)
+            }
+            if offset < 0 {
+                Spacer(minLength: 0)
+                swipeButton(
+                    title: "Delete",
+                    systemImage: "trash",
+                    tint: .red,
+                    action: {
+                        settle(to: 0)
+                        onDelete()
+                    }
+                )
+                .frame(width: revealWidth)
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    private func swipeButton(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: systemImage)
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(tint)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 16, coordinateSpace: .local)
+            .onChanged { value in
+                if dragAxis == nil {
+                    let isHorizontal = abs(value.translation.width) > abs(value.translation.height)
+                    dragAxis = isHorizontal ? .horizontal : .vertical
+                    dragStart = offset
+                }
+                guard dragAxis == .horizontal else { return }
+                let next = dragStart + value.translation.width
+                offset = min(max(next, -revealWidth), revealWidth)
+            }
+            .onEnded { value in
+                let wasHorizontal = dragAxis == .horizontal
+                dragAxis = nil
+                guard wasHorizontal else { return }
+                let next = dragStart + value.translation.width
+                let target: CGFloat
+                if next > revealWidth * 0.45 {
+                    target = revealWidth
+                } else if next < -revealWidth * 0.45 {
+                    target = -revealWidth
+                } else {
+                    target = 0
+                }
+                settle(to: target)
+            }
+    }
+
+    private func settle(to target: CGFloat) {
+        withAnimation(.smooth(duration: 0.2)) {
+            offset = target
+        }
     }
 }
 

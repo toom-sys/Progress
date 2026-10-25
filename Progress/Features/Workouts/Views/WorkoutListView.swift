@@ -56,7 +56,16 @@ struct WorkoutListView: View {
     @State private var shareItems: [Any] = []
     @State private var isShowingShareSheet = false
     @State private var alertInfo: WorkoutAlertInfo?
-    @State private var planWorkoutToOpen: Workout?
+    @State private var workoutToOpen: Workout?
+
+    /// Latest started workout that is still in progress, plan or custom.
+    private var activeWorkout: Workout? {
+        allWorkouts
+            .filter { $0.isInProgress && !$0.isDeleted }
+            .max { lhs, rhs in
+                (lhs.startedAt ?? .distantPast) < (rhs.startedAt ?? .distantPast)
+            }
+    }
 
     var body: some View {
         ZStack {
@@ -77,16 +86,17 @@ struct WorkoutListView: View {
                     workouts: sortedWorkouts,
                     plan: activePlan,
                     history: allWorkouts,
+                    activeWorkout: activeWorkout,
                     onDeleteWorkout: deleteWorkout,
                     onShareWorkout: shareWorkout,
-                    onStartPlanWorkout: { workout in
-                        planWorkoutToOpen = workout
+                    onOpenWorkout: { workout in
+                        workoutToOpen = workout
                     }
                 )
             }
         }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $planWorkoutToOpen) { workout in
+        .navigationDestination(item: $workoutToOpen) { workout in
             WorkoutDetailView(workout: workout)
         }
         .navigationDestination(isPresented: $showingWorkoutHistory) {

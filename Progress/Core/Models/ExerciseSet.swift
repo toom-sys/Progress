@@ -126,17 +126,19 @@ final class ExerciseSet {
     
     // MARK: - Methods
     
-    /// Mark this set as completed
+    /// Mark this set as completed. The first ticked set starts the workout.
     func complete() {
         isCompleted = true
         completedAt = Date()
-        exercise?.completeSet() // Notify exercise to start rest timer
+        exercise?.completeSet()
+        exercise?.workout?.start()
     }
     
-    /// Reset this set to incomplete
+    /// Reset this set to incomplete. Clearing the last tick returns the workout to planned.
     func reset() {
         isCompleted = false
         completedAt = nil
+        exercise?.workout?.revertToPlannedIfNoSetsTicked()
     }
     
     /// Update the set with new values

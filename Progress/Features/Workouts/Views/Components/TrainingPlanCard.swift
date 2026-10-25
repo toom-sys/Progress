@@ -9,9 +9,19 @@ import SwiftData
 struct TrainingPlanCard: View {
     let plan: TrainingPlan
     var history: [Workout] = []
+    var activeWorkoutId: UUID? = nil
     let onStartWorkout: (Workout) -> Void
 
-    @AppStorage("workouts.planCard.expanded") private var isExpanded = true
+    @AppStorage("workouts.planCard.expanded") private var storedExpanded = true
+    /// Session-only override while a workout is in progress. Starts collapsed.
+    @State private var sessionExpanded = false
+
+    private var isExpanded: Bool {
+        if activeWorkoutId != nil {
+            return sessionExpanded
+        }
+        return storedExpanded
+    }
 
     private var activeWorkouts: [Workout] {
         plan.workouts.filter { !$0.isDeleted }
@@ -46,14 +56,27 @@ struct TrainingPlanCard: View {
             }
         }
         .appCard(cornerRadius: 26, padding: 18)
+        .onChange(of: activeWorkoutId) { oldId, _ in
+            guard oldId != nil else { return }
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                sessionExpanded = false
+            }
+        }
     }
 
     @ViewBuilder
     private func planRow(_ workout: Workout) -> some View {
-        if workout.id == orderedWorkouts.first?.id {
+        let isLive = workout.id == activeWorkoutId
+        if activeWorkoutId == nil, workout.id == orderedWorkouts.first?.id {
             UpNextPlanRow(workout: workout, onStart: start)
         } else {
-            PlanWorkoutRow(workout: workout, onStart: { start(workout) })
+            PlanWorkoutRow(
+                workout: workout,
+                isInProgress: isLive,
+                onStart: { start(workout) }
+            )
         }
     }
 
@@ -97,21 +120,49 @@ struct TrainingPlanCard: View {
     private var collapsedPills: some View {
         PillWrapLayout(spacing: 6) {
             ForEach(orderedWorkouts, id: \.id) { workout in
-                let sessionIndex = workout.planSessionIndex ?? 1
-                Text("\(planEmoji(for: workout.name)) \(workout.name) \(sessionIndex)/5")
-                    .font(.system(size: 12, weight: .heavy))
-                    .foregroundColor(AppPalette.ink.opacity(0.75))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(Capsule().fill(AppPalette.optionFill))
-                    .accessibilityLabel("\(workout.name), session \(sessionIndex) of 5")
+                if workout.id == activeWorkoutId {
+                    livePill(for: workout)
+                } else {
+                    restingPill(for: workout)
+                }
             }
         }
     }
 
+    private func restingPill(for workout: Workout) -> some View {
+        let sessionIndex = workout.planSessionIndex ?? 1
+        return Text("\(planEmoji(for: workout.name)) \(workout.name) \(sessionIndex)/5")
+            .font(.system(size: 12, weight: .heavy))
+            .foregroundColor(AppPalette.ink.opacity(0.75))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(AppPalette.optionFill))
+            .accessibilityLabel("\(workout.name), session \(sessionIndex) of 5")
+    }
+
+    private func livePill(for workout: Workout) -> some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(AppPalette.live)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text("\(planEmoji(for: workout.name)) \(workout.name) · live")
+                .font(.system(size: 12, weight: .heavy))
+        }
+        .foregroundColor(AppPalette.liveText)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(AppPalette.tint(AppPalette.live)))
+        .accessibilityLabel("\(workout.name), in progress")
+    }
+
     private func toggleExpanded() {
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-            isExpanded.toggle()
+        withAnimation(.smooth(duration: 0.32)) {
+            if activeWorkoutId != nil {
+                sessionExpanded.toggle()
+            } else {
+                storedExpanded.toggle()
+            }
         }
     }
 
@@ -194,6 +245,7 @@ private struct UpNextPlanRow: View {
 
 private struct PlanWorkoutRow: View {
     let workout: Workout
+    var isInProgress: Bool = false
     let onStart: () -> Void
 
     private var sessionIndex: Int {
@@ -212,6 +264,7 @@ private struct PlanWorkoutRow: View {
                     .font(.appCardTitle)
                     .foregroundColor(AppPalette.ink)
                     .lineLimit(1)
+                    .layoutPriority(1)
 
                 HStack(spacing: 8) {
                     Text("Session \(sessionIndex) of 5")
@@ -222,12 +275,34 @@ private struct PlanWorkoutRow: View {
                 }
             }
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 8)
 
-            Button("Start", action: onStart)
-                .buttonStyle(AppPillButtonStyle(.outline, .compact))
+            if isInProgress {
+                inProgressPill
+            } else {
+                Button("Start", action: onStart)
+                    .buttonStyle(AppPillButtonStyle(.outline, .compact))
+            }
         }
         .appGroupRow(cornerRadius: 20)
+    }
+
+    private var inProgressPill: some View {
+        HStack(spacing: 5) {
+            Circle()
+                .fill(AppPalette.live)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            Text("In progress")
+                .font(.system(size: 12, weight: .heavy))
+                .lineLimit(1)
+        }
+        .foregroundColor(AppPalette.liveText)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(AppPalette.tint(AppPalette.live)))
+        .fixedSize()
+        .accessibilityLabel("In progress")
     }
 }
 

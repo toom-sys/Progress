@@ -170,11 +170,25 @@ final class Workout: Hashable {
     
     // MARK: - Methods
     
-    /// Start the workout
+    /// Start the workout. Later ticks leave the original start time in place.
     func start() {
         guard status == .planned else { return }
         status = .inProgress
         startedAt = Date()
+        updateTimestamp()
+    }
+
+    /// A workout stays in progress only while at least one set is ticked.
+    /// Confirming the completion screen finishes it separately.
+    func revertToPlannedIfNoSetsTicked() {
+        guard status == .inProgress else { return }
+        let hasTickedSet = exercises.contains { exercise in
+            exercise.sets.contains { $0.isCompleted }
+        }
+        guard !hasTickedSet else { return }
+        status = .planned
+        startedAt = nil
+        updateTimestamp()
     }
     
     /// Complete the workout
