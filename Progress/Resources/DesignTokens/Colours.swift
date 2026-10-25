@@ -144,23 +144,26 @@ public extension Color {
     /// Six-tier progress system colors for consistent visual feedback
     /// Used throughout the app for muscle group progress, achievements, and motivation
     
-    /// Dormant state - no recent activity
-    static let progressDormant = Color.gray.opacity(0.3)
+    /// Six-tier pastel palette. Dormant muscles keep the grey artwork of the
+    /// body map illustration; the other tiers tint them with soft colour.
+
+    /// Dormant state - no recent activity (neutral grey, matches the artwork)
+    static let progressDormant = Color(hex: "C9CFD6")
     
-    /// Beginner spark - just getting started
-    static let progressBeginnerSpark = Color.white.opacity(0.8)
+    /// Beginner spark - just getting started (pastel amber)
+    static let progressBeginnerSpark = Color(hex: "FFD97D")
     
-    /// Getting traction - building consistency
-    static let progressGettingTraction = Color.green.opacity(0.6)
+    /// Getting traction - building consistency (pastel green)
+    static let progressGettingTraction = Color(hex: "9FDFA8")
     
-    /// Solid intermediate - regular training established
-    static let progressSolidIntermediate = Color.blue.opacity(0.7)
+    /// Solid intermediate - regular training established (pastel blue)
+    static let progressSolidIntermediate = Color(hex: "8FBBEC")
     
-    /// Advanced - high level training
-    static let progressAdvanced = Color.blue.opacity(0.9)
+    /// Advanced - high level training (pastel indigo)
+    static let progressAdvanced = Color(hex: "9FA4EE")
     
-    /// Athlete tier - elite consistency
-    static let progressAthleteTier = Color.purple.opacity(0.8)
+    /// Athlete tier - elite consistency (pastel purple)
+    static let progressAthleteTier = Color(hex: "C79FE8")
     
     // MARK: - Component-Specific Colors
     

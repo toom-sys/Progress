@@ -449,6 +449,7 @@ struct OnboardingSilhouette: View {
                     .opacity(lit ? 1 : 0.7)
             }
             .frame(width: size.width, height: size.height)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(height: height)
@@ -479,6 +480,7 @@ struct OnboardingSilhouetteThumb: View {
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
             .opacity(0.7)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .accessibilityHidden(true)
     }
 }

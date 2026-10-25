@@ -7,6 +7,22 @@
 
 import Foundation
 import HealthKit
+import Charts
+
+/// A cumulative step sample for charting progress through a day.
+struct StepCumulativePoint: Identifiable, Equatable {
+    enum Day: String, Plottable {
+        case today = "Today"
+        case yesterday = "Yesterday"
+    }
+
+    /// Hours from midnight (0…24).
+    let hour: Double
+    let cumulativeSteps: Int
+    let day: Day
+
+    var id: String { "\(day.rawValue)-\(hour)" }
+}
 
 /// Reads daily step count from Apple Health (HealthKit).
 @MainActor
@@ -17,6 +33,10 @@ final class HealthKitService: ObservableObject {
     // MARK: - Published State
 
     @Published private(set) var todaysSteps: Int = 0
+    /// Yesterday's steps from midnight through the same clock time as now.
+    @Published private(set) var yesterdaysStepsAtSameTime: Int = 0
+    @Published private(set) var todayCumulativeSeries: [StepCumulativePoint] = []
+    @Published private(set) var yesterdayCumulativeSeries: [StepCumulativePoint] = []
     @Published private(set) var isAuthorized: Bool = false
     @Published private(set) var lastErrorMessage: String?
 
@@ -89,7 +109,10 @@ final class HealthKitService: ObservableObject {
         }
 
         do {
-            let steps = try await queryTodaysSteps()
+            let steps = try await queryStepCount(
+                from: Calendar.current.startOfDay(for: Date()),
+                to: Date()
+            )
             todaysSteps = steps
             lastErrorMessage = nil
             return steps
@@ -97,6 +120,60 @@ final class HealthKitService: ObservableObject {
             lastErrorMessage = error.localizedDescription
             print("❌ HealthKit step query failed: \(error)")
             return todaysSteps
+        }
+    }
+
+    /// Fetches today vs yesterday comparison totals and cumulative series for charting.
+    func fetchStepComparison() async {
+        guard isHealthDataAvailable else {
+            clearComparisonData()
+            return
+        }
+
+        let authorized = await requestAuthorizationIfNeeded()
+        guard authorized else {
+            clearComparisonData()
+            return
+        }
+
+        let calendar = Calendar.current
+        let now = Date()
+        let startOfToday = calendar.startOfDay(for: now)
+        guard let startOfYesterday = calendar.date(byAdding: .day, value: -1, to: startOfToday),
+              let yesterdaySameTime = calendar.date(byAdding: .day, value: -1, to: now),
+              let endOfYesterday = calendar.date(byAdding: .day, value: 1, to: startOfYesterday) else {
+            clearComparisonData()
+            return
+        }
+
+        do {
+            async let todayTotal = queryStepCount(from: startOfToday, to: now)
+            async let yesterdaySame = queryStepCount(from: startOfYesterday, to: yesterdaySameTime)
+            async let todayHourly = queryHourlySteps(from: startOfToday, to: now)
+            async let yesterdayHourly = queryHourlySteps(from: startOfYesterday, to: endOfYesterday)
+
+            let (today, yesterday, todayHours, yesterdayHours) = try await (
+                todayTotal, yesterdaySame, todayHourly, yesterdayHourly
+            )
+
+            todaysSteps = today
+            yesterdaysStepsAtSameTime = yesterday
+            todayCumulativeSeries = Self.cumulativeSeries(
+                hourlySteps: todayHours,
+                day: .today,
+                through: now,
+                calendar: calendar
+            )
+            yesterdayCumulativeSeries = Self.cumulativeSeries(
+                hourlySteps: yesterdayHours,
+                day: .yesterday,
+                through: endOfYesterday,
+                calendar: calendar
+            )
+            lastErrorMessage = nil
+        } catch {
+            lastErrorMessage = error.localizedDescription
+            print("❌ HealthKit step comparison query failed: \(error)")
         }
     }
 
@@ -117,7 +194,7 @@ final class HealthKitService: ObservableObject {
 
             Task { @MainActor in
                 guard let self else { return }
-                _ = await self.fetchTodaysStepCount()
+                await self.fetchStepComparison()
                 self.stepUpdateHandler?()
             }
         }
@@ -135,13 +212,17 @@ final class HealthKitService: ObservableObject {
 
     // MARK: - Private Helpers
 
-    private func queryTodaysSteps() async throws -> Int {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfDay = calendar.startOfDay(for: now)
+    private func clearComparisonData() {
+        todaysSteps = 0
+        yesterdaysStepsAtSameTime = 0
+        todayCumulativeSeries = []
+        yesterdayCumulativeSeries = []
+    }
+
+    private func queryStepCount(from start: Date, to end: Date) async throws -> Int {
         let predicate = HKQuery.predicateForSamples(
-            withStart: startOfDay,
-            end: now,
+            withStart: start,
+            end: end,
             options: .strictStartDate
         )
 
@@ -162,5 +243,78 @@ final class HealthKitService: ObservableObject {
 
             healthStore.execute(query)
         }
+    }
+
+    /// Hourly step buckets keyed by the hour's start date.
+    private func queryHourlySteps(from start: Date, to end: Date) async throws -> [(start: Date, steps: Int)] {
+        let calendar = Calendar.current
+        let anchor = calendar.startOfDay(for: start)
+        let interval = DateComponents(hour: 1)
+        let predicate = HKQuery.predicateForSamples(
+            withStart: start,
+            end: end,
+            options: .strictStartDate
+        )
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsCollectionQuery(
+                quantityType: stepType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum,
+                anchorDate: anchor,
+                intervalComponents: interval
+            )
+
+            query.initialResultsHandler = { _, results, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+
+                var buckets: [(start: Date, steps: Int)] = []
+                results?.enumerateStatistics(from: start, to: end) { statistics, _ in
+                    let steps = statistics.sumQuantity()?.doubleValue(for: .count()) ?? 0
+                    buckets.append((statistics.startDate, Int(steps.rounded())))
+                }
+                continuation.resume(returning: buckets)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    /// Builds a midnight-origin cumulative series from hourly buckets.
+    private static func cumulativeSeries(
+        hourlySteps: [(start: Date, steps: Int)],
+        day: StepCumulativePoint.Day,
+        through end: Date,
+        calendar: Calendar
+    ) -> [StepCumulativePoint] {
+        let dayStart: Date
+        if let first = hourlySteps.first {
+            dayStart = calendar.startOfDay(for: first.start)
+        } else {
+            dayStart = calendar.startOfDay(for: end)
+        }
+
+        var points: [StepCumulativePoint] = [
+            StepCumulativePoint(hour: 0, cumulativeSteps: 0, day: day)
+        ]
+        var running = 0
+        let nowHour = max(0, min(24, end.timeIntervalSince(dayStart) / 3600))
+
+        for bucket in hourlySteps.sorted(by: { $0.start < $1.start }) {
+            running += bucket.steps
+            let hourEnd = bucket.start.timeIntervalSince(dayStart) / 3600 + 1
+            let clampedHour = day == .today ? min(hourEnd, nowHour) : min(hourEnd, 24)
+            points.append(StepCumulativePoint(hour: clampedHour, cumulativeSteps: running, day: day))
+        }
+
+        // Ensure today's series ends exactly at the current clock time.
+        if day == .today, points.last?.hour != nowHour {
+            points.append(StepCumulativePoint(hour: nowHour, cumulativeSteps: running, day: day))
+        }
+
+        return points
     }
 }

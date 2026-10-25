@@ -189,6 +189,10 @@ struct FoodDetailView: View {
                     Image(systemName: "camera.fill")
                         .font(.caption)
                         .foregroundColor(.purple)
+                } else if entry.logMethod == .aiPrompt {
+                    Image(systemName: "text.bubble.fill")
+                        .font(.caption)
+                        .foregroundColor(.purple)
                 }
                 
                 Spacer()

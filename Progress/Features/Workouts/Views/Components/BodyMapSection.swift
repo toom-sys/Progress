@@ -63,27 +63,29 @@ struct BodyMapSection: View {
     @State private var cachedOpacity: [MuscleGroup: Double] = [:]
     @State private var lastUpdateTime: Date = Date()
     @State private var showingLegend: Bool = false
+    /// Persisted separately from layout state so UserDefaults writes
+    /// don't interrupt the expand/collapse animation transaction.
+    @AppStorage("journey.bodyMap.expanded") private var storedIsExpanded = false
+    /// Seed from UserDefaults so the first frame matches the persisted state
+    /// (avoids a collapse→expand flash on appear).
+    @State private var isExpanded = UserDefaults.standard.bool(forKey: "journey.bodyMap.expanded")
     
     var body: some View {
-        ZStack {
-            VStack(spacing: 12) {
-                if hasAnyProgress {
-                    bodyMapContainer
-                } else {
-                    emptyStateView
-                }
-            }
+        VStack(alignment: .leading, spacing: 0) {
+            header
             
-            // Legend button overlay at top right of card
-            VStack {
-                HStack {
-                    Spacer()
-                    legendButton
+            if isExpanded {
+                Group {
+                    if hasAnyProgress {
+                        bodyMapContainer
+                    } else {
+                        emptyStateView
+                    }
                 }
-                Spacer()
+                .padding(.top, 10)
             }
         }
-        .whiteCardStyle(cornerRadius: 16, padding: 20)
+        .whiteCardStyle(cornerRadius: 14, padding: 14)
         .onAppear {
             progressService.setModelContext(modelContext)
             Task {
@@ -100,6 +102,83 @@ struct BodyMapSection: View {
         }
         .sheet(isPresented: $showingLegend) {
             ProgressLegendView()
+        }
+    }
+    
+    // MARK: - Header
+    
+    private var header: some View {
+        HStack(spacing: 8) {
+            Button(action: toggleExpanded) {
+                HStack(spacing: 8) {
+                    Image(systemName: "figure.stand")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.brand)
+                        .frame(width: 24, height: 24)
+                        .background(Color.brand.opacity(0.14))
+                        .clipShape(RoundedRectangle(cornerRadius: 7))
+                    
+                    Text("Body Map")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.textPrimary)
+                    
+                    Spacer(minLength: 8)
+                    
+                    if !isExpanded {
+                        compactSummary
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            
+            if isExpanded {
+                legendButton
+            }
+            
+            Button(action: toggleExpanded) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.textSecondary)
+                    .frame(width: 24, height: 24)
+                    .rotationEffect(.degrees(isExpanded ? 180 : 0))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(isExpanded ? "Collapse body map" : "Expand body map")
+        }
+    }
+    
+    private var compactSummary: some View {
+        Text(compactSummaryText)
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(.textSecondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.backgroundSecondary)
+            .clipShape(Capsule())
+    }
+    
+    private var compactSummaryText: String {
+        guard hasAnyProgress else { return "No activity yet" }
+        let count = activeMuscleCount
+        return count == 1 ? "1 muscle active" : "\(count) muscles active"
+    }
+    
+    private var activeMuscleCount: Int {
+        optimizedProgress.values.filter { $0 != .dormant }.count
+    }
+    
+    private func toggleExpanded() {
+        HapticFeedback.workoutButtonTap()
+        let newValue = !isExpanded
+        withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) {
+            isExpanded = newValue
+        }
+        // Persist after the current turn so UserDefaults doesn't
+        // publish inside the animation transaction.
+        DispatchQueue.main.async {
+            storedIsExpanded = newValue
         }
     }
     
@@ -159,7 +238,6 @@ struct BodyMapSection: View {
     
     private var emptyStateView: some View {
         BodyMapEmptyState(variant: bodyMapVariant)
-        .frame(height: 280)
     }
     
     // MARK: - Interaction Handlers
@@ -233,7 +311,7 @@ struct BodyMapSection: View {
         }) {
             HStack(spacing: 4) {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 14))
+                    .font(.system(size: 13))
                 Text("Legend")
                     .font(.caption)
             }

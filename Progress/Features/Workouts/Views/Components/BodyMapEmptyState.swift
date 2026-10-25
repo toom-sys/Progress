@@ -5,34 +5,35 @@ struct BodyMapEmptyState: View {
     var variant: BodyMapVariant = .male
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 12) {
             bodyImage
             
             // Encouraging message
-            VStack(spacing: 12) {
+            VStack(spacing: 6) {
                 Text("Light Up Your Progress")
-                    .font(.title2)
+                    .font(.title3)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                     .multilineTextAlignment(.center)
                 
-                Text("Complete your first workout to see your body map come alive with color. Each muscle group you train will glow brighter as you build consistency.")
-                    .font(.body)
+                Text("Complete a workout to light up your body map.")
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(.horizontal, 32)
-        .padding(.vertical, 24)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
     }
     
     private var bodyImage: some View {
         Image(variant.baseImageName)
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(height: 180)
+            .frame(height: 140)
             .opacity(0.5)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }
 

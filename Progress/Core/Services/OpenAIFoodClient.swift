@@ -19,6 +19,8 @@ struct FoodRecognitionResult {
     let foods: [RecognizedFood]
     let confidence: Double
     let rawResponse: String
+    /// Drink volume in millilitres, when the description includes a beverage.
+    var estimatedWaterMl: Double? = nil
 }
 
 struct RecognizedFood {

@@ -112,13 +112,17 @@ struct BodyMapView: View {
             ZStack {
                 Color.white
 
-                maskedMuscleLayers(in: renderedSize)
-
-                Image(variant.linesImageName)
+                // Full illustration: thin dark outlines with grey muscle
+                // fills. Dormant groups keep this default grey look.
+                Image(variant.baseImageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: renderedSize.width, height: renderedSize.height)
                     .allowsHitTesting(false)
+
+                // Translucent pastel tints over the active muscle groups so
+                // the illustration's outlines and shading stay visible.
+                maskedMuscleLayers(in: renderedSize)
 
                 cardioHeartOverlay(in: renderedSize)
 
@@ -290,29 +294,31 @@ struct BodyMapView: View {
 
     private func getProgressColor(for muscleGroup: MuscleGroup) -> Color {
         let tier = getProgressTier(for: muscleGroup)
-        let opacity = muscleGroupOpacity[muscleGroup] ?? 0.3
+
+        // Dormant groups aren't tinted — the grey base illustration shows
+        // through as the default look.
+        guard tier != .dormant else { return .clear }
+
+        let decay = muscleGroupOpacity[muscleGroup] ?? 0.3
         let animationValue = animationValues[muscleGroup] ?? 1.0
         let pulseValue = pulseAnimations[muscleGroup] ?? false
         let glowValue = glowAnimations[muscleGroup] ?? false
 
-        var baseColor = tier.color
-        var finalOpacity = opacity
+        let baseColor = tier.color
+
+        // Map the decay range (0.3...1.0) onto a strong-but-translucent tint
+        // so pastel colours read clearly over the grey artwork while its thin
+        // outlines and shading stay visible underneath.
+        var finalOpacity = 0.5 + 0.42 * decay
 
         if animationValue != 1.0 {
             finalOpacity *= animationValue
         }
-        if pulseValue {
-            finalOpacity = min(1.0, finalOpacity * 1.4)
-        }
-        if glowValue {
-            finalOpacity = min(1.0, finalOpacity * 1.2)
-            baseColor = baseColor.opacity(0.9)
-        }
-        if tier == .advanced || tier == .athleteTier {
-            finalOpacity = min(1.0, finalOpacity * 1.1)
+        if pulseValue || glowValue {
+            finalOpacity = min(1.0, finalOpacity * 1.15)
         }
 
-        return baseColor.opacity(finalOpacity)
+        return baseColor.opacity(min(finalOpacity, 0.92))
     }
 
     private func handleMuscleGroupTap(_ muscleGroup: MuscleGroup) {
@@ -477,11 +483,11 @@ enum ProgressTier: String, CaseIterable {
     var colorBlindDescription: String {
         switch self {
         case .dormant: return "Grey - Inactive"
-        case .beginnerSpark: return "White - Beginner"
-        case .gettingTraction: return "Light - Building"
-        case .solidIntermediate: return "Medium - Consistent"
-        case .advanced: return "Dark - Advanced"
-        case .athleteTier: return "Bright - Elite"
+        case .beginnerSpark: return "Amber - Beginner"
+        case .gettingTraction: return "Green - Building"
+        case .solidIntermediate: return "Blue - Consistent"
+        case .advanced: return "Indigo - Advanced"
+        case .athleteTier: return "Purple - Elite"
         }
     }
 

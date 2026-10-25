@@ -17,6 +17,7 @@ struct NutritionDashboardView: View {
     @Query private var users: [User]
     @EnvironmentObject private var subscriptionService: SubscriptionService
     @State private var showingCameraAI = false
+    @State private var showingDescribeFood = false
     @State private var showingManualEntry = false
     @State private var showingWaterLog = false
     @State private var selectedDate = Date()
@@ -164,6 +165,10 @@ struct NutritionDashboardView: View {
                     HapticFeedback.workoutButtonTap()
                     showingCameraAI = true
                 }
+                Button("Describe Food", systemImage: "text.bubble.fill") {
+                    HapticFeedback.workoutButtonTap()
+                    showingDescribeFood = true
+                }
                 Button("Enter Manually", systemImage: "pencil") {
                     HapticFeedback.workoutButtonTap()
                     showingManualEntry = true
@@ -180,6 +185,9 @@ struct NutritionDashboardView: View {
         .sheet(isPresented: $showingCameraAI) {
             CameraFoodView()
                 .environmentObject(subscriptionService)
+        }
+        .sheet(isPresented: $showingDescribeFood) {
+            DescribeFoodView(selectedDate: validatedSelectedDate)
         }
         .sheet(isPresented: $showingManualEntry) {
             ManualFoodEntryView()

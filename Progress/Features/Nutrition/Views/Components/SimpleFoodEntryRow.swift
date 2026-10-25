@@ -48,9 +48,13 @@ struct SimpleFoodEntryRow: View {
                             .foregroundColor(.textPrimary)
                             .lineLimit(2)
                         
-                        // AI camera indicator
+                        // AI log indicators
                         if entry.logMethod == .aiCamera {
                             Image(systemName: "camera.fill")
+                                .font(.caption)
+                                .foregroundColor(.purple)
+                        } else if entry.logMethod == .aiPrompt {
+                            Image(systemName: "text.bubble.fill")
                                 .font(.caption)
                                 .foregroundColor(.purple)
                         }

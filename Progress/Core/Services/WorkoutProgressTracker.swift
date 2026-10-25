@@ -21,6 +21,10 @@ class WorkoutProgressTracker: ObservableObject {
 
     /// Today's step count from Apple Health.
     @Published var currentSteps: Int = 0
+    /// Yesterday's steps from midnight through the same clock time as now.
+    @Published var yesterdaysStepsAtSameTime: Int = 0
+    @Published var todayCumulativeSeries: [StepCumulativePoint] = []
+    @Published var yesterdayCumulativeSeries: [StepCumulativePoint] = []
 
     @Published var dailyStepGoal: Int = 10000
     @Published var isHealthKitAvailable: Bool = false
@@ -55,7 +59,7 @@ class WorkoutProgressTracker: ObservableObject {
             _ = await healthKitService.requestAuthorizationIfNeeded()
             healthKitService.startObservingStepUpdates { [weak self] in
                 guard let self else { return }
-                self.currentSteps = self.healthKitService.todaysSteps
+                self.applyStepComparison(from: self.healthKitService)
             }
         }
     }
@@ -147,7 +151,20 @@ class WorkoutProgressTracker: ObservableObject {
 
     func fetchDailySteps() async {
         isHealthKitAvailable = healthKitService.isHealthDataAvailable
-        currentSteps = await healthKitService.fetchTodaysStepCount()
+        await healthKitService.fetchStepComparison()
+        applyStepComparison(from: healthKitService)
+    }
+
+    private func applyStepComparison(from service: HealthKitService) {
+        currentSteps = service.todaysSteps
+        yesterdaysStepsAtSameTime = service.yesterdaysStepsAtSameTime
+        todayCumulativeSeries = service.todayCumulativeSeries
+        yesterdayCumulativeSeries = service.yesterdayCumulativeSeries
+    }
+
+    /// Today minus yesterday-at-same-time. Positive means ahead of yesterday.
+    var stepsDeltaVsYesterday: Int {
+        currentSteps - yesterdaysStepsAtSameTime
     }
 
     // MARK: - Private Helpers

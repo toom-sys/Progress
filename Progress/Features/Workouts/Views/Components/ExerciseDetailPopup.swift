@@ -218,40 +218,55 @@ struct ExerciseDetailPopup: View {
     
     // MARK: - Media Preview
     
+    @ViewBuilder
     private var mediaPreview: some View {
+        let poseFrames = ExerciseImageService.shared.getPoseFrames(for: exercise.name)
+
+        if exercise.isCustom {
+            mediaPlaceholder {
+                Image(systemName: exercise.type.icon)
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(typeColor)
+                Text("Custom Exercise")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+        } else if poseFrames.count > 1 {
+            ExercisePoseCarousel(frames: poseFrames)
+        } else if let single = poseFrames.first {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.white)
+                Image(uiImage: single)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .padding(8)
+            }
+            .frame(height: 168)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.brand, lineWidth: 1)
+            )
+        } else {
+            mediaPlaceholder {
+                Image(systemName: exercise.type.icon)
+                    .font(.system(size: 30, weight: .medium))
+                    .foregroundColor(typeColor)
+                Text("Preview coming soon")
+                    .font(.caption)
+                    .foregroundColor(.textSecondary)
+            }
+        }
+    }
+
+    private func mediaPlaceholder<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 12)
                 .fill(typeColor.opacity(0.1))
-                .frame(height: 110)
-            
-            if exercise.isCustom {
-                VStack(spacing: 6) {
-                    Image(systemName: exercise.type.icon)
-                        .font(.system(size: 30, weight: .medium))
-                        .foregroundColor(typeColor)
-                    
-                    Text("Custom Exercise")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
-            } else if ExerciseImageService.shared.hasSpecificImage(for: exercise.name) {
-                ExerciseImageService.shared.getSwiftUIImage(for: exercise.name)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(maxHeight: 95)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                VStack(spacing: 6) {
-                    Image(systemName: exercise.type.icon)
-                        .font(.system(size: 30, weight: .medium))
-                        .foregroundColor(typeColor)
-                    
-                    Text("Preview coming soon")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
-            }
+            VStack(spacing: 6, content: content)
         }
+        .frame(height: 110)
     }
     
     // MARK: - Sets Title Bar

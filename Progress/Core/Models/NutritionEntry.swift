@@ -364,6 +364,7 @@ enum LogMethod: String, CaseIterable, Codable {
     case search = "search"
     case barcode = "barcode"
     case aiCamera = "ai_camera"
+    case aiPrompt = "ai_prompt"
     case favorite = "favorite"
     case recent = "recent"
     
@@ -373,6 +374,7 @@ enum LogMethod: String, CaseIterable, Codable {
         case .search: return "Food Search"
         case .barcode: return "Barcode Scan"
         case .aiCamera: return "AI Camera"
+        case .aiPrompt: return "Describe Food"
         case .favorite: return "Favorite"
         case .recent: return "Recent"
         }
@@ -384,6 +386,7 @@ enum LogMethod: String, CaseIterable, Codable {
         case .search: return "magnifyingglass"
         case .barcode: return "barcode.viewfinder"
         case .aiCamera: return "camera.fill"
+        case .aiPrompt: return "text.bubble.fill"
         case .favorite: return "heart.fill"
         case .recent: return "clock.fill"
         }
@@ -391,6 +394,6 @@ enum LogMethod: String, CaseIterable, Codable {
     
     /// Whether this method requires AI tier subscription
     var requiresAI: Bool {
-        return self == .aiCamera
+        return self == .aiCamera || self == .aiPrompt
     }
 }
