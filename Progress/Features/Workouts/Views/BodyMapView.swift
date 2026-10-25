@@ -5,6 +5,7 @@
 //  Created by Progress Team
 //
 
+import os
 import SwiftUI
 import UIKit
 
@@ -85,6 +86,8 @@ struct BodyMapView: View {
     @State private var particleEffects: [MuscleGroup: Bool] = [:]
     @State private var breathingAnimation: Bool = false
     @State private var overallGlow: Double = 0.0
+    /// Bumps after background artwork generation so a cache fill redraws the figure.
+    @State private var artworkToken = 0
 
     // MARK: - Initialization
 
@@ -105,12 +108,13 @@ struct BodyMapView: View {
     // MARK: - Body
 
     var body: some View {
-        GeometryReader { geo in
+        let _ = artworkToken
+        let artwork = BodyMapArtwork.cached(baseName: variant.baseImageName)
+
+        return GeometryReader { geo in
             let renderedSize = fittedImageSize(in: geo.size)
             let offsetX = (geo.size.width - renderedSize.width) / 2
             let offsetY = (geo.size.height - renderedSize.height) / 2
-
-            let artwork = BodyMapArtwork.rendered(baseName: variant.baseImageName)
 
             ZStack {
                 // White inside the figure. Clear pixels let the card surface show around it.
@@ -126,15 +130,10 @@ struct BodyMapView: View {
                 // Translucent pastel tints over the active muscle groups.
                 maskedMuscleLayers(in: renderedSize)
 
+                muscleGroupOutlines(in: renderedSize)
+
                 if let artwork {
                     Image(uiImage: artwork.stroke)
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: renderedSize.width, height: renderedSize.height)
-                        .allowsHitTesting(false)
-                } else {
-                    Image(variant.linesImageName)
                         .resizable()
                         .interpolation(.high)
                         .aspectRatio(contentMode: .fit)
@@ -174,8 +173,29 @@ struct BodyMapView: View {
         .scaleEffect(1.0 + (breathingAnimation ? 0.015 : 0.0))
         .shadow(color: Color.blue.opacity(overallGlow * 0.3), radius: overallGlow * 8, x: 0, y: 0)
         .onAppear {
-            initializeAnimations()
             prepareHapticFeedback()
+        }
+        .task(id: variant.baseImageName) {
+            let name = variant.baseImageName
+            let maskNames = Self.maskedGroups.map { variant.maskImageName(for: $0) }
+            let needsArtwork = BodyMapArtwork.cached(baseName: name) == nil
+            let needsOutlines = maskNames.contains { MuscleGroupOutlines.cached(named: $0) == nil }
+            guard needsArtwork || needsOutlines else { return }
+            await Task.detached(priority: .userInitiated) {
+                if needsArtwork {
+                    BodyMapArtwork.render(baseName: name)
+                }
+                for maskName in maskNames {
+                    MuscleGroupOutlines.render(named: maskName)
+                }
+            }.value
+            artworkToken += 1
+        }
+        .task {
+            // A repeating animation started during the tab transition
+            // attaches to that transition and leaves the bar mid-way.
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
             startBreathingAnimation()
         }
         .onChange(of: muscleGroupProgress) { _, newProgress in
@@ -220,6 +240,22 @@ struct BodyMapView: View {
             }
         }
         .frame(width: size.width, height: size.height)
+    }
+
+    private func muscleGroupOutlines(in size: CGSize) -> some View {
+        ZStack {
+            ForEach(Self.maskedGroups, id: \.self) { group in
+                if let outline = MuscleGroupOutlines.cached(named: variant.maskImageName(for: group)) {
+                    Image(uiImage: outline)
+                        .resizable()
+                        .interpolation(.medium)
+                        .frame(width: size.width, height: size.height)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .allowsHitTesting(false)
     }
 
     // MARK: - Pixel Hit Testing
@@ -373,18 +409,6 @@ struct BodyMapView: View {
 
     // MARK: - Animation Methods
 
-    private func initializeAnimations() {
-        for muscleGroup in MuscleGroup.allCases {
-            animationValues[muscleGroup] = 1.0
-            revealAnimations[muscleGroup] = false
-            pulseAnimations[muscleGroup] = false
-            glowAnimations[muscleGroup] = false
-            scaleAnimations[muscleGroup] = 1.0
-            rotationAnimations[muscleGroup] = 0.0
-            particleEffects[muscleGroup] = false
-        }
-    }
-
     private func startBreathingAnimation() {
         withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
             breathingAnimation = true
@@ -525,9 +549,8 @@ enum ProgressTier: String, CaseIterable {
 
 /// White figure with a clear surround and a smooth, even outline.
 /// The backdrop is whatever near-white is connected to the image edge, so the card surface shows through.
-@MainActor
 private enum BodyMapArtwork {
-    struct Images {
+    struct Images: Sendable {
         let fill: UIImage
         let stroke: UIImage
     }
@@ -537,13 +560,28 @@ private enum BodyMapArtwork {
         let y: Int
     }
 
-    private static var cache: [String: Images] = [:]
+    private static let cache = OSAllocatedUnfairLock(initialState: [String: Images]())
 
-    static func rendered(baseName: String) -> Images? {
-        if let cached = cache[baseName] { return cached }
+    static func cached(baseName: String) -> Images? {
+        cache.withLock { $0[baseName] }
+    }
+
+    /// Builds the smoothed figure. Safe to call off the main thread.
+    @discardableResult
+    static func render(baseName: String) -> Images? {
+        if let existing = cached(baseName: baseName) { return existing }
         guard let images = make(baseName: baseName) else { return nil }
-        cache[baseName] = images
-        return images
+        cache.withLock { store in
+            if store[baseName] == nil {
+                store[baseName] = images
+            }
+        }
+        return cached(baseName: baseName)
+    }
+
+    static func prewarm() {
+        render(baseName: BodyMapVariant.male.baseImageName)
+        render(baseName: BodyMapVariant.female.baseImageName)
     }
 
     private static func make(baseName: String) -> Images? {
@@ -905,6 +943,130 @@ private enum BodyMapArtwork {
             current = next
         }
         return current
+    }
+}
+
+enum BodyMapArtworkLoader {
+    /// Generates both figures away from the main thread so the Journey tab transition is not blocked.
+    static func prewarm() async {
+        await Task.detached(priority: .utility) {
+            BodyMapArtwork.prewarm()
+            MuscleGroupOutlines.prewarm()
+        }.value
+    }
+}
+
+/// Thin interior edge of each muscle mask, drawn over the tint.
+private enum MuscleGroupOutlines {
+    private static let groups: [MuscleGroup] = [.chest, .back, .shoulders, .arms, .core, .quads, .posteriorChain]
+    private static let cache = OSAllocatedUnfairLock(initialState: [String: UIImage]())
+
+    static func cached(named name: String) -> UIImage? {
+        cache.withLock { $0[name] }
+    }
+
+    @discardableResult
+    static func render(named name: String) -> UIImage? {
+        if let existing = cached(named: name) { return existing }
+        guard let source = UIImage(named: name)?.cgImage,
+              let image = make(from: source) else { return nil }
+        cache.withLock { store in
+            if store[name] == nil {
+                store[name] = image
+            }
+        }
+        return cached(named: name)
+    }
+
+    static func prewarm() {
+        for variant in [BodyMapVariant.male, BodyMapVariant.female] {
+            for group in groups {
+                render(named: variant.maskImageName(for: group))
+            }
+        }
+    }
+
+    private static func make(from source: CGImage) -> UIImage? {
+        let width = source.width
+        let height = source.height
+        guard width > 2, height > 2 else { return nil }
+        let count = width * height
+        var bytes = [UInt8](repeating: 0, count: count * 4)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let drew = bytes.withUnsafeMutableBytes { raw -> Bool in
+            guard let base = raw.baseAddress,
+                  let context = CGContext(
+                    data: base,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: width * 4,
+                    space: colorSpace,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  ) else { return false }
+            context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard drew else { return nil }
+
+        var inside = [Bool](repeating: false, count: count)
+        for index in 0..<count where bytes[index * 4 + 3] > 128 {
+            inside[index] = true
+        }
+
+        var edge = [Bool](repeating: false, count: count)
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = y * width + x
+                guard inside[index] else { continue }
+                let onBoundary = x == 0 || y == 0 || x == width - 1 || y == height - 1
+                    || inside[index - 1] == false
+                    || inside[index + 1] == false
+                    || inside[index - width] == false
+                    || inside[index + width] == false
+                edge[index] = onBoundary
+            }
+        }
+
+        // One extra pixel inward so the line stays visible once the figure is scaled down.
+        var thick = edge
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = y * width + x
+                guard edge[index] else { continue }
+                if x > 0, inside[index - 1] { thick[index - 1] = true }
+                if x + 1 < width, inside[index + 1] { thick[index + 1] = true }
+                if y > 0, inside[index - width] { thick[index - width] = true }
+                if y + 1 < height, inside[index + width] { thick[index + width] = true }
+            }
+        }
+
+        var outline = [UInt8](repeating: 0, count: count * 4)
+        let alpha: UInt8 = 176
+        let scale = Float(alpha) / 255
+        for index in 0..<count where thick[index] {
+            let offset = index * 4
+            outline[offset] = UInt8(168 * scale)
+            outline[offset + 1] = UInt8(170 * scale)
+            outline[offset + 2] = UInt8(178 * scale)
+            outline[offset + 3] = alpha
+        }
+
+        let image = outline.withUnsafeMutableBytes { raw -> CGImage? in
+            guard let base = raw.baseAddress,
+                  let context = CGContext(
+                    data: base,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: width * 4,
+                    space: colorSpace,
+                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+                  ) else { return nil }
+            return context.makeImage()
+        }
+        guard let image, let copied = image.copy() else { return nil }
+        return UIImage(cgImage: copied, scale: 1, orientation: .up)
     }
 }
 

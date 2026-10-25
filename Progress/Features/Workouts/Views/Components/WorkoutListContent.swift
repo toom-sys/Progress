@@ -14,7 +14,6 @@ struct WorkoutListContent: View {
     var history: [Workout] = []
     var activeWorkout: Workout?
     let onDeleteWorkout: (Workout) -> Void
-    let onShareWorkout: (Workout) -> Void
     var onOpenWorkout: (Workout) -> Void = { _ in }
 
     var body: some View {
@@ -80,7 +79,6 @@ struct WorkoutListContent: View {
                         WorkoutSwipeRow(
                             workout: workout,
                             onOpen: { onOpenWorkout(workout) },
-                            onShare: { onShareWorkout(workout) },
                             onDelete: { onDeleteWorkout(workout) }
                         )
                     }
@@ -103,11 +101,10 @@ struct WorkoutListContent: View {
     }
 }
 
-/// Leading share and trailing delete, without putting the row in a list cell.
+/// Trailing delete sits behind the row and is uncovered by a left swipe.
 private struct WorkoutSwipeRow: View {
     let workout: Workout
     let onOpen: () -> Void
-    let onShare: () -> Void
     let onDelete: () -> Void
 
     @State private var offset: CGFloat = 0
@@ -117,76 +114,55 @@ private struct WorkoutSwipeRow: View {
     private let revealWidth: CGFloat = 88
 
     var body: some View {
-        ZStack {
-            actions
+        ZStack(alignment: .trailing) {
+            if offset < 0 {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { settle(to: 0) }
+            }
 
-            row
-                .offset(x: offset)
+            deleteButton
+                .frame(width: revealWidth)
+                .frame(maxHeight: .infinity)
+                .opacity(offset < 0 ? 1 : 0)
+                .allowsHitTesting(offset < 0)
+
+            WorkoutRowView(workout: workout)
                 .contentShape(Rectangle())
                 .simultaneousGesture(swipeGesture)
+                .offset(x: offset)
+                .allowsHitTesting(offset == 0)
         }
+        // Height comes from the card, so the delete control can't grow past it.
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 6)
         .accessibilityAction(.default, onOpen)
-        .accessibilityAction(named: Text("Share"), onShare)
         .accessibilityAction(named: Text("Delete"), onDelete)
     }
 
-    private var row: some View {
-        WorkoutRowView(workout: workout)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 6)
-    }
-
-    @ViewBuilder
-    private var actions: some View {
-        HStack(spacing: 0) {
-            if offset > 0 {
-                swipeButton(
-                    title: "Share",
-                    systemImage: "square.and.arrow.up",
-                    tint: Color.brand,
-                    action: {
-                        settle(to: 0)
-                        onShare()
-                    }
-                )
-                .frame(width: revealWidth)
-                Spacer(minLength: 0)
-            }
-            if offset < 0 {
-                Spacer(minLength: 0)
-                swipeButton(
-                    title: "Delete",
-                    systemImage: "trash",
-                    tint: .red,
-                    action: {
-                        settle(to: 0)
-                        onDelete()
-                    }
-                )
-                .frame(width: revealWidth)
-            }
-        }
-        .frame(maxHeight: .infinity)
-    }
-
-    private func swipeButton(
-        title: String,
-        systemImage: String,
-        tint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
+    private var deleteButton: some View {
+        Button(action: onDelete) {
             VStack(spacing: 4) {
-                Image(systemName: systemImage)
-                Text(title)
+                Image(systemName: "trash")
+                Text("Delete")
                     .font(.system(size: 12, weight: .semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(tint)
+            .background(Color.red)
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: 0,
+                    bottomLeadingRadius: 0,
+                    bottomTrailingRadius: 22,
+                    topTrailingRadius: 22,
+                    style: .continuous
+                )
+            )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(title)
+        .accessibilityLabel("Delete")
     }
 
     private var swipeGesture: some Gesture {
@@ -202,7 +178,7 @@ private struct WorkoutSwipeRow: View {
                 }
                 guard dragAxis == .horizontal else { return }
                 let next = dragStart + translation.width
-                offset = min(max(next, -revealWidth), revealWidth)
+                offset = min(max(next, -revealWidth), 0)
             }
             .onEnded { value in
                 let translation = value.translation
@@ -219,14 +195,7 @@ private struct WorkoutSwipeRow: View {
                 }
                 guard wasHorizontal else { return }
                 let next = dragStart + translation.width
-                let target: CGFloat
-                if next > revealWidth * 0.45 {
-                    target = revealWidth
-                } else if next < -revealWidth * 0.45 {
-                    target = -revealWidth
-                } else {
-                    target = 0
-                }
+                let target: CGFloat = next < -revealWidth * 0.45 ? -revealWidth : 0
                 settle(to: target)
             }
     }
@@ -242,8 +211,7 @@ private struct WorkoutSwipeRow: View {
     NavigationStack {
         WorkoutListContent(
             workouts: [],
-            onDeleteWorkout: { _ in },
-            onShareWorkout: { _ in }
+            onDeleteWorkout: { _ in }
         )
     }
 }

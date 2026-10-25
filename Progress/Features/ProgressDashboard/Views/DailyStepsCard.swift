@@ -73,10 +73,12 @@ struct DailyStepsCardView: View {
         }
         .appCard(cornerRadius: 22, padding: 14)
         .accessibilityElement(children: .contain)
-        .onAppear {
-            progressTracker.setModelContext(modelContext)
+        .task {
+            progressTracker.setModelContext(modelContext, refreshImmediately: false)
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
             progressTracker.startObservingSteps()
-            Task { await progressTracker.refresh() }
+            await progressTracker.refresh()
         }
         .onDisappear {
             progressTracker.stopObservingSteps()

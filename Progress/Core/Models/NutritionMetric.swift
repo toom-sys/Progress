@@ -162,7 +162,7 @@ enum NutritionMetricType: String, CaseIterable, Codable {
         case .protein: return "fish.fill"
         case .carbohydrates: return "leaf.fill"
         case .fat: return "drop.fill"
-        case .fiber: return "windmill"
+        case .fiber: return "carrot.fill"
         case .sugar: return "cube.fill"
         case .saturatedFat, .transFat: return "drop.triangle.fill"
         case .sodium: return "shippingbox.fill"

@@ -184,8 +184,9 @@ class WorkoutProgressTracker: ObservableObject {
 
     // MARK: - Convenience
 
-    func setModelContext(_ context: ModelContext) {
+    func setModelContext(_ context: ModelContext, refreshImmediately: Bool = true) {
         self.modelContext = context
+        guard refreshImmediately else { return }
         Task { await refresh() }
     }
 

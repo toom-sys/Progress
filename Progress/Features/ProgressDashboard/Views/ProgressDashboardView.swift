@@ -39,8 +39,10 @@ struct ProgressDashboardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            journeyHeader
+        let data = dashboardData
+
+        return VStack(spacing: 0) {
+            journeyHeader(streak: data.currentStreak)
 
             ScrollView {
                 // VStack (not LazyVStack) so height changes animate sibling
@@ -48,7 +50,7 @@ struct ProgressDashboardView: View {
                 VStack(spacing: 12) {
                     DailyStepsCardView()
 
-                    if dashboardData.hasData {
+                    if data.hasData {
                         BodyMapSection()
                     } else {
                         EmptyJourneyCallToAction()
@@ -56,7 +58,7 @@ struct ProgressDashboardView: View {
 
                     WeightTrendCard()
 
-                    AchievementsRowView(dashboardData: dashboardData)
+                    AchievementsRowView(dashboardData: data)
 
                     Color.clear
                         .frame(height: 32)
@@ -73,7 +75,7 @@ struct ProgressDashboardView: View {
         }
     }
 
-    private var journeyHeader: some View {
+    private func journeyHeader(streak: Int) -> some View {
         HStack(spacing: 8) {
             Text("Journey")
                 .font(.appScreenTitle)
@@ -82,7 +84,7 @@ struct ProgressDashboardView: View {
 
             Spacer(minLength: 8)
 
-            Text("🔥 \(dashboardData.currentStreak)")
+            Text("🔥 \(streak)")
                 .font(.system(size: 15, weight: .heavy))
                 .foregroundColor(AppPalette.ink)
                 .frame(height: 36)
@@ -92,7 +94,7 @@ struct ProgressDashboardView: View {
                         .fill(AppPalette.surface)
                         .overlay(Capsule().strokeBorder(AppPalette.line, lineWidth: 1))
                 )
-                .accessibilityLabel("\(dashboardData.currentStreak) day streak")
+                .accessibilityLabel("\(streak) day streak")
 
             Button {
                 showingSettings = true
@@ -639,6 +641,7 @@ struct DashboardData {
     let weightEntries: [BodyWeightEntry]
     let weeklyWorkoutGoal: Int
     let dailyWaterGoal: Double
+    private let metrics: Metrics
 
     var hasData: Bool {
         !workouts.isEmpty || !nutritionEntries.isEmpty
@@ -658,111 +661,144 @@ struct DashboardData {
         self.weightEntries = weightEntries
         self.weeklyWorkoutGoal = weeklyWorkoutGoal
         self.dailyWaterGoal = dailyWaterGoal
+        self.metrics = Metrics(
+            workouts: workouts,
+            nutritionEntries: nutritionEntries,
+            waterEntries: waterEntries,
+            weeklyWorkoutGoal: weeklyWorkoutGoal,
+            dailyWaterGoal: dailyWaterGoal
+        )
     }
 
-    // MARK: - Workout Metrics
-
-    var totalWorkouts: Int {
-        workouts.filter { $0.isCompleted }.count
-    }
-
-    var workoutsThisWeek: Int {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return workouts.filter { workout in
-            workout.isCompleted &&
-            (workout.completedAt ?? Date()) >= weekAgo
-        }.count
-    }
-
+    var totalWorkouts: Int { metrics.totalWorkouts }
+    var workoutsThisWeek: Int { metrics.workoutsThisWeek }
     /// Longest completed workout duration in minutes
-    var longestWorkoutMinutes: Int {
-        workouts.compactMap { workout -> Int? in
-            guard workout.isCompleted, let duration = workout.duration else { return nil }
-            return Int(duration / 60)
-        }.max() ?? 0
-    }
-
+    var longestWorkoutMinutes: Int { metrics.longestWorkoutMinutes }
     /// Completed workouts that belong to a training plan
-    var completedPlanWorkouts: Int {
-        workouts.filter { $0.isCompleted && $0.trainingPlanId != nil }.count
-    }
-
-    // MARK: - Nutrition Metrics
-
-    var totalNutritionEntries: Int {
-        nutritionEntries.count
-    }
-
-    /// Number of foods logged with an uploaded photo (AI camera entries)
-    var foodPhotosLogged: Int {
-        nutritionEntries.filter { $0.imageData != nil }.count
-    }
-
-    var barcodeScans: Int {
-        nutritionEntries.filter { $0.logMethod == .barcode }.count
-    }
-
-    var aiFoodScans: Int {
-        nutritionEntries.filter { $0.logMethod == .aiCamera || $0.logMethod == .aiPrompt }.count
-    }
-
-    // MARK: - Water & Weight Metrics
-
-    var totalWaterLogs: Int {
-        waterEntries.count
-    }
-
+    var completedPlanWorkouts: Int { metrics.completedPlanWorkouts }
+    var totalNutritionEntries: Int { metrics.totalNutritionEntries }
+    /// Foods logged from the camera. Counted by log method so photo bytes stay unloaded.
+    var foodPhotosLogged: Int { metrics.foodPhotosLogged }
+    var barcodeScans: Int { metrics.barcodeScans }
+    var aiFoodScans: Int { metrics.aiFoodScans }
+    var totalWaterLogs: Int { metrics.totalWaterLogs }
     /// Distinct days where total water logged met or exceeded the daily goal
-    var waterGoalDays: Int {
-        let calendar = Calendar.current
-        let totalsByDay = Dictionary(grouping: waterEntries) { entry in
-            calendar.startOfDay(for: entry.loggedAt)
-        }.mapValues { entries in
-            entries.reduce(0.0) { $0 + $1.amount }
-        }
-        return totalsByDay.values.filter { $0 >= dailyWaterGoal }.count
-    }
+    var waterGoalDays: Int { metrics.waterGoalDays }
+    var totalWeightLogs: Int { weightEntries.count }
+    var perfectWeeks: Int { metrics.perfectWeeks }
+    var currentStreak: Int { metrics.currentStreak }
 
-    var totalWeightLogs: Int {
-        weightEntries.count
-    }
+    private struct Metrics {
+        let totalWorkouts: Int
+        let workoutsThisWeek: Int
+        let longestWorkoutMinutes: Int
+        let completedPlanWorkouts: Int
+        let totalNutritionEntries: Int
+        let foodPhotosLogged: Int
+        let barcodeScans: Int
+        let aiFoodScans: Int
+        let totalWaterLogs: Int
+        let waterGoalDays: Int
+        let perfectWeeks: Int
+        let currentStreak: Int
 
-    // MARK: - Achievement & Streak Properties
+        init(
+            workouts: [Workout],
+            nutritionEntries: [NutritionEntry],
+            waterEntries: [WaterEntry],
+            weeklyWorkoutGoal: Int,
+            dailyWaterGoal: Double
+        ) {
+            let calendar = Calendar.current
+            let now = Date()
+            let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) ?? now
 
-    var perfectWeeks: Int {
-        let calendar = Calendar.current
-        return (0..<4).compactMap { calendar.date(byAdding: .weekOfYear, value: -$0, to: Date()) }
-            .filter { weekStart in
-                let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
-                let weekWorkouts = workouts.filter { w in
-                    guard let c = w.completedAt else { return false }
-                    return c >= weekStart && c < weekEnd
-                }.count
-                let weekNutritionDays = Set(nutritionEntries.compactMap { e -> Date? in
-                    guard e.loggedAt >= weekStart && e.loggedAt < weekEnd else { return nil }
-                    return calendar.startOfDay(for: e.loggedAt)
-                }).count
-                return weekWorkouts >= weeklyWorkoutGoal && weekNutritionDays >= 5
-            }.count
-    }
+            var totalWorkouts = 0
+            var workoutsThisWeek = 0
+            var longestWorkoutMinutes = 0
+            var completedPlanWorkouts = 0
+            var activeDays = Set<Date>()
 
-    var currentStreak: Int {
-        let calendar = Calendar.current
-        var streak = 0
-        for dayOffset in 0..<90 {
-            guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
-            let dayStart = calendar.startOfDay(for: day)
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-            let hasWorkout = workouts.contains { w in
-                guard let c = w.completedAt else { return false }
-                return c >= dayStart && c < dayEnd
+            for workout in workouts {
+                if let completedAt = workout.completedAt {
+                    activeDays.insert(calendar.startOfDay(for: completedAt))
+                }
+                guard workout.isCompleted else { continue }
+                totalWorkouts += 1
+                if (workout.completedAt ?? now) >= weekAgo {
+                    workoutsThisWeek += 1
+                }
+                if let duration = workout.duration {
+                    longestWorkoutMinutes = max(longestWorkoutMinutes, Int(duration / 60))
+                }
+                if workout.trainingPlanId != nil {
+                    completedPlanWorkouts += 1
+                }
             }
-            let hasNutrition = nutritionEntries.contains { $0.loggedAt >= dayStart && $0.loggedAt < dayEnd }
-            if hasWorkout || hasNutrition { streak += 1 } else { break }
+
+            var foodPhotosLogged = 0
+            var barcodeScans = 0
+            var aiFoodScans = 0
+            for entry in nutritionEntries {
+                activeDays.insert(calendar.startOfDay(for: entry.loggedAt))
+                switch entry.logMethod {
+                case .aiCamera:
+                    foodPhotosLogged += 1
+                    aiFoodScans += 1
+                case .aiPrompt:
+                    aiFoodScans += 1
+                case .barcode:
+                    barcodeScans += 1
+                case .manual, .search, .favorite, .recent:
+                    break
+                }
+            }
+
+            let totalsByDay = Dictionary(grouping: waterEntries) { entry in
+                calendar.startOfDay(for: entry.loggedAt)
+            }.mapValues { entries in
+                entries.reduce(0.0) { $0 + $1.amount }
+            }
+
+            var streak = 0
+            for dayOffset in 0..<90 {
+                guard let day = calendar.date(byAdding: .day, value: -dayOffset, to: now) else { break }
+                if activeDays.contains(calendar.startOfDay(for: day)) {
+                    streak += 1
+                } else {
+                    break
+                }
+            }
+
+            let completedDates = workouts.compactMap(\.completedAt)
+            let nutritionDates = nutritionEntries.map(\.loggedAt)
+            let perfectWeeks = (0..<4).compactMap { calendar.date(byAdding: .weekOfYear, value: -$0, to: now) }
+                .filter { weekStart in
+                    let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? weekStart
+                    let weekWorkouts = completedDates.filter { $0 >= weekStart && $0 < weekEnd }.count
+                    let weekNutritionDays = Set(nutritionDates.compactMap { date -> Date? in
+                        guard date >= weekStart && date < weekEnd else { return nil }
+                        return calendar.startOfDay(for: date)
+                    }).count
+                    return weekWorkouts >= weeklyWorkoutGoal && weekNutritionDays >= 5
+                }.count
+
+            self.totalWorkouts = totalWorkouts
+            self.workoutsThisWeek = workoutsThisWeek
+            self.longestWorkoutMinutes = longestWorkoutMinutes
+            self.completedPlanWorkouts = completedPlanWorkouts
+            self.totalNutritionEntries = nutritionEntries.count
+            self.foodPhotosLogged = foodPhotosLogged
+            self.barcodeScans = barcodeScans
+            self.aiFoodScans = aiFoodScans
+            self.totalWaterLogs = waterEntries.count
+            self.waterGoalDays = totalsByDay.values.filter { $0 >= dailyWaterGoal }.count
+            self.perfectWeeks = perfectWeeks
+            self.currentStreak = streak
         }
-        return streak
     }
 }
+
 
 // MARK: - Preview
 

@@ -86,16 +86,8 @@ struct BodyMapSection: View {
             }
         }
         .appCard(cornerRadius: 22, padding: 14)
-        .onAppear {
-            progressService.setModelContext(modelContext)
-            Task {
-                await progressService.refreshProgress()
-            }
-        }
-        .onChange(of: workouts) { oldWorkouts, newWorkouts in
-            Task {
-                await progressService.refreshProgress()
-            }
+        .task(id: bodyMapRefreshID) {
+            await refreshBodyMapAfterTransition()
         }
         .onChange(of: progressService.currentProgress) { oldProgress, newProgress in
             // Progress data updated - UI will refresh automatically
@@ -130,6 +122,26 @@ struct BodyMapSection: View {
         }
     }
     
+    /// Changes when workout history changes, so progress refresh restarts and coalesces.
+    private var bodyMapRefreshID: Int {
+        var hasher = Hasher()
+        hasher.combine(workouts.count)
+        for workout in workouts {
+            hasher.combine(workout.persistentModelID)
+            hasher.combine(workout.updatedAt.timeIntervalSinceReferenceDate)
+        }
+        return hasher.finalize()
+    }
+
+    /// Progress recalculation walks every workout on the main actor.
+    /// Waiting out the tab transition keeps that work from freezing the bar animation.
+    private func refreshBodyMapAfterTransition() async {
+        progressService.setModelContext(modelContext)
+        try? await Task.sleep(for: .milliseconds(400))
+        guard !Task.isCancelled else { return }
+        await progressService.refreshProgress()
+    }
+
     private func toggleExpanded() {
         HapticFeedback.workoutButtonTap()
         let newValue = !isExpanded

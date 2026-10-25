@@ -71,6 +71,9 @@ struct MainTabView: View {
                 selectedTab = .workouts
             }
         }
+        .task {
+            await BodyMapArtworkLoader.prewarm()
+        }
     }
     // MARK: - Gate Overlay
 

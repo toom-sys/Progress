@@ -107,19 +107,14 @@ struct NutritionDashboardView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Custom title header
-            HStack {
-                Text("Nutrition")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.textPrimary)
-                    .multilineTextAlignment(.leading)
-                
-                Spacer()
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 16)
-            .padding(.bottom, 24)
+            Text("Nutrition")
+                .font(.appScreenTitle)
+                .tracking(-0.5)
+                .foregroundColor(AppPalette.ink)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
             
             // Day Picker Header
             dayPickerHeader
@@ -137,14 +132,16 @@ struct NutritionDashboardView: View {
                         fatGoal: nutritionGoals.fat
                     )
 
-                    // Meals Section Header
-                    HStack {
-                        Text(isToday ? "Today's Food" : "Food")
-                            .font(.headline)
-                            .foregroundColor(.textPrimary)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(isToday ? "Today's food" : "Food")
+                            .font(.appSectionTitle)
+                            .foregroundColor(AppPalette.ink)
                         Spacer()
+                        Text("\(Int(selectedDateEntries.reduce(0) { $0 + $1.totalCalories })) kcal")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(AppPalette.muted)
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 20)
                     
                     // Food List or empty message
                     if selectedDateEntries.isEmpty {
@@ -153,33 +150,13 @@ struct NutritionDashboardView: View {
                         foodEntriesList
                     }
                 }
-                .padding(.top, 8)
-                .padding(.bottom, 88) // Keep last row clear of the floating add button
+                .padding(.top, 18)
+                .padding(.bottom, 120)
             }
+            .scrollClipDisabled()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AdaptiveGradientBackground())
-        .overlay(alignment: .bottom) {
-            FloatingAddButton {
-                Button("Take Photo (AI)", systemImage: "camera.fill") {
-                    HapticFeedback.workoutButtonTap()
-                    showingCameraAI = true
-                }
-                Button("Describe Food", systemImage: "text.bubble.fill") {
-                    HapticFeedback.workoutButtonTap()
-                    showingDescribeFood = true
-                }
-                Button("Enter Manually", systemImage: "pencil") {
-                    HapticFeedback.workoutButtonTap()
-                    showingManualEntry = true
-                }
-                Button("Log Water", systemImage: "drop.fill") {
-                    HapticFeedback.workoutButtonTap()
-                    showingWaterLog = true
-                }
-            }
-            .padding(.bottom, 8)
-        }
+        .background(AppBackground())
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingCameraAI) {
@@ -199,27 +176,37 @@ struct NutritionDashboardView: View {
     }
     
     private var emptyFoodMessage: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "fork.knife")
-                .font(.system(size: 24, weight: .semibold))
-                .foregroundColor(.green)
-                .frame(width: 52, height: 52)
-                .background(Color.green.opacity(0.12))
-                .clipShape(Circle())
-            
-            Text("No food logged yet")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.textPrimary)
-            
-            Text("Use the + button to add food")
-                .font(.caption)
-                .foregroundColor(.textSecondary)
+        HStack(spacing: 14) {
+            EmojiTile(emoji: "🍽️", size: 56, background: AppPalette.tint(.green))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Log your first meal")
+                    .font(.system(size: 17, weight: .heavy))
+                    .foregroundColor(AppPalette.ink)
+                Text("Snap a photo, describe it or enter it manually.")
+                    .font(.system(size: 14))
+                    .foregroundColor(AppPalette.muted)
+            }
+
+            Spacer(minLength: 0)
+
+            AddFoodMenu(
+                showingCameraAI: $showingCameraAI,
+                showingDescribeFood: $showingDescribeFood,
+                showingManualEntry: $showingManualEntry,
+                showingWaterLog: $showingWaterLog
+            ) {
+                Image(systemName: "plus")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(AppPalette.onInk)
+                    .frame(width: 48, height: 48)
+                    .background(Circle().fill(AppPalette.ink))
+                    .shadow(color: Color.black.opacity(0.25), radius: 8, y: 6)
+            }
+            .accessibilityLabel("Log food")
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .whiteCardStyle(cornerRadius: 16, padding: 20)
-        .padding(.horizontal, 24)
+        .appCard(cornerRadius: 24, padding: 20)
+        .padding(.horizontal, 20)
     }
     
     private var isToday: Bool {
@@ -227,7 +214,9 @@ struct NutritionDashboardView: View {
     }
     
     private var foodEntriesList: some View {
-        LazyVStack(spacing: 12) {
+        LazyVStack(spacing: 20) {
+            logFoodButton
+
             ForEach(selectedDateEntries) { entry in
                 SwipeableNutritionRow(
                     entry: entry,
@@ -237,7 +226,41 @@ struct NutritionDashboardView: View {
                 )
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
+    }
+
+    private var logFoodButton: some View {
+        AddFoodMenu(
+            showingCameraAI: $showingCameraAI,
+            showingDescribeFood: $showingDescribeFood,
+            showingManualEntry: $showingManualEntry,
+            showingWaterLog: $showingWaterLog
+        ) {
+            HStack(spacing: 10) {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(AppPalette.onInk)
+                    .frame(width: 32, height: 32)
+                    .background(Circle().fill(AppPalette.ink))
+                Text("Log food")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppPalette.ink)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 56)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppPalette.surface.opacity(0.6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(
+                        AppPalette.muted.opacity(0.5),
+                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                    )
+            )
+        }
+        .accessibilityLabel("Log food")
     }
     
     private var dayPickerHeader: some View {
@@ -257,7 +280,7 @@ struct NutritionDashboardView: View {
             .offset(x: -pageWidth + weekDragOffset)
             .gesture(weekDragGesture(pageWidth: pageWidth))
         }
-        .frame(height: 74)
+        .frame(height: 86)
         .clipped()
     }
     
@@ -279,7 +302,7 @@ struct NutritionDashboardView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 14)
         .padding(.vertical, 12)
     }
     
@@ -396,6 +419,38 @@ struct NutritionDashboardView: View {
             } catch {
                 modelContext.insert(entry)
             }
+        }
+    }
+}
+
+/// The four ways to log food. Both the empty state and the list button use this menu.
+private struct AddFoodMenu<Label: View>: View {
+    @Binding var showingCameraAI: Bool
+    @Binding var showingDescribeFood: Bool
+    @Binding var showingManualEntry: Bool
+    @Binding var showingWaterLog: Bool
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        Menu {
+            Button("Take Photo (AI)", systemImage: "camera.fill") {
+                HapticFeedback.workoutButtonTap()
+                showingCameraAI = true
+            }
+            Button("Describe Food", systemImage: "text.bubble.fill") {
+                HapticFeedback.workoutButtonTap()
+                showingDescribeFood = true
+            }
+            Button("Enter Manually", systemImage: "pencil") {
+                HapticFeedback.workoutButtonTap()
+                showingManualEntry = true
+            }
+            Button("Log Water", systemImage: "drop.fill") {
+                HapticFeedback.workoutButtonTap()
+                showingWaterLog = true
+            }
+        } label: {
+            label()
         }
     }
 }

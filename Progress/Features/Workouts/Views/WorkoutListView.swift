@@ -8,31 +8,6 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Share Sheet Representable
-
-private struct ShareSheetView: UIViewControllerRepresentable {
-    let items: [Any]
-    var onComplete: ((UIActivity.ActivityType?, Bool) -> Void)?
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        controller.completionWithItemsHandler = { activityType, completed, _, _ in
-            onComplete?(activityType, completed)
-        }
-        return controller
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
-// MARK: - Alert Info
-
-private struct WorkoutAlertInfo: Identifiable {
-    let id = UUID()
-    let title: String
-    let message: String
-}
-
 // MARK: - WorkoutListView
 
 struct WorkoutListView: View {
@@ -53,9 +28,6 @@ struct WorkoutListView: View {
     @State private var showingCreateWorkout = false
     @AppStorage("workoutSortOption") private var sortOption: WorkoutSortOption = .dateCreated
     @State private var showingWorkoutHistory = false
-    @State private var shareItems: [Any] = []
-    @State private var isShowingShareSheet = false
-    @State private var alertInfo: WorkoutAlertInfo?
     @State private var workoutToOpen: Workout?
 
     /// Latest started workout that is still in progress, plan or custom.
@@ -88,7 +60,6 @@ struct WorkoutListView: View {
                     history: allWorkouts,
                     activeWorkout: activeWorkout,
                     onDeleteWorkout: deleteWorkout,
-                    onShareWorkout: shareWorkout,
                     onOpenWorkout: { workout in
                         workoutToOpen = workout
                     }
@@ -107,23 +78,6 @@ struct WorkoutListView: View {
             // attach `.animation(_:value:)` here or the whole list re-animates.
             WorkoutListOverlays(showingCreateWorkout: $showingCreateWorkout)
                 .environment(\.modelContext, modelContext)
-        }
-        .sheet(isPresented: $isShowingShareSheet) {
-            ShareSheetView(items: shareItems) { activityType, completed in
-                guard completed else { return }
-                alertInfo = WorkoutAlertInfo(
-                    title: "Shared Successfully!",
-                    message: shareSuccessMessage(for: activityType)
-                )
-            }
-            .presentationDetents([.medium, .large])
-        }
-        .alert(item: $alertInfo) { info in
-            Alert(
-                title: Text(info.title),
-                message: Text(info.message),
-                dismissButton: .default(Text("OK"))
-            )
         }
     }
 
@@ -149,48 +103,6 @@ struct WorkoutListView: View {
     private func deleteWorkout(_ workout: Workout) {
         workout.softDelete()
         try? modelContext.save()
-    }
-
-    private func shareWorkout(_ workout: Workout) {
-        guard WorkoutURLGenerator.canShareWorkout(workout) else {
-            let message = WorkoutURLGenerator.getSharingError(for: workout) ?? "This workout cannot be shared."
-            alertInfo = WorkoutAlertInfo(title: "Cannot Share Workout", message: message)
-            return
-        }
-
-        do {
-            let shareableURL = try WorkoutURLGenerator.generateShareableURL(for: workout)
-            let appStoreURL = "https://apps.apple.com/app/progress-fitness-tracker/id123456789"
-            let message = """
-            Check out my "\(workout.name)" workout! 💪
-
-            Get the Progress app to import this workout:
-            \(appStoreURL)
-            """
-            shareItems = [message, URL(string: shareableURL) as Any].compactMap { $0 }
-            isShowingShareSheet = true
-        } catch {
-            let message = (error as? WorkoutURLGenerator.WorkoutSharingError)?.errorDescription ?? error.localizedDescription
-            alertInfo = WorkoutAlertInfo(title: "Sharing Failed", message: message)
-        }
-    }
-
-    private func shareSuccessMessage(for activityType: UIActivity.ActivityType?) -> String {
-        guard let activityType else {
-            return "Workout shared successfully! 🎉\n\nRecipients can tap the link to get the Progress app and import your workout."
-        }
-        switch activityType {
-        case .message:
-            return "Workout shared via Messages! 📱\n\nRecipients can tap the link to get the Progress app and import your workout."
-        case .mail:
-            return "Workout shared via Mail! 📧\n\nRecipients can tap the link to get the Progress app and import your workout."
-        case .airDrop:
-            return "Workout shared via AirDrop! 📡\n\nThe recipient can tap the link to import your workout."
-        case .copyToPasteboard:
-            return "Workout link copied to clipboard! 📋\n\nYou can now paste it anywhere to share your workout."
-        default:
-            return "Workout shared successfully! 🎉\n\nRecipients can tap the link to get the Progress app and import your workout."
-        }
     }
 }
 

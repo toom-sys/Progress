@@ -104,7 +104,9 @@ struct WeightTrendCard: View {
         .sheet(isPresented: $showingLogSheet) {
             WeightLogSheet()
         }
-        .onAppear {
+        .task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
             seedInitialEntryFromProfileIfNeeded()
         }
     }

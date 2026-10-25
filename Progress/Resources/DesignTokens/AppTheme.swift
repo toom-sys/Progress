@@ -72,7 +72,7 @@ extension View {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .strokeBorder(AppPalette.line, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 8)
+            .shadow(color: Color.black.opacity(0.045), radius: 16, x: 0, y: 2)
     }
 
     func appGroupRow(cornerRadius: CGFloat = 20) -> some View {

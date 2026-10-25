@@ -13,143 +13,76 @@ import ImageIO
 struct SimpleFoodEntryRow: View {
     let entry: NutritionEntry
     
-    private static let thumbnailSide: CGFloat = 50
-    
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        return formatter
-    }()
-    
+    private static let thumbnailSide: CGFloat = 46
+
     @State private var thumbnail: UIImage?
     
+    private var detailLine: String {
+        if entry.quantity != 1.0 {
+            return "\(String(format: "%.2g", entry.quantity)) × \(entry.servingSize)"
+        }
+        return entry.servingSize
+    }
+
     var body: some View {
-        VStack(spacing: 16) {
-            // Header row with food name and time
-            HStack {
-                // Captured image for AI camera entries
-                if let thumbnail {
-                    Image(uiImage: thumbnail)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: Self.thumbnailSide, height: Self.thumbnailSide)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                }
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(entry.foodName)
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.textPrimary)
-                            .lineLimit(2)
-                        
-                        // AI log indicators
-                        if entry.logMethod == .aiCamera {
-                            Image(systemName: "camera.fill")
-                                .font(.caption)
-                                .foregroundColor(.purple)
-                        } else if entry.logMethod == .aiPrompt {
-                            Image(systemName: "text.bubble.fill")
-                                .font(.caption)
-                                .foregroundColor(.purple)
-                        }
-                    }
-                    
-                    HStack(spacing: 8) {
-                        if entry.quantity != 1.0 {
-                            Text("\(String(format: "%.2g", entry.quantity)) × \(entry.servingSize)")
-                                .font(.subheadline)
-                                .foregroundColor(.textSecondary)
-                        } else {
-                            Text(entry.servingSize)
-                                .font(.subheadline)
-                                .foregroundColor(.textSecondary)
-                        }
-                        
-                        if entry.isVerified {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.caption)
-                                .foregroundColor(.green)
-                        }
-                        
-                        if let brandName = entry.brandName {
-                            Text("• \(brandName)")
-                                .font(.caption)
-                                .foregroundColor(.textTertiary)
-                        }
-                    }
-                }
-                
-                Spacer()
-                
-                if !entry.isPending {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(Self.timeFormatter.string(from: entry.loggedAt))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.textSecondary)
-                        
-                        HStack(spacing: 4) {
-                            Image(systemName: "flame.fill")
-                                .font(.caption2)
-                                .foregroundColor(.orange)
-                            Text("\(Int(entry.totalCalories))")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.orange)
-                        }
+        HStack(spacing: 12) {
+            thumbnailView
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.foodName)
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(AppPalette.ink)
+                    .lineLimit(2)
+
+                if entry.isPending {
+                    Text("Analyzing photo...")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppPalette.muted)
+                } else {
+                    Text(detailLine)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppPalette.muted)
+                        .lineLimit(1)
+
+                    if entry.logMethod == .aiCamera {
+                        Text("📸 logged from photo")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(AppPalette.liveText)
                     }
                 }
             }
-            
-            // Macros row or loading indicator
+
+            Spacer(minLength: 0)
+
             if entry.isPending {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                    Text("Analyzing photo...")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    Spacer()
-                }
+                ProgressView()
             } else {
-                HStack(spacing: 20) {
-                    MacroMiniCard(
-                        value: entry.totalProtein,
-                        label: "Protein",
-                        unit: "g",
-                        color: .red,
-                        icon: "fish.fill"
-                    )
-                    
-                    MacroMiniCard(
-                        value: entry.totalCarbohydrates,
-                        label: "Carbs",
-                        unit: "g",
-                        color: .orange,
-                        icon: "leaf.fill"
-                    )
-                    
-                    MacroMiniCard(
-                        value: entry.totalFat,
-                        label: "Fat",
-                        unit: "g",
-                        color: .blue,
-                        icon: "drop.fill"
-                    )
-                    
-                    Spacer()
-                }
+                Text("\(Int(entry.totalCalories))")
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(AppPalette.ink)
+                    .lineLimit(1)
             }
         }
-        .whiteCardStyleWithBorder(cornerRadius: 16)
+        .appCard(cornerRadius: 20, padding: 12)
         .task(id: entry.id) {
             loadThumbnail()
+        }
+    }
+
+    @ViewBuilder
+    private var thumbnailView: some View {
+        if let thumbnail {
+            Image(uiImage: thumbnail)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: Self.thumbnailSide, height: Self.thumbnailSide)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        } else if entry.imageData != nil {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(AppPalette.optionFill)
+                .frame(width: Self.thumbnailSide, height: Self.thumbnailSide)
+        } else {
+            EmojiTile(emoji: "🍽️", size: 46, background: AppPalette.tint(.green))
         }
     }
     

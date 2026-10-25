@@ -34,26 +34,27 @@ struct DayPickerCard: View {
         Button(action: onTap) {
             VStack(spacing: 2) {
                 Text(dayFormatter.string(from: date))
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundColor(isSelected ? .white : .textSecondary)
-                
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(isSelected ? AppPalette.onInk.opacity(0.75) : AppPalette.muted)
+
                 Text(dayNumberFormatter.string(from: date))
-                    .font(.headline)
-                    .fontWeight(.bold)
-                    .foregroundColor(isSelected ? .white : .textPrimary)
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundColor(isSelected ? AppPalette.onInk : AppPalette.ink)
+
+                Circle()
+                    .fill(isToday && !isSelected ? Color.brand : Color.clear)
+                    .frame(width: 5, height: 5)
             }
-            .frame(height: 50)
+            .frame(height: 62)
             .frame(maxWidth: .infinity)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? Color.primary : (isToday ? Color.primary.opacity(0.1) : Color.clear))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(isToday && !isSelected ? Color.primary : Color.clear, lineWidth: 2)
-                    )
-            )
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(AppPalette.ink)
+                        .shadow(color: Color.black.opacity(0.22), radius: 8, y: 6)
+                }
+            }
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
 }

@@ -15,194 +15,107 @@ struct MuscleGroupProgressCard: View {
     @State private var trendPercentage: Double = 0
     @State private var workoutCount: Int = 0
     @State private var isLoading = true
-    
-    // Enhanced animation state
-    @State private var headerScale: Double = 0.8
-    @State private var progressRingScale: Double = 0.0
-    @State private var contentOpacity: Double = 0.0
-    @State private var slideOffset: CGFloat = 50
-    
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with muscle group info
-            headerSection
-            
-            // Progress visualization
-            progressSection
-            
-            // Recent workouts
-            if !recentWorkouts.isEmpty {
-                recentWorkoutsSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                headerSection
+                progressSection
+
+                if !recentWorkouts.isEmpty {
+                    recentWorkoutsSection
+                }
+
+                motivationalSection
             }
-            
-            // Motivational message
-            motivationalSection
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 28)
         }
-        .elevatedCardStyle(cornerRadius: 20, padding: 0)
-        .scaleEffect(headerScale)
-        .opacity(contentOpacity)
-        .offset(y: slideOffset)
+        .background(AppBackground())
         .onAppear {
             loadProgressData()
-            startEntranceAnimation()
         }
     }
-    
+
     // MARK: - Header Section
-    
+
     private var headerSection: some View {
-        HStack {
-            // Enhanced muscle group icon and name
-            HStack(spacing: 16) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                gradient: Gradient(colors: [
-                                    progress.color.opacity(0.3),
-                                    progress.color.opacity(0.1)
-                                ]),
-                                center: .center,
-                                startRadius: 5,
-                                endRadius: 20
-                            )
-                        )
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: muscleGroup.icon)
-                        .font(.title2)
-                        .foregroundColor(progress.color)
-                        .fontWeight(.semibold)
-                }
-                .scaleEffect(headerScale)
-                .animation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0), value: headerScale)
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(muscleGroup.displayName)
-                        .font(.title3)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                    
-                    Text(progress.displayName)
-                        .font(.subheadline)
-                        .foregroundColor(progress.color)
-                        .fontWeight(.medium)
-                }
+        HStack(alignment: .center, spacing: 12) {
+            ZStack {
+                Circle()
+                    .fill(AppPalette.tint(progress.color))
+                    .frame(width: 46, height: 46)
+                Image(systemName: muscleGroup.icon)
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(progress.color)
             }
-            
-            Spacer()
-            
-            // Enhanced progress tier badge
-            enhancedProgressBadge
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(muscleGroup.displayName)
+                    .font(.appSectionTitle)
+                    .foregroundStyle(AppPalette.ink)
+                    .lineLimit(1)
+                Text(progress.description)
+                    .font(.appSubtitle)
+                    .foregroundStyle(AppPalette.muted)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(progress.displayName)
+                .font(.system(size: 12, weight: .heavy))
+                .foregroundStyle(progress.color)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Capsule().fill(AppPalette.tint(progress.color)))
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 20)
     }
-    
-    private var enhancedProgressBadge: some View {
-        Text(progress.displayName.uppercased())
-            .font(.caption2)
-            .fontWeight(.bold)
-            .foregroundColor(.white)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        progress.color,
-                        progress.color.opacity(0.8)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(Capsule())
-            .shadow(color: progress.color.opacity(0.4), radius: 4, x: 0, y: 2)
-            .scaleEffect(headerScale)
-            .animation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0), value: headerScale)
-    }
-    
+
     // MARK: - Progress Section
-    
+
     private var progressSection: some View {
-        HStack(spacing: 24) {
-            // Progress Circle Area
-            VStack(spacing: 8) {
-                ZStack {
-                    // Background ring
-                    Circle()
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 10)
-                        .frame(width: 100, height: 100)
-                    
-                    // Glow effect ring
-                    Circle()
-                        .stroke(progress.color.opacity(0.3), lineWidth: 12)
-                        .frame(width: 100, height: 100)
-                        .blur(radius: 4)
-                    
-                    // Main progress ring
-                    Circle()
-                        .trim(from: 0, to: progressPercentage)
-                        .stroke(
-                            LinearGradient(
-                                gradient: Gradient(colors: [
-                                    progress.color,
-                                    progress.color.opacity(0.7)
-                                ]),
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                        )
-                        .frame(width: 100, height: 100)
-                        .rotationEffect(.degrees(-90))
-                        .scaleEffect(progressRingScale)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.6, blendDuration: 0), value: progressRingScale)
-                        .animation(.easeInOut(duration: 1.5), value: progressPercentage)
-                    
-                    // Center content
-                    VStack(spacing: 3) {
-                        Text("\(Int(progressPercentage * 100))%")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.primary)
-                            .contentTransition(.numericText())
-                            .animation(.easeInOut(duration: 1.0), value: progressPercentage)
-                        
-                        Text("PROGRESS")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
-                            .fontWeight(.semibold)
-                            .tracking(1)
-                    }
-                    .scaleEffect(progressRingScale * 0.9)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.6, blendDuration: 0).delay(0.2), value: progressRingScale)
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                Circle()
+                    .stroke(AppPalette.line, lineWidth: 8)
+                    .frame(width: 84, height: 84)
+
+                Circle()
+                    .trim(from: 0, to: progressPercentage)
+                    .stroke(progress.color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .frame(width: 84, height: 84)
+                    .rotationEffect(.degrees(-90))
+
+                Text("\(Int(progressPercentage * 100))%")
+                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppPalette.ink)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(workoutCount == 1 ? "1 workout" : "\(workoutCount) workouts")
+                    .font(.system(size: 16, weight: .heavy))
+                    .foregroundStyle(AppPalette.ink)
+
+                HStack(spacing: 6) {
+                    Image(systemName: trendIcon)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(trendColor)
+                    Text(trendMessage)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppPalette.ink)
+                        .lineLimit(2)
                 }
-                
-                Text("\(workoutCount) workouts completed")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+
+                Text("Compared with your 30-day average")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppPalette.muted)
             }
-            
-            // Trend Arrow Area
-            VStack(spacing: 8) {
-                Image(systemName: trendPercentage == 0 ? "arrow.right" : trendIcon)
-                    .foregroundColor(trendPercentage == 0 ? .gray : trendColor)
-                    .font(.largeTitle)
-                    .fontWeight(.medium)
-                
-                Text(trendMessage)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                
-                Text("vs 30-day avg")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
+
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 16)
+        .appCard(cornerRadius: 22, padding: 16)
     }
     
     private var progressPercentage: Double {
@@ -259,11 +172,11 @@ struct MuscleGroupProgressCard: View {
     
     private var trendColor: Color {
         if trendPercentage > 10 {
-            return .green
+            return AppPalette.live
         } else if trendPercentage < -10 {
-            return .orange
+            return Color(hex: "E07A3D")
         } else {
-            return .blue
+            return AppPalette.muted
         }
     }
     
@@ -281,92 +194,76 @@ struct MuscleGroupProgressCard: View {
     // MARK: - Recent Workouts Section
     
     private var recentWorkoutsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Divider()
-                .padding(.horizontal, 20)
-            
-            HStack {
-                Text("Recent Workouts")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.primary)
-                
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Recent")
+                    .font(.appCardTitle)
+                    .foregroundStyle(AppPalette.ink)
                 Spacer()
-                
                 Text("\(recentWorkouts.count) this week")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppPalette.muted)
             }
-            .padding(.horizontal, 20)
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(spacing: 10) {
                     ForEach(recentWorkouts.prefix(5), id: \.id) { workout in
                         recentWorkoutCard(workout)
                     }
                 }
-                .padding(.horizontal, 20)
             }
         }
-        .padding(.bottom, 16)
     }
-    
+
     private func recentWorkoutCard(_ workout: Workout) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(workout.name)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(.primary)
+                .font(.system(size: 13, weight: .heavy))
+                .foregroundStyle(AppPalette.ink)
                 .lineLimit(1)
-            
+
             if let completedAt = workout.completedAt {
                 Text(RelativeDateTimeFormatter().localizedString(for: completedAt, relativeTo: Date()))
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AppPalette.muted)
             }
-            
-            // Exercise count for this muscle group
+
             let exerciseCount = workout.exercises.filter { exercise in
                 exercise.primaryMuscleGroup == muscleGroup ||
                 exercise.secondaryMuscleGroupsDecoded.keys.contains(muscleGroup)
             }.count
-            
+
             if exerciseCount > 0 {
                 Text("\(exerciseCount) exercises")
-                    .font(.caption2)
-                    .foregroundColor(progress.color)
-                    .fontWeight(.medium)
+                    .font(.system(size: 11, weight: .heavy))
+                    .foregroundStyle(progress.color)
             }
         }
         .padding(12)
-        .frame(width: 120)
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
+        .frame(width: 148, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppPalette.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(AppPalette.line, lineWidth: 1)
+        )
     }
-    
+
     // MARK: - Motivational Section
-    
+
     private var motivationalSection: some View {
-        VStack(spacing: 8) {
-            Divider()
-                .padding(.horizontal, 20)
-            
-            HStack {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.yellow)
-                    .font(.title3)
-                
-                Text(motivationalMessage)
-                    .font(.subheadline)
-                    .foregroundColor(.primary)
-                    .multilineTextAlignment(.leading)
-                
-                Spacer()
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .padding(.bottom, 8) // Extra bottom padding since this is now the last section
+        HStack(alignment: .top, spacing: 10) {
+            Text("✨")
+                .font(.system(size: 18))
+            Text(motivationalMessage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
+        .appCard(cornerRadius: 22, padding: 16)
     }
     
     private var motivationalMessage: String {
@@ -411,24 +308,6 @@ struct MuscleGroupProgressCard: View {
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-        }
-    }
-    
-    // MARK: - Animation Methods
-    
-    private func startEntranceAnimation() {
-        // Staggered entrance animation
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)) {
-            headerScale = 1.0
-            contentOpacity = 1.0
-            slideOffset = 0
-        }
-        
-        // Progress ring animation with delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(.spring(response: 0.8, dampingFraction: 0.6, blendDuration: 0)) {
-                progressRingScale = 1.0
-            }
         }
     }
     
@@ -583,6 +462,5 @@ extension MuscleGroupProgressCard {
         opacity: 0.8,
         onDismiss: {}
     )
-    .padding()
-    .background(Color(.systemGray6))
+    .background(AppBackground())
 }

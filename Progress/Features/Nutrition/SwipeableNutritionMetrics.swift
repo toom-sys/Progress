@@ -7,6 +7,11 @@
 
 import SwiftUI
 
+enum NutritionCardMetrics {
+    /// Shared height so calories, water, and the macro cards line up.
+    static let height: CGFloat = 158
+}
+
 struct SwipeableNutritionMetrics: View {
     let nutritionEntries: [NutritionEntry]
     var totalWater: Double = 0
@@ -65,32 +70,31 @@ struct SwipeableNutritionMetrics: View {
                     .tag(1)
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            // Fixed height for consistent layout; includes the vertical padding
-            // each page adds so card shadows aren't clipped by the TabView bounds.
-            .frame(height: 304)
+            // Room around the cards so the softer shadow fades out
+            // before the page view clips it.
+            .frame(height: 408)
             
             // Bottom controls
             HStack {
                 Spacer()
                 
-                // Page dots (centered)
                 HStack(spacing: 8) {
                     ForEach(0..<2, id: \.self) { index in
-                        Circle()
-                            .fill(selectedPage == index ? Color.primary : Color.primary.opacity(0.3))
-                            .frame(width: 8, height: 8)
-                            .animation(.easeInOut(duration: 0.2), value: selectedPage)
+                        Capsule()
+                            .fill(selectedPage == index ? AppPalette.ink : AppPalette.muted.opacity(0.4))
+                            .frame(width: selectedPage == index ? 20 : 7, height: 7)
                     }
                 }
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: selectedPage)
                 
                 Spacer()
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 20)
         }
     }
     
     private var primaryMetricsPage: some View {
-        Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+        Grid(horizontalSpacing: 20, verticalSpacing: 20) {
             // Row 1: Calories (2/3) + Water (1/3)
             GridRow {
                 CalorieCard(
@@ -113,23 +117,22 @@ struct SwipeableNutritionMetrics: View {
                 }
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 22)
     }
     
     private var secondaryMetricsPage: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 3), spacing: 20) {
             ForEach(secondaryMetrics, id: \.self) { metric in
                 NutritionMetricCard(
                     metric: metric,
                     consumed: dailyTotals[metric] ?? 0,
                     target: metric.recommendedDailyValue
                 )
-                .frame(height: 120)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 22)
     }
 }
 
@@ -176,57 +179,68 @@ struct NutritionMetricCard: View {
         }
     }
     
-    private var progressColor: Color {
-        if metric.higherIsBetter {
-            return metric.color
-        } else {
-            // For "lower is better", use red if over target, green if under
-            return progress > 1.0 ? .red : .green
+    /// Primary macros use the shared palette. Other metrics keep their own colour.
+    private var ringHue: Color {
+        switch metric {
+        case .protein: return AppPalette.protein
+        case .carbohydrates: return AppPalette.carbs
+        case .fat: return AppPalette.fat
+        default: return metric.color
+        }
+    }
+
+    private var centerEmoji: String? {
+        switch metric {
+        case .protein: return "🥩"
+        case .carbohydrates: return "🍞"
+        case .fat: return "🥑"
+        default: return nil
         }
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
+        VStack(spacing: 8) {
+            Text(displayValue)
+                .font(.system(size: 20, weight: .heavy, design: .rounded))
+                .foregroundColor(AppPalette.ink)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
 
-            VStack(spacing: 2) {
-                Text(displayValue)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundColor(.textPrimary)
-                    .minimumScaleFactor(0.7)
-                    .lineLimit(1)
-                
-                Text(label)
-                    .font(.caption2)
-                    .foregroundColor(.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(1)
-            }
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(AppPalette.muted)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
 
-            Spacer(minLength: 4)
-            
-            // Circular progress with icon
             ZStack {
                 Circle()
-                    .stroke(progressColor.opacity(0.2), lineWidth: 4)
-                    .frame(width: 40, height: 40)
-                
+                    .stroke(ringHue.opacity(0.22), lineWidth: 5)
+                    .frame(width: 50, height: 50)
+
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(progressColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 40, height: 40)
+                    .stroke(ringHue, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .frame(width: 50, height: 50)
                     .rotationEffect(.degrees(-90))
                     .animation(.easeInOut(duration: 0.5), value: progress)
-                
-                Image(systemName: metric.icon)
-                    .font(.caption)
-                    .foregroundColor(progressColor)
-            }
 
-            Spacer(minLength: 0)
+                if let centerEmoji {
+                    Text(centerEmoji)
+                        .font(.system(size: 18))
+                        .accessibilityHidden(true)
+                } else {
+                    Image(systemName: metric.icon)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(ringHue)
+                        .accessibilityHidden(true)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .whiteCardStyle(cornerRadius: 16)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 14)
+        .frame(height: NutritionCardMetrics.height)
+        .appCard(cornerRadius: 22, padding: 0)
     }
     
     private func formatValue(_ value: Double) -> String {
@@ -263,35 +277,28 @@ struct WaterMiniCard: View {
             : "\(Int(totalAmount)) mL"
     }
 
-    private var fillColor: Color {
-        if progress >= 1.0 { return .cyan }
-        if progress >= 0.8 { return .teal }
-        return .brand
-    }
-
     var body: some View {
         VStack(spacing: 6) {
-            Spacer(minLength: 0)
-
-            FillingCup(progress: progress, color: fillColor)
+            FillingCup(progress: progress, color: AppPalette.brandLight)
                 .frame(width: 28, height: 44)
 
             VStack(spacing: 2) {
                 Text(displayText)
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundColor(.textPrimary)
-                    .minimumScaleFactor(0.6)
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(AppPalette.ink)
+                    .minimumScaleFactor(0.8)
                     .lineLimit(1)
 
                 Text("Water")
-                    .font(.caption2)
-                    .foregroundColor(.textSecondary)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppPalette.muted)
             }
-
-            Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .whiteCardStyle(cornerRadius: 16)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 14)
+        .frame(height: NutritionCardMetrics.height)
+        .appCard(cornerRadius: 24, padding: 0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Water intake: \(displayText) of \(String(format: "%.1f L", goalAmount / 1000))")
     }
@@ -326,7 +333,7 @@ struct FillingCup: View {
                     )
 
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(color.opacity(0.55), lineWidth: 1.5)
+                    .stroke(Color.brand.opacity(0.35), lineWidth: 1.5)
             }
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         }

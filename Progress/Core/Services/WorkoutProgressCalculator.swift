@@ -92,35 +92,50 @@ class WorkoutProgressCalculator: ObservableObject {
         // Progress update completed
     }
     
-    /// Forces a complete recalculation of all progress
+    /// Forces a complete recalculation of all progress.
+    /// Each workout is scored once, and the main actor yields between workouts
+    /// so a tab transition can keep drawing while this runs.
     func recalculateAllProgress() async {
         guard let context = modelContext else { return }
-        
+
         isCalculating = true
         defer { isCalculating = false }
-        
+
         let descriptor = FetchDescriptor<Workout>(
             sortBy: [SortDescriptor(\.completedAt, order: .reverse)]
         )
-        
+
         guard let allWorkouts = try? context.fetch(descriptor) else { return }
         let completedWorkouts = allWorkouts.filter { !$0.isDeleted && $0.status == .completed }
-        
-        calculatePersonalBaselines(from: completedWorkouts)
-        
+
+        var impacts: [[MuscleGroup: Double]] = []
+        impacts.reserveCapacity(completedWorkouts.count)
+        for workout in completedWorkouts {
+            if Task.isCancelled { return }
+            impacts.append(calculateWorkoutImpact(workout))
+            await Task.yield()
+        }
+
+        calculatePersonalBaselines(from: impacts)
+
         let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        let recentWorkouts = completedWorkouts.filter {
-            ($0.completedAt ?? Date.distantPast) >= sevenDaysAgo
+        var recentImpacts: [[MuscleGroup: Double]] = []
+        recentImpacts.reserveCapacity(impacts.count)
+        for index in completedWorkouts.indices {
+            if (completedWorkouts[index].completedAt ?? .distantPast) >= sevenDaysAgo {
+                recentImpacts.append(impacts[index])
+            }
         }
-        
+
+        var progress: [MuscleGroup: ProgressTier] = [:]
+        var opacityByGroup: [MuscleGroup: Double] = [:]
         for muscleGroup in MuscleGroup.allCases {
-            let recentImpact = calculateRecentImpact(for: muscleGroup, from: recentWorkouts)
-            let progressTier = calculateProgressTier(impact: recentImpact, muscleGroup: muscleGroup)
-            let opacity = calculateOpacity(for: muscleGroup, from: completedWorkouts)
-            
-            muscleGroupProgress[muscleGroup] = progressTier
-            muscleGroupOpacity[muscleGroup] = opacity
+            let recentImpact = averagePositiveImpact(for: muscleGroup, in: recentImpacts)
+            progress[muscleGroup] = calculateProgressTier(impact: recentImpact, muscleGroup: muscleGroup)
+            opacityByGroup[muscleGroup] = fadedOpacity(for: muscleGroup, workouts: completedWorkouts, impacts: impacts)
         }
+        muscleGroupProgress = progress
+        muscleGroupOpacity = opacityByGroup
     }
     
     /// Gets current progress for a specific muscle group
@@ -206,21 +221,18 @@ class WorkoutProgressCalculator: ObservableObject {
         return totalImpact
     }
     
-    private func calculatePersonalBaselines(from completedWorkouts: [Workout]) {
+    private func calculatePersonalBaselines(from impacts: [[MuscleGroup: Double]]) {
         for muscleGroup in MuscleGroup.allCases {
-            let impacts = completedWorkouts.compactMap { workout -> Double? in
-                let workoutImpact = calculateWorkoutImpact(workout)
-                return workoutImpact[muscleGroup]
-            }.filter { $0 > 0 }
-            
-            if !impacts.isEmpty {
-                let averageImpact = impacts.reduce(0, +) / Double(impacts.count)
-                let maxImpact = impacts.max() ?? 0
-                
+            let values = positiveImpacts(for: muscleGroup, in: impacts)
+
+            if !values.isEmpty {
+                let averageImpact = values.reduce(0, +) / Double(values.count)
+                let maxImpact = values.max() ?? 0
+
                 personalBaselines[muscleGroup] = PersonalBaseline(
                     averageImpact: averageImpact,
                     maxImpact: maxImpact,
-                    workoutCount: impacts.count,
+                    workoutCount: values.count,
                     lastUpdated: Date()
                 )
             } else {
@@ -232,6 +244,19 @@ class WorkoutProgressCalculator: ObservableObject {
                 )
             }
         }
+    }
+
+    private func positiveImpacts(for muscleGroup: MuscleGroup, in impacts: [[MuscleGroup: Double]]) -> [Double] {
+        impacts.compactMap { impact in
+            let value = impact[muscleGroup] ?? 0
+            return value > 0 ? value : nil
+        }
+    }
+
+    private func averagePositiveImpact(for muscleGroup: MuscleGroup, in impacts: [[MuscleGroup: Double]]) -> Double {
+        let values = positiveImpacts(for: muscleGroup, in: impacts)
+        guard !values.isEmpty else { return 0 }
+        return values.reduce(0, +) / Double(values.count)
     }
     
     private func updatePersonalBaselines(with newImpacts: [MuscleGroup: Double]) async {
@@ -256,16 +281,6 @@ class WorkoutProgressCalculator: ObservableObject {
                 )
             }
         }
-    }
-    
-    private func calculateRecentImpact(for muscleGroup: MuscleGroup, from recentWorkouts: [Workout]) -> Double {
-        let impacts = recentWorkouts.compactMap { workout -> Double? in
-            let workoutImpact = calculateWorkoutImpact(workout)
-            let impact = workoutImpact[muscleGroup] ?? 0
-            return impact > 0 ? impact : nil
-        }
-        
-        return impacts.isEmpty ? 0 : impacts.reduce(0, +) / Double(impacts.count)
     }
     
     private func calculateProgressTier(impact: Double, muscleGroup: MuscleGroup) -> ProgressTier {
@@ -313,18 +328,18 @@ class WorkoutProgressCalculator: ObservableObject {
         return tier
     }
     
-    private func calculateOpacity(for muscleGroup: MuscleGroup, from completedWorkouts: [Workout]) -> Double {
-        for workout in completedWorkouts {
-            let workoutImpact = calculateWorkoutImpact(workout)
-            if (workoutImpact[muscleGroup] ?? 0) > 0 {
-                let workoutDate = workout.completedAt ?? workout.createdAt
-                let daysSinceWorkout = calendar.dateComponents([.day], from: workoutDate, to: Date()).day ?? 0
-                let decayRate = muscleGroup.isStrengthTraining ? Config.strengthDecayDays : Config.cardioDecayDays
-                
-                return max(Config.minimumOpacity, 1.0 - (Double(daysSinceWorkout) / decayRate))
-            }
+    private func fadedOpacity(
+        for muscleGroup: MuscleGroup,
+        workouts: [Workout],
+        impacts: [[MuscleGroup: Double]]
+    ) -> Double {
+        for index in workouts.indices {
+            guard (impacts[index][muscleGroup] ?? 0) > 0 else { continue }
+            let workoutDate = workouts[index].completedAt ?? workouts[index].createdAt
+            let daysSinceWorkout = calendar.dateComponents([.day], from: workoutDate, to: Date()).day ?? 0
+            let decayRate = muscleGroup.isStrengthTraining ? Config.strengthDecayDays : Config.cardioDecayDays
+            return max(Config.minimumOpacity, 1.0 - (Double(daysSinceWorkout) / decayRate))
         }
-        
         return Config.minimumOpacity
     }
     
@@ -334,12 +349,14 @@ class WorkoutProgressCalculator: ObservableObject {
             sortBy: [SortDescriptor(\.completedAt, order: .reverse)]
         )
         let completedWorkouts = (try? context.fetch(descriptor).filter { !$0.isDeleted && $0.status == .completed }) ?? []
-        
+        let impacts = completedWorkouts.map { calculateWorkoutImpact($0) }
+
         for muscleGroup in muscleGroups {
             muscleGroupOpacity[muscleGroup] = 0.1
-            
+            let resolved = fadedOpacity(for: muscleGroup, workouts: completedWorkouts, impacts: impacts)
+
             withAnimation(.easeOut(duration: 0.8).delay(Double.random(in: 0...0.3))) {
-                muscleGroupOpacity[muscleGroup] = calculateOpacity(for: muscleGroup, from: completedWorkouts)
+                muscleGroupOpacity[muscleGroup] = resolved
             }
         }
     }
@@ -360,8 +377,9 @@ private struct PersonalBaseline {
 extension WorkoutProgressCalculator {
     /// Convenience method to set model context
     func setModelContext(_ context: ModelContext) {
+        guard modelContext !== context else { return }
         self.modelContext = context
-        Task {
+        Task(priority: .utility) {
             await recalculateAllProgress()
         }
     }
