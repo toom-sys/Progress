@@ -161,7 +161,7 @@ struct SettingsView: View {
                 }
             )
         }
-        .padding(.top, 8)
+        .padding(.top, 20)
     }
 
     private var settingsDivider: some View {

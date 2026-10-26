@@ -61,7 +61,7 @@ struct ProgressLegendView: View {
                 )
             }
             .padding(.horizontal, 20)
-            .padding(.top, 12)
+            .padding(.top, 24)
             .padding(.bottom, 28)
         }
         .background(AppBackground())
