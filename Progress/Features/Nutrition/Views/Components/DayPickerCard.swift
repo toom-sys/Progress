@@ -56,5 +56,12 @@ struct DayPickerCard: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityName)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var accessibilityName: String {
+        let day = date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+        return isToday ? "Today, \(day)" : day
     }
 }

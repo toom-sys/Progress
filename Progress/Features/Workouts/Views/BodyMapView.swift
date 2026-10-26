@@ -171,7 +171,7 @@ struct BodyMapView: View {
         .aspectRatio(variant.imageAspect, contentMode: .fit)
         .overlay(cardioAura)
         .scaleEffect(1.0 + (breathingAnimation ? 0.015 : 0.0))
-        .shadow(color: Color.blue.opacity(overallGlow * 0.3), radius: overallGlow * 8, x: 0, y: 0)
+        .shadow(color: Color.brand.opacity(overallGlow * 0.3), radius: overallGlow * 8, x: 0, y: 0)
         .onAppear {
             prepareHapticFeedback()
         }
@@ -953,6 +953,14 @@ enum BodyMapArtworkLoader {
             BodyMapArtwork.prewarm()
             MuscleGroupOutlines.prewarm()
         }.value
+    }
+
+    static func cachedFill(baseName: String) -> UIImage? {
+        BodyMapArtwork.cached(baseName: baseName)?.fill
+    }
+
+    static func renderFill(baseName: String) {
+        BodyMapArtwork.render(baseName: baseName)
     }
 }
 

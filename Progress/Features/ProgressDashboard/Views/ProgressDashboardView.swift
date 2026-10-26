@@ -141,7 +141,8 @@ struct JourneyCardHeader<Trailing: View>: View {
             Text(title)
                 .font(.appCardTitle)
                 .foregroundColor(AppPalette.ink)
-                .lineLimit(1)
+                .lineLimit(2)
+                .layoutPriority(1)
 
             Spacer(minLength: 8)
 
@@ -802,10 +803,20 @@ struct DashboardData {
 
 // MARK: - Preview
 
-#Preview("Journey") {
+#Preview("Journey Light") {
     NavigationStack {
         ProgressDashboardView()
     }
     .modelContainer(for: [User.self, Workout.self, NutritionEntry.self, BodyWeightEntry.self, WaterEntry.self], inMemory: true)
     .environmentObject(SubscriptionService())
+    .preferredColorScheme(.light)
+}
+
+#Preview("Journey Dark") {
+    NavigationStack {
+        ProgressDashboardView()
+    }
+    .modelContainer(for: [User.self, Workout.self, NutritionEntry.self, BodyWeightEntry.self, WaterEntry.self], inMemory: true)
+    .environmentObject(SubscriptionService())
+    .preferredColorScheme(.dark)
 }

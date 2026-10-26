@@ -71,12 +71,12 @@ struct ActiveWorkoutCard: View {
                 Text(workout.name)
                     .font(.system(size: 20, weight: .heavy))
                     .foregroundColor(AppPalette.onInk)
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(statusLine)
                     .font(.appSubtitle)
                     .foregroundColor(AppPalette.onInk.opacity(0.7))
-                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer(minLength: 8)

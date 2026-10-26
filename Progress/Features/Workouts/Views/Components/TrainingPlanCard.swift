@@ -10,6 +10,8 @@ struct TrainingPlanCard: View {
     let plan: TrainingPlan
     var history: [Workout] = []
     var activeWorkoutId: UUID? = nil
+    /// Preview-only. Nil keeps the stored or in-session expansion.
+    var expansionOverride: Bool? = nil
     let onStartWorkout: (Workout) -> Void
 
     @AppStorage("workouts.planCard.expanded") private var storedExpanded = true
@@ -17,6 +19,9 @@ struct TrainingPlanCard: View {
     @State private var sessionExpanded = false
 
     private var isExpanded: Bool {
+        if let expansionOverride {
+            return expansionOverride
+        }
         if activeWorkoutId != nil {
             return sessionExpanded
         }
@@ -195,7 +200,8 @@ private struct UpNextPlanRow: View {
                         Text(workout.name)
                             .font(.system(size: 17, weight: .heavy))
                             .foregroundColor(AppPalette.ink)
-                            .lineLimit(1)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .layoutPriority(1)
 
                         Text("UP NEXT")
                             .font(.system(size: 11, weight: .heavy))
@@ -263,7 +269,7 @@ private struct PlanWorkoutRow: View {
                 Text(workout.name)
                     .font(.appCardTitle)
                     .foregroundColor(AppPalette.ink)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
                     .layoutPriority(1)
 
                 HStack(spacing: 8) {
@@ -430,10 +436,12 @@ func planEmoji(for name: String) -> String {
 // MARK: - Preview
 
 private struct TrainingPlanCardPreview: View {
+    var expansionOverride: Bool? = nil
     private let plan: TrainingPlan
     private let history: [Workout]
+    private let activeId: UUID?
 
-    init() {
+    init(expansionOverride: Bool? = nil, showsActiveWorkout: Bool = false) {
         let plan = TrainingPlan(name: "Strength plan", splitType: .upperLower)
         let upper = Workout(name: "Upper")
         upper.planSessionIndex = 2
@@ -448,24 +456,52 @@ private struct TrainingPlanCardPreview: View {
         absHistory.completedAt = Date()
         absHistory.status = .completed
 
+        self.expansionOverride = expansionOverride
         self.plan = plan
         self.history = [absHistory]
+        self.activeId = showsActiveWorkout ? upper.id : nil
     }
 
     var body: some View {
-        TrainingPlanCard(plan: plan, history: history, onStartWorkout: { _ in })
-            .padding(20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(AppBackground())
+        TrainingPlanCard(
+            plan: plan,
+            history: history,
+            activeWorkoutId: activeId,
+            expansionOverride: expansionOverride,
+            onStartWorkout: { _ in }
+        )
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(AppBackground())
     }
 }
 
-#Preview("Light") {
-    TrainingPlanCardPreview()
+#Preview("Expanded") {
+    TrainingPlanCardPreview(expansionOverride: true)
         .preferredColorScheme(.light)
 }
 
-#Preview("Dark") {
-    TrainingPlanCardPreview()
+#Preview("Expanded Dark") {
+    TrainingPlanCardPreview(expansionOverride: true)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Collapsed") {
+    TrainingPlanCardPreview(expansionOverride: false)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Collapsed Dark") {
+    TrainingPlanCardPreview(expansionOverride: false)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("Active workout") {
+    TrainingPlanCardPreview(expansionOverride: true, showsActiveWorkout: true)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Active workout Dark") {
+    TrainingPlanCardPreview(expansionOverride: true, showsActiveWorkout: true)
         .preferredColorScheme(.dark)
 }

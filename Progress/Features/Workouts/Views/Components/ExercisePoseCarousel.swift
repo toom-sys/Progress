@@ -18,8 +18,8 @@ struct ExercisePoseCarousel: View {
             advancePose()
         } label: {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(AppPalette.optionFill)
 
                 if frames.isEmpty {
                     EmptyView()
@@ -44,12 +44,12 @@ struct ExercisePoseCarousel: View {
                 }
             }
             .frame(height: 168)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.brand, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(AppPalette.line, lineWidth: 1)
             )
-            .contentShape(RoundedRectangle(cornerRadius: 12))
+            .contentShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(frames.count < 2)
@@ -65,7 +65,7 @@ struct ExercisePoseCarousel: View {
         HStack(spacing: 6) {
             ForEach(frames.indices, id: \.self) { index in
                 Circle()
-                    .fill(index == poseIndex ? Color.brand : Color.textTertiary.opacity(0.45))
+                    .fill(index == poseIndex ? AppPalette.ink : AppPalette.muted.opacity(0.45))
                     .frame(width: 6, height: 6)
             }
         }

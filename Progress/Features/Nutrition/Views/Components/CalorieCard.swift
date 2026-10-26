@@ -43,7 +43,7 @@ struct CalorieCard: View {
                 Text("Calories left")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(AppPalette.muted)
-                    .lineLimit(1)
+                    .lineLimit(2)
 
                 Text("🍽 \(Int(consumed)) eaten")
                     .font(.system(size: 12, weight: .bold))

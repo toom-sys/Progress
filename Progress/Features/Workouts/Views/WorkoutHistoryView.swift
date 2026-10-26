@@ -11,8 +11,6 @@ import SwiftData
 struct WorkoutHistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \Workout.completedAt, order: .reverse) private var allWorkouts: [Workout]
-    @Query private var users: [User]
-    
     private var completedWorkouts: [Workout] {
         allWorkouts.filter { !$0.isDeleted && $0.status == WorkoutStatus.completed }
     }
@@ -21,15 +19,12 @@ struct WorkoutHistoryView: View {
         allWorkouts.filter { $0.isDeleted }.count
     }
     
-    private var userUnitSystem: UnitSystem {
-        users.first?.preferredUnits ?? .metric
-    }
-    
     @State private var expandedWorkouts: Set<UUID> = []
     @State private var editingWorkoutId: UUID? = nil
     @State private var showingDatePicker = false
     @State private var selectedDate = Date()
     @State private var showingRecentlyDeleted = false
+    @State private var workoutPendingDelete: Workout?
     let onDismiss: () -> Void
     
     init(onDismiss: @escaping () -> Void = {}) {
@@ -38,98 +33,19 @@ struct WorkoutHistoryView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            AdaptiveGradientBackground()
-                .ignoresSafeArea()
-            
+            AppBackground()
+
             VStack(spacing: 0) {
-                // Custom navigation header - matching individual workout style
-                HStack {
-                    Button(action: {
-                        HapticFeedback.workoutButtonTap()
-                        onDismiss()
-                    }) {
-                        HStack(spacing: 8) {
-                            ZStack {
-                                Image(systemName: "chevron.left")
-                                    .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.blue)
-                                
-                                // Blue indicator dot to show active section
-                                Circle()
-                                    .fill(.blue)
-                                    .frame(width: 6, height: 6)
-                                    .offset(x: 10, y: -8)
-                            }
-                            
-                            Text("Workouts")
-                                .font(.headline)
-                                .foregroundColor(.blue)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Text("History")
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.textPrimary)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        HapticFeedback.workoutButtonTap()
-                        showingRecentlyDeleted = true
-                    }) {
-                        ZStack(alignment: .topTrailing) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.blue)
-                                .frame(width: 44, height: 28, alignment: .trailing)
-                            
-                            if deletedWorkoutCount > 0 {
-                                Text("\(min(deletedWorkoutCount, 99))")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(Color.red)
-                                    .clipShape(Capsule())
-                                    .offset(x: 4, y: -8)
-                            }
-                        }
-                    }
-                    .accessibilityLabel("Recently Deleted")
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 16)
-                .padding(.bottom, 24)
-                
-                // Content
+                header
+
                 if completedWorkouts.isEmpty {
-                    // Empty state
-                    VStack(spacing: 16) {
-                        Spacer()
-                        
-                        Image(systemName: "chart.line.uptrend.xyaxis.circle")
-                            .font(.system(size: 60))
-                            .foregroundColor(.secondary)
-                        
-                        Text("No Completed Workouts")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.textPrimary)
-                        
-                        Text("Complete your first workout to see it here")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal, 40)
+                    ContentUnavailableView(
+                        "No Completed Workouts",
+                        systemImage: "chart.line.uptrend.xyaxis",
+                        description: Text("Complete your first workout to see it here")
+                    )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    // History list
                     List {
                         ForEach(completedWorkouts, id: \.id) { workout in
                             WorkoutHistoryRow(
@@ -150,14 +66,19 @@ struct WorkoutHistoryView: View {
                             )
                             .listRowSeparator(.hidden)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24))
-                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button("Delete", role: .destructive) {
-                                    deleteWorkout(workout)
+                                    workoutPendingDelete = workout
                                 }
                             }
                         }
-                        .onDelete(perform: deleteWorkouts)
+
+                        Color.clear
+                            .frame(height: 100)
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets())
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -178,14 +99,84 @@ struct WorkoutHistoryView: View {
         .sheet(isPresented: $showingDatePicker) {
             datePickerSheet
         }
+        .alert(
+            "Delete Workout?",
+            isPresented: Binding(
+                get: { workoutPendingDelete != nil },
+                set: { if !$0 { workoutPendingDelete = nil } }
+            )
+        ) {
+            Button("Cancel", role: .cancel) {
+                workoutPendingDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let workout = workoutPendingDelete {
+                    deleteWorkout(workout)
+                }
+                workoutPendingDelete = nil
+            }
+        } message: {
+            Text("\(workoutPendingDelete?.name ?? "This workout") will move to Recently Deleted.")
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            CircleIconButton(
+                systemName: "chevron.left",
+                style: .plain,
+                size: 40,
+                accessibilityLabel: "Workouts",
+                action: {
+                    HapticFeedback.workoutButtonTap()
+                    onDismiss()
+                }
+            )
+
+            Text("History")
+                .font(.appScreenTitle)
+                .tracking(-0.5)
+                .foregroundColor(AppPalette.ink)
+                .lineLimit(1)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+
+            ZStack(alignment: .topTrailing) {
+                CircleIconButton(
+                    systemName: "trash",
+                    style: .plain,
+                    size: 40,
+                    accessibilityLabel: "Recently deleted",
+                    action: {
+                        HapticFeedback.workoutButtonTap()
+                        showingRecentlyDeleted = true
+                    }
+                )
+
+                if deletedWorkoutCount > 0 {
+                    Text("\(min(deletedWorkoutCount, 99))")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundColor(AppPalette.onInk)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(AppPalette.ink))
+                        .offset(x: 4, y: -4)
+                        .accessibilityHidden(true)
+                }
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
+        .padding(.bottom, 18)
     }
     
     private var datePickerSheet: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 Text("Edit Completion Date")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.appSectionTitle)
+                    .foregroundColor(AppPalette.ink)
                     .padding(.top)
                 
                 HStack {
@@ -203,6 +194,7 @@ struct WorkoutHistoryView: View {
                 
                 Spacer()
             }
+            .background(AppBackground())
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -239,13 +231,6 @@ struct WorkoutHistoryView: View {
         
         showingDatePicker = false
         editingWorkoutId = nil
-    }
-    
-    private func deleteWorkouts(offsets: IndexSet) {
-        for index in offsets {
-            let workout = completedWorkouts[index]
-            deleteWorkout(workout)
-        }
     }
     
     private func deleteWorkout(_ workout: Workout) {
@@ -355,7 +340,7 @@ struct WorkoutHistoryRow: View {
                 expandedContent
             }
         }
-        .whiteCardStyleWithBorder(cornerRadius: 12, padding: 0)
+        .appCard(cornerRadius: 22, padding: 0)
     }
     
     private var mainRowContent: some View {
@@ -368,45 +353,35 @@ struct WorkoutHistoryRow: View {
             }
             .padding(16)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
+        .accessibilityLabel(workout.name)
+        .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
     }
     
     private var workoutInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(workout.name)
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .font(.appCardTitle)
+                .foregroundColor(AppPalette.ink)
                 .multilineTextAlignment(.leading)
-            
+                .fixedSize(horizontal: false, vertical: true)
+
             Text(formattedDate)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
+
             workoutStats
         }
     }
     
     private var workoutStats: some View {
-        HStack(spacing: 16) {
-            HStack(spacing: 4) {
-                Image(systemName: "dumbbell")
-                    .font(.caption)
-                    .foregroundColor(.blue)
-                Text("\(completedExercises.count) exercises")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            HStack(spacing: 4) {
-                Image(systemName: "checkmark.circle")
-                    .font(.caption)
-                    .foregroundColor(.green)
-                Text("\(totalSets) sets")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+        HStack(spacing: 12) {
+            Text("\(completedExercises.count) exercises")
+            Text("·")
+            Text("\(totalSets) sets")
         }
+        .font(.appSubtitle)
+        .foregroundColor(AppPalette.muted)
     }
     
     private var editButton: some View {
@@ -414,24 +389,30 @@ struct WorkoutHistoryRow: View {
             onEditDate(workout)
         }) {
             Image(systemName: "pencil")
-                .font(.subheadline)
-                .foregroundColor(.blue)
-                .padding(8)
-                .background(Color.blue.opacity(0.1))
-                .clipShape(Circle())
+                .font(.system(size: 13, weight: .bold))
+                .foregroundColor(AppPalette.ink)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(AppPalette.optionFill))
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
+        .accessibilityLabel("Edit completion date")
     }
-    
+
     private var expansionIndicator: some View {
-        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-            .font(.subheadline)
-            .foregroundColor(.secondary)
+        Image(systemName: "chevron.down")
+            .font(.system(size: 13, weight: .bold))
+            .foregroundColor(AppPalette.ink)
+            .rotationEffect(.degrees(isExpanded ? 180 : 0))
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(AppPalette.optionFill))
+            .accessibilityHidden(true)
     }
     
     private var expandedContent: some View {
         VStack(spacing: 12) {
-            Divider()
+            Rectangle()
+                .fill(AppPalette.line)
+                .frame(height: 1)
                 .padding(.horizontal, 16)
             
             exerciseDetails
@@ -445,24 +426,22 @@ struct WorkoutHistoryRow: View {
         HStack(spacing: 24) {
             VStack(spacing: 4) {
                 Text("\(totalSets)")
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .font(.appCardTitle)
+                    .foregroundColor(AppPalette.ink)
                 Text("Total Sets")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
             }
-            
+
             VStack(spacing: 4) {
                 Text(String(format: "%.0f kg", totalVolume))
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(.purple)
+                    .font(.appCardTitle)
+                    .foregroundColor(AppPalette.ink)
                 Text("Total Volume")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
             }
-            
+
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -472,9 +451,8 @@ struct WorkoutHistoryRow: View {
         VStack(spacing: 12) {
             HStack {
                 Text("Exercises Completed")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textPrimary)
+                    .font(.appCardTitle)
+                    .foregroundColor(AppPalette.ink)
                 Spacer()
             }
             .padding(.horizontal, 16)
@@ -490,21 +468,20 @@ struct WorkoutHistoryRow: View {
             // Exercise header
             HStack(spacing: 12) {
                 Image(systemName: exercise.type.icon)
-                    .font(.subheadline)
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(colorFromString(exercise.type.color))
                     .frame(width: 20)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(exercise.name)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
-                    
-                    Text(workout.status == .completed ? 
+                        .font(.appCardTitle)
+                        .foregroundColor(AppPalette.ink)
+
+                    Text(workout.status == .completed ?
                          "\(exercise.completedSetsSnapshot)/\(exercise.setsSnapshot.count) sets completed" :
                          "\(exercise.completedSetsCount)/\(exercise.sets.count) sets completed")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
                 
                 Spacer()
@@ -531,131 +508,129 @@ struct WorkoutHistoryRow: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 12)
         }
-        .background(Color.surface.opacity(0.5))
-        .cornerRadius(12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppPalette.optionFill)
+        )
         .padding(.horizontal, 16)
     }
     
     private func setRow(set: ExerciseSet, setNumber: Int) -> some View {
         HStack {
             Text("Set \(setNumber)")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
                 .frame(width: 50, alignment: .leading)
-            
+
             Spacer()
-            
+
             HStack(spacing: 16) {
                 HStack(spacing: 4) {
                     Text(self.userUnitSystem.formatWeight(set.weight))
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.ink)
                     Text(self.userUnitSystem.weightUnit)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
-                
+
                 HStack(spacing: 4) {
                     Text("\(set.reps)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.ink)
                     Text("reps")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
-                
+
                 if set.duration > 0 {
                     HStack(spacing: 4) {
                         Text("\(Int(set.duration))")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.textPrimary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.ink)
                         Text("sec")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.muted)
                     }
                 }
-                
+
                 if set.distance > 0 {
                     HStack(spacing: 4) {
                         Text("\(String(format: "%.1f", set.distance))")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.textPrimary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.ink)
                         Text("km")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.muted)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color.surface)
-        .cornerRadius(8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppPalette.surface)
+        )
     }
     
     private func snapshotSetRow(snapshot: ExerciseSetSnapshot, setNumber: Int) -> some View {
         HStack {
             Text("Set \(setNumber)")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
                 .frame(width: 50, alignment: .leading)
-            
+
             Spacer()
-            
+
             HStack(spacing: 16) {
                 HStack(spacing: 4) {
                     Text(self.userUnitSystem.formatWeight(snapshot.weight))
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.ink)
                     Text(self.userUnitSystem.weightUnit)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
-                
+
                 HStack(spacing: 4) {
                     Text("\(snapshot.reps)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.ink)
                     Text("reps")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
-                
+
                 if snapshot.duration > 0 {
                     HStack(spacing: 4) {
                         Text("\(Int(snapshot.duration))")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.textPrimary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.ink)
                         Text("sec")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.muted)
                     }
                 }
-                
+
                 if snapshot.distance > 0 {
                     HStack(spacing: 4) {
                         Text(self.userUnitSystem.formatDistance(snapshot.distance))
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.textPrimary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.ink)
                         Text(self.userUnitSystem.distanceUnit)
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.muted)
                     }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
         .padding(.horizontal, 12)
-        .background(Color.surface)
-        .cornerRadius(8)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(AppPalette.surface)
+        )
     }
 }
 
@@ -665,13 +640,13 @@ struct WorkoutHistoryRow: View {
 private func colorFromString(_ colorString: String) -> Color {
     switch colorString {
     case "blue":
-        return .blue
+        return Color.brand
     case "red":
-        return .red
+        return AppPalette.protein
     case "green":
-        return .green
+        return AppPalette.live
     default:
-        return .primary
+        return AppPalette.ink
     }
 }
 

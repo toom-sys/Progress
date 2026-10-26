@@ -25,23 +25,24 @@ struct WorkoutTimer: View {
     }
     
     private var borderColor: Color {
-        if timerService.isFinished { return .green }
-        if timerService.timeRemaining <= 10 && timerService.isRunning { return .red }
-        return .blue
+        if timerService.isFinished { return AppPalette.live }
+        if timerService.timeRemaining <= 10 && timerService.isRunning { return AppPalette.protein }
+        return Color.brand
     }
     
     var body: some View {
         VStack(spacing: 2) {
             Text(timerService.formattedTime)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(timerService.timeRemaining <= 10 ? .red : (timerService.isRunning ? .blue : .primary))
+                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                .foregroundColor(timerService.timeRemaining <= 10 ? AppPalette.protein : (timerService.isRunning ? Color.brand : AppPalette.ink))
                 .frame(minWidth: 50, alignment: .center)
                 .monospacedDigit()
-            
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+
             Text("Timer")
-                .font(.caption2)
-                .foregroundColor(.secondary)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
         }
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
@@ -67,8 +68,10 @@ struct WorkoutTimer: View {
             )
         }
         .padding(8)
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(AppPalette.optionFill)
+        )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .trim(from: 0, to: timerService.isFinished ? 1 : timerProgress)

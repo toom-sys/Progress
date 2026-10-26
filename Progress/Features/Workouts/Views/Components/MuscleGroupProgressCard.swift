@@ -18,18 +18,16 @@ struct MuscleGroupProgressCard: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 18) {
                 headerSection
                 progressSection
 
                 if !recentWorkouts.isEmpty {
                     recentWorkoutsSection
                 }
-
-                motivationalSection
             }
             .padding(.horizontal, 20)
-            .padding(.top, 8)
+            .padding(.top, 12)
             .padding(.bottom, 28)
         }
         .background(AppBackground())
@@ -38,84 +36,104 @@ struct MuscleGroupProgressCard: View {
         }
     }
 
-    // MARK: - Header Section
+    // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .center, spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(AppPalette.tint(progress.color))
-                    .frame(width: 46, height: 46)
-                Image(systemName: muscleGroup.icon)
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundStyle(progress.color)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            Text(muscleGroup.displayName)
+                .font(.appSectionTitle)
+                .foregroundStyle(AppPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(muscleGroup.displayName)
-                    .font(.appSectionTitle)
-                    .foregroundStyle(AppPalette.ink)
-                    .lineLimit(1)
-                Text(progress.description)
-                    .font(.appSubtitle)
-                    .foregroundStyle(AppPalette.muted)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 8)
-
-            Text(progress.displayName)
-                .font(.system(size: 12, weight: .heavy))
-                .foregroundStyle(progress.color)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Capsule().fill(AppPalette.tint(progress.color)))
+            Text(muscleGroup.description)
+                .font(.appSubtitle)
+                .foregroundStyle(AppPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Progress Section
+    // MARK: - Progress
 
     private var progressSection: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                Circle()
-                    .stroke(AppPalette.line, lineWidth: 8)
-                    .frame(width: 84, height: 84)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(AppPalette.tint(progress.color))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: muscleGroup.icon)
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(progress.color)
+                        .accessibilityHidden(true)
+                }
 
-                Circle()
-                    .trim(from: 0, to: progressPercentage)
-                    .stroke(progress.color, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .frame(width: 84, height: 84)
-                    .rotationEffect(.degrees(-90))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(progress.displayName)
+                        .font(.appCardTitle)
+                        .foregroundStyle(AppPalette.ink)
+                    Text(progress.description)
+                        .font(.appSubtitle)
+                        .foregroundStyle(AppPalette.muted)
+                }
+
+                Spacer(minLength: 8)
 
                 Text("\(Int(progressPercentage * 100))%")
-                    .font(.system(size: 18, weight: .heavy, design: .rounded))
+                    .font(.system(size: 28, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppPalette.ink)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(workoutCount == 1 ? "1 workout" : "\(workoutCount) workouts")
-                    .font(.system(size: 16, weight: .heavy))
-                    .foregroundStyle(AppPalette.ink)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(AppPalette.line)
+                    Capsule()
+                        .fill(progress.color)
+                        .frame(width: max(0, geo.size.width * progressPercentage))
+                }
+            }
+            .frame(height: 8)
+            .accessibilityHidden(true)
+
+            HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("\(workoutCount)")
+                        .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppPalette.ink)
+                    Text(workoutCount == 1 ? "Workout" : "Workouts")
+                        .font(.appSubtitle)
+                        .foregroundStyle(AppPalette.muted)
+                }
+
+                Rectangle()
+                    .fill(AppPalette.line)
+                    .frame(width: 1, height: 28)
 
                 HStack(spacing: 6) {
                     Image(systemName: trendIcon)
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(trendColor)
+                        .accessibilityHidden(true)
                     Text(trendMessage)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.appSubtitle)
                         .foregroundStyle(AppPalette.ink)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Text("Compared with your 30-day average")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppPalette.muted)
+                Spacer(minLength: 0)
             }
 
-            Spacer(minLength: 0)
+            Text(motivationalMessage)
+                .font(.appSubtitle)
+                .foregroundStyle(AppPalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .appCard(cornerRadius: 22, padding: 16)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(muscleGroup.displayName), \(progress.displayName). \(workoutCount) workouts. \(trendMessage). \(motivationalMessage)")
     }
     
     private var progressPercentage: Double {
@@ -126,37 +144,6 @@ struct MuscleGroupProgressCard: View {
         case .solidIntermediate: return 0.6
         case .advanced: return 0.8
         case .athleteTier: return 1.0
-        }
-    }
-    
-    // MARK: - Trend Section
-    
-    private var trendSection: some View {
-        VStack(spacing: 8) {
-            Divider()
-                .padding(.horizontal, 20)
-            
-            VStack(spacing: 8) {
-                HStack {
-                    Image(systemName: trendIcon)
-                        .foregroundColor(trendColor)
-                        .font(.title3)
-                    
-                    Text(trendMessage)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary)
-                    
-                    Spacer()
-                }
-                
-                Text("vs your 30-day average")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
         }
     }
     
@@ -174,7 +161,7 @@ struct MuscleGroupProgressCard: View {
         if trendPercentage > 10 {
             return AppPalette.live
         } else if trendPercentage < -10 {
-            return Color(hex: "E07A3D")
+            return AppPalette.carbs
         } else {
             return AppPalette.muted
         }
@@ -195,77 +182,55 @@ struct MuscleGroupProgressCard: View {
     
     private var recentWorkoutsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Recent")
-                    .font(.appCardTitle)
-                    .foregroundStyle(AppPalette.ink)
-                Spacer()
-                Text("\(recentWorkouts.count) this week")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppPalette.muted)
-            }
+            Text("THIS WEEK")
+                .font(.system(size: 13, weight: .heavy))
+                .tracking(0.4)
+                .foregroundStyle(AppPalette.muted)
+                .accessibilityAddTraits(.isHeader)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(recentWorkouts.prefix(5), id: \.id) { workout in
-                        recentWorkoutCard(workout)
-                    }
+            VStack(spacing: 8) {
+                ForEach(recentWorkouts.prefix(5), id: \.id) { workout in
+                    recentWorkoutCard(workout)
                 }
             }
         }
     }
 
     private func recentWorkoutCard(_ workout: Workout) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(workout.name)
-                .font(.system(size: 13, weight: .heavy))
-                .foregroundStyle(AppPalette.ink)
-                .lineLimit(1)
+        let exerciseCount = workout.exercises.filter { exercise in
+            exercise.primaryMuscleGroup == muscleGroup ||
+            exercise.secondaryMuscleGroupsDecoded.keys.contains(muscleGroup)
+        }.count
 
-            if let completedAt = workout.completedAt {
-                Text(RelativeDateTimeFormatter().localizedString(for: completedAt, relativeTo: Date()))
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(AppPalette.muted)
+        return HStack(spacing: 12) {
+            EmojiTile(emoji: "🏋️", size: 40, background: AppPalette.surface)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(workout.name)
+                    .font(.appCardTitle)
+                    .foregroundStyle(AppPalette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let completedAt = workout.completedAt {
+                    Text(RelativeDateTimeFormatter().localizedString(for: completedAt, relativeTo: Date()))
+                        .font(.appSubtitle)
+                        .foregroundStyle(AppPalette.muted)
+                }
             }
 
-            let exerciseCount = workout.exercises.filter { exercise in
-                exercise.primaryMuscleGroup == muscleGroup ||
-                exercise.secondaryMuscleGroupsDecoded.keys.contains(muscleGroup)
-            }.count
+            Spacer(minLength: 8)
 
             if exerciseCount > 0 {
-                Text("\(exerciseCount) exercises")
-                    .font(.system(size: 11, weight: .heavy))
+                Text(exerciseCount == 1 ? "1 exercise" : "\(exerciseCount) exercises")
+                    .font(.appSubtitle)
                     .foregroundStyle(progress.color)
+                    .multilineTextAlignment(.trailing)
             }
         }
-        .padding(12)
-        .frame(width: 148, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppPalette.surface)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(AppPalette.line, lineWidth: 1)
-        )
+        .appGroupRow(cornerRadius: 18)
+        .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Motivational Section
-
-    private var motivationalSection: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text("✨")
-                .font(.system(size: 18))
-            Text(motivationalMessage)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(AppPalette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .appCard(cornerRadius: 22, padding: 16)
-    }
-    
     private var motivationalMessage: String {
         switch progress {
         case .dormant:
@@ -283,33 +248,6 @@ struct MuscleGroupProgressCard: View {
         }
     }
     
-    
-    // MARK: - Background
-    
-    private var enhancedBackgroundGradient: some View {
-        ZStack {
-            // Primary gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(.systemBackground),
-                    Color(.systemGray6).opacity(0.2)
-                ]),
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            
-            // Subtle accent gradient
-            LinearGradient(
-                gradient: Gradient(colors: [
-                    progress.color.opacity(0.05),
-                    Color.clear,
-                    progress.color.opacity(0.02)
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
-    }
     
     // MARK: - Data Loading
     
@@ -425,37 +363,7 @@ struct MuscleGroupProgressCard: View {
     }
 }
 
-// MARK: - Supporting Extensions
-
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-struct RoundedCorner: Shape {
-    var radius: CGFloat = .infinity
-    var corners: UIRectCorner = .allCorners
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
-    }
-}
-
-// MARK: - Accessibility
-
-extension MuscleGroupProgressCard {
-    private var accessibilityLabel: String {
-        "\(muscleGroup.displayName) progress: \(progress.displayName). \(workoutCount) workouts completed. \(motivationalMessage)"
-    }
-}
-
-#Preview {
+#Preview("Light") {
     MuscleGroupProgressCard(
         muscleGroup: .chest,
         progress: .gettingTraction,
@@ -463,4 +371,16 @@ extension MuscleGroupProgressCard {
         onDismiss: {}
     )
     .background(AppBackground())
+    .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    MuscleGroupProgressCard(
+        muscleGroup: .chest,
+        progress: .gettingTraction,
+        opacity: 0.8,
+        onDismiss: {}
+    )
+    .background(AppBackground())
+    .preferredColorScheme(.dark)
 }

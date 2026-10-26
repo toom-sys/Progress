@@ -43,27 +43,12 @@ struct ExerciseDetailPopup: View {
                                 HapticFeedback.workoutButtonTap()
                                 addNewSet()
                             }) {
-                                HStack {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 20, weight: .medium))
-                                        .foregroundColor(.blue)
-
+                                HStack(spacing: 8) {
+                                    Image(systemName: "plus")
                                     Text("Add First Set")
-                                        .font(.subheadline)
-                                        .fontWeight(.medium)
-                                        .foregroundColor(.blue)
-
-                                    Spacer()
                                 }
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 8)
-                                .background(Color.blue.opacity(0.05))
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                                )
                             }
+                            .buttonStyle(AppPillButtonStyle(.outline, .large))
                         } else {
                             ForEach(exercise.sets.sorted { $0.order < $1.order }, id: \.id) { set in
                                 SetRowView(
@@ -96,17 +81,20 @@ struct ExerciseDetailPopup: View {
             // Explicit dimensions force the VStack to fill the available space,
             // with the ScrollView expanding to take whatever height remains.
             .frame(
-                width: proxy.size.width - 48,  // 24pt margin each side
+                width: proxy.size.width - 40,
                 height: proxy.size.height - safeAreaBottom
             )
-            .background(Color.surfaceWhite)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.border, lineWidth: 1)
-                    .opacity(0.3)
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(AppPalette.surface)
             )
-            .padding(.horizontal, 24)
+            .overlay(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .strokeBorder(AppPalette.line, lineWidth: 1)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .shadow(color: Color.black.opacity(0.08), radius: 18, x: 0, y: 8)
+            .padding(.horizontal, 20)
         }
         .overlay(
             Group {
@@ -136,43 +124,35 @@ struct ExerciseDetailPopup: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(exercise.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.textPrimary)
-                        .lineLimit(2)
-                    
+                        .font(.appSectionTitle)
+                        .foregroundColor(AppPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+
                     HStack(spacing: 6) {
                         Image(systemName: exercise.type.icon)
-                            .font(.caption)
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(typeColor)
-                        
+
                         Text(exercise.type.displayName)
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
-                        
-                        Text("•")
-                            .font(.caption)
-                            .foregroundColor(.textTertiary)
-                        
+                        Text("·")
                         Text("\(exercise.completedSetsCount)/\(exercise.sets.count) sets")
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
                     }
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
                 }
-                
-                Spacer()
-                
-                Button(action: {
-                    HapticFeedback.workoutButtonTap()
-                    onDismiss()
-                }) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.textSecondary)
-                }
-                .frame(width: 30, height: 30)
-                .background(Color.backgroundSecondary)
-                .clipShape(Circle())
+
+                Spacer(minLength: 8)
+
+                CircleIconButton(
+                    systemName: "xmark",
+                    style: .plain,
+                    size: 36,
+                    accessibilityLabel: "Close",
+                    action: {
+                        HapticFeedback.workoutButtonTap()
+                        onDismiss()
+                    }
+                )
             }
             
             // Collapsible media section (gif/preview placeholder)
@@ -185,24 +165,28 @@ struct ExerciseDetailPopup: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "photo")
-                            .font(.system(size: 13, weight: .medium))
-                        
+                            .font(.system(size: 13, weight: .bold))
+
                         Text(isMediaExpanded ? "Hide preview" : "Show preview")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                        
+                            .font(.system(size: 13, weight: .heavy))
+
                         Spacer()
-                        
-                        Image(systemName: isMediaExpanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 11, weight: .semibold))
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .bold))
+                            .rotationEffect(.degrees(isMediaExpanded ? 180 : 0))
                     }
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.ink)
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.backgroundSecondary.opacity(0.6))
-                    .clipShape(RoundedRectangle(cornerRadius: isMediaExpanded ? 10 : 10))
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(AppPalette.optionFill)
+                    )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(isMediaExpanded ? "Hide preview" : "Show preview")
+                .accessibilityValue(isMediaExpanded ? "Expanded" : "Collapsed")
                 
                 if isMediaExpanded {
                     mediaPreview
@@ -225,45 +209,45 @@ struct ExerciseDetailPopup: View {
         if exercise.isCustom {
             mediaPlaceholder {
                 Image(systemName: exercise.type.icon)
-                    .font(.system(size: 30, weight: .medium))
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(typeColor)
                 Text("Custom Exercise")
-                    .font(.caption)
-                    .foregroundColor(.textSecondary)
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
             }
         } else if poseFrames.count > 1 {
             ExercisePoseCarousel(frames: poseFrames)
         } else if let single = poseFrames.first {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.white)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(AppPalette.optionFill)
                 Image(uiImage: single)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .padding(8)
             }
             .frame(height: 168)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.brand, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(AppPalette.line, lineWidth: 1)
             )
         } else {
             mediaPlaceholder {
                 Image(systemName: exercise.type.icon)
-                    .font(.system(size: 30, weight: .medium))
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(typeColor)
                 Text("Preview coming soon")
-                    .font(.caption)
-                    .foregroundColor(.textSecondary)
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
             }
         }
     }
 
     private func mediaPlaceholder<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
-                .fill(typeColor.opacity(0.1))
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppPalette.tint(typeColor))
             VStack(spacing: 6, content: content)
         }
         .frame(height: 110)
@@ -274,9 +258,8 @@ struct ExerciseDetailPopup: View {
     private var setsTitleBar: some View {
         HStack(spacing: 0) {
             Text("Sets")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.textPrimary)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.ink)
                 .frame(width: SetRowLayout.leadingColumnWidth, alignment: .leading)
 
             // Column titles line up with the value columns in each set row
@@ -287,8 +270,8 @@ struct ExerciseDetailPopup: View {
                 .frame(width: SetRowLayout.trailingColumnWidth, height: 1)
         }
         .padding(.horizontal, SetRowLayout.listHorizontalPadding + SetRowLayout.rowHorizontalPadding)
-        .padding(.vertical, 12)
-        .background(Color.backgroundSecondary.opacity(0.3))
+        .padding(.vertical, 10)
+        .background(AppPalette.optionFill.opacity(0.65))
     }
     
     // MARK: - Variable Titles
@@ -315,9 +298,8 @@ struct ExerciseDetailPopup: View {
 
     private func columnTitle(_ title: String) -> some View {
         Text(title)
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .foregroundColor(.textSecondary)
+            .font(.appSubtitle)
+            .foregroundColor(AppPalette.muted)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
     
@@ -330,73 +312,44 @@ struct ExerciseDetailPopup: View {
         }) {
             HStack(spacing: 8) {
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .medium))
-                
                 Text("Add Set")
-                    .font(.headline)
             }
-            .foregroundColor(.blue)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-            .background(Color.blue.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(AppPillButtonStyle(.outline, .large))
     }
     
     // MARK: - Bottom Action Buttons
     
     private var bottomActionButtons: some View {
         HStack(spacing: 12) {
-            // Hide/Unhide Exercise button
             Button(action: {
                 HapticFeedback.workoutButtonTap()
                 exercise.toggleHidden()
-                
-                // Save the change immediately to ensure persistence
+
                 do {
                     try modelContext.save()
-                    print("💾 Exercise hidden state saved successfully")
                 } catch {
-                    print("❌ Failed to save exercise hidden state: \(error)")
+                    print("Failed to save exercise hidden state: \(error)")
                 }
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: exercise.isHidden ? "eye" : "eye.slash")
-                        .font(.system(size: 14, weight: .medium))
-                    
-                    Text(exercise.isHidden ? "Unhide" : "Hide Exercise")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                    Text(exercise.isHidden ? "Unhide" : "Hide")
                 }
-                .foregroundColor(exercise.isHidden ? .green : .orange)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background((exercise.isHidden ? Color.green : Color.orange).opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(PlainButtonStyle())
-            
-            // History button
+            .buttonStyle(AppPillButtonStyle(.outline, .large))
+            .accessibilityLabel(exercise.isHidden ? "Unhide exercise" : "Hide exercise")
+
             Button(action: {
                 HapticFeedback.workoutButtonTap()
                 showingHistorySheet = true
             }) {
                 HStack(spacing: 6) {
                     Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 14, weight: .medium))
-                    
                     Text("History")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
                 }
-                .foregroundColor(Color.brand)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(Color.brand.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(AppPillButtonStyle(.ink, .large))
             .accessibilityLabel("Exercise history")
             .accessibilityHint("View progress history for \(exercise.name)")
         }
@@ -423,11 +376,11 @@ struct ExerciseDetailPopup: View {
     private var typeColor: Color {
         switch exercise.type {
         case .resistance, .strength:
-            return .blue
+            return Color.brand
         case .cardio:
-            return .red
+            return AppPalette.protein
         case .recovery, .flexibility:
-            return .green
+            return AppPalette.live
         }
     }
     
@@ -524,5 +477,5 @@ struct ExerciseDetailPopup: View {
         onDismiss: { },
         onEdit: { }
     )
-    .background(Color.backgroundSecondary)
+    .background(AppBackground())
 }

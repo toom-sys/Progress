@@ -13,103 +13,46 @@ struct WorkoutProgressBar: View {
     let onWorkoutCompleted: (() -> Void)?
     
     var body: some View {
-        VStack(spacing: 12) {
-            // Progress bar
-            VStack(spacing: 8) {
-                HStack {
-                    Text("Workout Progress")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
-                    
-                    Spacer()
-                    
-                    Text("\(completedExercisesCount)/\(visibleExercises.count) exercises")
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                }
-                
-                // Progress bar track
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        // Background track
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.gray.opacity(0.2))
-                            .frame(height: 8)
-                        
-                        // Progress fill
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [.blue, .green]),
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * progressPercentage, height: 8)
-                            .animation(.easeInOut(duration: 0.5), value: progressPercentage)
-                    }
-                }
-                .frame(height: 8)
-                
-                // Detailed stats
-                HStack(spacing: 16) {
-                    // Total sets
-                    VStack(spacing: 2) {
-                        Text("\(completedSetsCount)")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.textPrimary)
-                        Text("Sets Done")
-                            .font(.caption2)
-                            .foregroundColor(.textSecondary)
-                    }
-                    
-                    Divider()
-                        .frame(height: 30)
-                    
-                    // Remaining sets
-                    VStack(spacing: 2) {
-                        Text("\(totalSetsCount - completedSetsCount)")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(.textSecondary)
-                        Text("Remaining")
-                            .font(.caption2)
-                            .foregroundColor(.textSecondary)
-                    }
-                    
-                    Divider()
-                        .frame(height: 30)
-                    
-                    // Completion percentage
-                    VStack(spacing: 2) {
-                        Text("\(Int(progressPercentage * 100))%")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                            .foregroundColor(progressPercentage == 1.0 ? .green : .blue)
-                        Text("Complete")
-                            .font(.caption2)
-                            .foregroundColor(.textSecondary)
-                            .lineLimit(1)
-                            .fixedSize()
-                    }
-                    
-                    Spacer()
-                    
-                    WorkoutTimer(workoutId: workout.id.uuidString, defaultDuration: 90)
-                }
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Progress")
+                    .font(.appCardTitle)
+                    .foregroundColor(AppPalette.ink)
+
+                Spacer()
+
+                Text("\(completedExercisesCount)/\(visibleExercises.count) exercises")
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
+            }
+
+            AppProgressBar(progress: progressPercentage, height: 8)
+
+            HStack(spacing: 16) {
+                progressStat(value: "\(completedSetsCount)", label: "Sets done")
+
+                Rectangle()
+                    .fill(AppPalette.line)
+                    .frame(width: 1, height: 28)
+
+                progressStat(value: "\(totalSetsCount - completedSetsCount)", label: "Remaining")
+
+                Rectangle()
+                    .fill(AppPalette.line)
+                    .frame(width: 1, height: 28)
+
+                progressStat(
+                    value: "\(Int(progressPercentage * 100))%",
+                    label: "Complete",
+                    valueColor: progressPercentage == 1.0 ? AppPalette.live : AppPalette.ink
+                )
+
+                Spacer(minLength: 0)
+
+                WorkoutTimer(workoutId: workout.id.uuidString, defaultDuration: 90)
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(Color.surfaceWhite)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.border, lineWidth: 1)
-                .opacity(0.2)
-        )
+        .appCard(cornerRadius: 22, padding: 16)
         .onChange(of: progressPercentage) { _, newValue in
             // Auto-complete workout when all visible exercises are done AND there are completed sets
             if newValue == 1.0 && !workout.isCompleted && visibleExercises.count > 0 && completedSetsCount > 0 {
@@ -124,6 +67,20 @@ struct WorkoutProgressBar: View {
         }
     }
     
+    private func progressStat(value: String, label: String, valueColor: Color = AppPalette.ink) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                .foregroundColor(valueColor)
+                .minimumScaleFactor(0.8)
+                .lineLimit(1)
+            Text(label)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
+                .lineLimit(1)
+        }
+    }
+
     // MARK: - Computed Properties
     
     /// Exercises that are not hidden (visible for progression tracking)
@@ -206,5 +163,5 @@ struct WorkoutProgressBar: View {
         Spacer()
     }
     .padding()
-    .background(Color.backgroundSecondary)
+    .background(AppBackground())
 }

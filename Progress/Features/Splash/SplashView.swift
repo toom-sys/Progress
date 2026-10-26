@@ -16,8 +16,7 @@ struct SplashView: View {
 
     var body: some View {
         ZStack {
-            AdaptiveGradientBackground()
-                .ignoresSafeArea()
+            AppBackground()
 
             VStack(spacing: 20) {
                 Image("app_icon_display")
@@ -25,13 +24,14 @@ struct SplashView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 120, height: 120)
                     .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                    .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                    .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
                     .scaleEffect(iconScale)
                     .opacity(iconOpacity)
 
                 Text("Progress")
-                    .font(.titleXL)
-                    .foregroundColor(.textPrimary)
+                    .font(.appScreenTitle)
+                    .tracking(-0.5)
+                    .foregroundColor(AppPalette.ink)
                     .opacity(textOpacity)
             }
         }
@@ -63,7 +63,14 @@ struct SplashView: View {
     }
 }
 
-#Preview {
+#Preview("Light") {
     SplashView(onComplete: {})
         .environmentObject(SubscriptionService())
+        .preferredColorScheme(.light)
+}
+
+#Preview("Dark") {
+    SplashView(onComplete: {})
+        .environmentObject(SubscriptionService())
+        .preferredColorScheme(.dark)
 }

@@ -94,6 +94,9 @@ struct BodyMapSection: View {
         }
         .sheet(isPresented: $showingLegend) {
             ProgressLegendView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground { AppBackground() }
         }
     }
     
@@ -199,21 +202,24 @@ struct BodyMapSection: View {
                 )
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground { AppBackground() }
                 .id(sheetManager.sheetId) // Force recreation when sheetId changes
             } else {
                 let _ = print("🎯 POPUP: ERROR - SheetManager muscleGroup is nil, showing fallback")
                 // Fallback content if muscleGroup is nil
-                VStack {
+                VStack(spacing: 12) {
                     Text("Loading...")
-                        .foregroundColor(.secondary)
+                        .font(.appCardTitle)
+                        .foregroundColor(AppPalette.ink)
                     Button("Close") {
-                        print("🎯 POPUP: Fallback close button tapped")
                         sheetManager.dismissSheet()
                     }
-                    .padding()
+                    .buttonStyle(AppPillButtonStyle(.outline, .compact))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(AppBackground())
                 .presentationDetents([.medium])
+                .presentationBackground { AppBackground() }
                 .id(sheetManager.sheetId) // Force recreation when sheetId changes
             }
         }
@@ -350,7 +356,7 @@ struct BodyMapSection: View {
             }
             .padding(.vertical, 20)
         }
-        .background(AdaptiveGradientBackground())
+        .background(AppBackground())
     }
     .modelContainer(for: [Workout.self, Exercise.self, ExerciseSet.self])
 }

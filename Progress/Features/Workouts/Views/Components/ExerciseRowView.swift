@@ -45,7 +45,7 @@ struct ExerciseRowView: View {
                                 HStack {
                                     Spacer()
                                     Circle()
-                                        .fill(Color.orange)
+                                        .fill(AppPalette.carbs)
                                         .frame(width: 12, height: 12)
                                         .overlay(
                                             Image(systemName: "person.badge.plus")
@@ -61,7 +61,7 @@ struct ExerciseRowView: View {
                                 HStack {
                                     Spacer()
                                     Circle()
-                                        .fill(Color.green)
+                                        .fill(AppPalette.live)
                                         .frame(width: 12, height: 12)
                                         .overlay(
                                             Image(systemName: "checkmark")
@@ -81,38 +81,38 @@ struct ExerciseRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(exercise.name)
-                        .font(.headline)
-                        .foregroundColor(exercise.isHidden ? .textSecondary : .textPrimary)
-                        .lineLimit(1)
+                        .font(.appCardTitle)
+                        .foregroundColor(exercise.isHidden ? AppPalette.muted : AppPalette.ink)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     if exercise.isHidden {
                         Image(systemName: "eye.slash.fill")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.orange)
+                            .foregroundColor(AppPalette.carbs)
                     }
                     
                     if isExerciseCompleted {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.green)
+                            .foregroundColor(AppPalette.live)
                             .scaleEffect(1.1)
                     }
                 }
                 
                 HStack(spacing: 4) {
                     Text(exercise.type.displayName)
-                        .font(.caption)
-                        .foregroundColor(.textSecondary)
-                    
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
+
                     if exercise.sets.count > 0 {
-                        Text("•")
-                            .font(.caption)
-                            .foregroundColor(.textSecondary)
-                        
+                        Text("·")
+                            .font(.appSubtitle)
+                            .foregroundColor(AppPalette.muted)
+
                         Text("\(completedSetsCount)/\(exercise.sets.count) sets")
-                            .font(.caption)
-                            .foregroundColor(isExerciseCompleted ? .green : .textSecondary)
-                            .fontWeight(isExerciseCompleted ? .semibold : .regular)
+                            .font(.appSubtitle)
+                            .foregroundColor(isExerciseCompleted ? AppPalette.liveText : AppPalette.muted)
                     }
                 }
             }
@@ -121,18 +121,20 @@ struct ExerciseRowView: View {
             
             // Chevron indicator
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.textSecondary)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(AppPalette.muted.opacity(0.7))
+                .accessibilityHidden(true)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(backgroundColorForExercise)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(borderColorForExercise, lineWidth: 1)
-                .opacity(borderOpacityForExercise)
-        )
+        .appCard(cornerRadius: 22, padding: 14)
+        .overlay {
+            if isExerciseCompleted {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(AppPalette.live.opacity(0.45), lineWidth: 1.5)
+            } else if exercise.isHidden {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .strokeBorder(AppPalette.carbs.opacity(0.45), lineWidth: 1.5)
+            }
+        }
         .animation(.easeInOut(duration: 0.3), value: isExerciseCompleted)
         .animation(.easeInOut(duration: 0.3), value: exercise.isHidden)
         .contentShape(Rectangle())
@@ -147,11 +149,11 @@ struct ExerciseRowView: View {
     private var typeColor: Color {
         switch exercise.type {
         case .resistance, .strength:
-            return .blue
+            return Color.brand
         case .cardio:
-            return .red
+            return AppPalette.protein
         case .recovery, .flexibility:
-            return .green
+            return AppPalette.live
         }
     }
     
@@ -163,33 +165,6 @@ struct ExerciseRowView: View {
         exercise.sets.count > 0 && completedSetsCount == exercise.sets.count
     }
     
-    private var backgroundColorForExercise: Color {
-        if exercise.isHidden {
-            return Color.gray.opacity(0.1)
-        } else if isExerciseCompleted {
-            return Color.green.opacity(0.05)
-        } else {
-            return Color.surfaceWhite
-        }
-    }
-    
-    private var borderColorForExercise: Color {
-        if exercise.isHidden {
-            return Color.orange.opacity(0.3)
-        } else if isExerciseCompleted {
-            return Color.green.opacity(0.3)
-        } else {
-            return Color.border
-        }
-    }
-    
-    private var borderOpacityForExercise: Double {
-        if exercise.isHidden || isExerciseCompleted {
-            return 1.0
-        } else {
-            return 0.2
-        }
-    }
 }
 
 #Preview {
@@ -222,5 +197,5 @@ struct ExerciseRowView: View {
         )
     }
     .padding()
-    .background(Color.backgroundSecondary)
+    .background(AppBackground())
 }

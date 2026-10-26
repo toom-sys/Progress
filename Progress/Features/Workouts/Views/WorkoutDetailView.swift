@@ -39,41 +39,40 @@ struct WorkoutDetailView: View {
     
     var body: some View {
         ZStack {
-            // Background
-            AdaptiveGradientBackground()
-                .ignoresSafeArea()
-            
+            AppBackground()
+
             VStack(spacing: 0) {
-                // Custom title header with menu button
-                HStack {
+                HStack(alignment: .center, spacing: 10) {
                     Text(workout.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.textPrimary)
-                        .multilineTextAlignment(.leading)
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        HapticFeedback.workoutButtonTap()
-                        showingWorkoutMenu = true
-                    }) {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundColor(.textPrimary)
-                    }
+                        .font(.appScreenTitle)
+                        .tracking(-0.5)
+                        .foregroundColor(AppPalette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
+
+                    Spacer(minLength: 0)
+
+                    CircleIconButton(
+                        systemName: "ellipsis",
+                        style: .plain,
+                        size: 40,
+                        accessibilityLabel: "Workout options",
+                        action: {
+                            HapticFeedback.workoutButtonTap()
+                            showingWorkoutMenu = true
+                        }
+                    )
                 }
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 20)
                 .padding(.top, 16)
-                .padding(.bottom, 8)
+                .padding(.bottom, 12)
 
                 if isPlanWorkout {
                     planSessionHeader
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 8)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 12)
                 }
-                
-                // Workout progress bar
+
                 WorkoutProgressBar(
                     exercises: workout.exercises,
                     workout: workout,
@@ -81,43 +80,33 @@ struct WorkoutDetailView: View {
                         markWorkoutComplete()
                     }
                 )
-                .padding(.horizontal, 24)
-                .padding(.bottom, 8)
-                
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
+
                 if workout.exercises.isEmpty {
-                    // Empty state
-                    VStack(spacing: 24) {
+                    VStack(spacing: 16) {
                         Spacer()
-                        
+
                         Image(systemName: "dumbbell")
-                            .font(.system(size: 64, weight: .light))
-                            .foregroundColor(.textTertiary)
-                        
-                        VStack(spacing: 8) {
+                            .font(.system(size: 44, weight: .semibold))
+                            .foregroundColor(AppPalette.muted)
+
+                        VStack(spacing: 6) {
                             Text("No Exercises Yet")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.textPrimary)
-                            
+                                .font(.appSectionTitle)
+                                .foregroundColor(AppPalette.ink)
+
                             Text("Add your first exercise to get started")
-                                .font(.body)
-                                .foregroundColor(.textSecondary)
+                                .font(.appSubtitle)
+                                .foregroundColor(AppPalette.muted)
                                 .multilineTextAlignment(.center)
                         }
-                        
-                        Button(action: {
+
+                        Button("Add Exercise") {
                             showingAddExercise = true
-                        }) {
-                            Text("Add Exercise")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 24)
-                                .padding(.vertical, 12)
-                                .background(Color.blue)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        
+                        .buttonStyle(AppPillButtonStyle(.ink, .large))
+
                         Spacer()
                     }
                     .padding(.horizontal, 32)
@@ -135,7 +124,7 @@ struct WorkoutDetailView: View {
                                         showingExerciseDetail = exercise
                                     }
                                 )
-                                .listRowInsets(EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24))
+                                .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                                 .listRowSeparator(.hidden)
                                 .listRowBackground(Color.clear)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -311,20 +300,17 @@ struct WorkoutDetailView: View {
             HStack(spacing: 10) {
                 if let sessionIndex = workout.planSessionIndex {
                     Text("Session \(sessionIndex) of 5 · Block \(workout.planBlockNumber ?? 1)")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(.textSecondary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
 
                 if workout.planPhase == .deload {
                     Text("Recovery / Deload")
-                        .font(.caption)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.orange)
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundColor(AppPalette.carbs)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.orange.opacity(0.15))
-                        .clipShape(Capsule())
+                        .background(Capsule().fill(AppPalette.tint(AppPalette.carbs)))
                 }
 
                 Spacer()
@@ -332,8 +318,8 @@ struct WorkoutDetailView: View {
 
             if workout.planPhase == .deload {
                 Text("Lighter loads and fewer sets — recover before your next block.")
-                    .font(.caption)
-                    .foregroundColor(.textSecondary)
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
             }
         }
     }

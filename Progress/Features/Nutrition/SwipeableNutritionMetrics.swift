@@ -72,7 +72,7 @@ struct SwipeableNutritionMetrics: View {
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             // Room around the cards so the softer shadow fades out
             // before the page view clips it.
-            .frame(height: 408)
+            .frame(height: 366)
             
             // Bottom controls
             HStack {
@@ -118,7 +118,8 @@ struct SwipeableNutritionMetrics: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 22)
+        .padding(.top, 4)
+        .padding(.bottom, 18)
     }
     
     private var secondaryMetricsPage: some View {
@@ -132,7 +133,8 @@ struct SwipeableNutritionMetrics: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 22)
+        .padding(.top, 4)
+        .padding(.bottom, 18)
     }
 }
 

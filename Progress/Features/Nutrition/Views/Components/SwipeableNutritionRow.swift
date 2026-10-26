@@ -16,6 +16,7 @@ struct SwipeableNutritionRow: View {
     @State private var showingDetail = false
 
     private let revealWidth: CGFloat = 88
+    private let cardCornerRadius: CGFloat = 20
 
     var body: some View {
         ZStack(alignment: .trailing) {
@@ -24,6 +25,11 @@ struct SwipeableNutritionRow: View {
                     .contentShape(Rectangle())
                     .onTapGesture { settle(to: 0) }
             }
+
+            RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
+                .fill(Color.red)
+                .opacity(offset < 0 ? 1 : 0)
+                .allowsHitTesting(false)
 
             deleteButton
                 .frame(width: revealWidth)
@@ -60,16 +66,6 @@ struct SwipeableNutritionRow: View {
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.red)
-            .clipShape(
-                UnevenRoundedRectangle(
-                    topLeadingRadius: 0,
-                    bottomLeadingRadius: 0,
-                    bottomTrailingRadius: 20,
-                    topTrailingRadius: 20,
-                    style: .continuous
-                )
-            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Delete")

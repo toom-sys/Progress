@@ -29,6 +29,7 @@ struct WorkoutListView: View {
     @AppStorage("workoutSortOption") private var sortOption: WorkoutSortOption = .dateCreated
     @State private var showingWorkoutHistory = false
     @State private var workoutToOpen: Workout?
+    @State private var workoutPendingDelete: Workout?
 
     /// Latest started workout that is still in progress, plan or custom.
     private var activeWorkout: Workout? {
@@ -59,7 +60,7 @@ struct WorkoutListView: View {
                     plan: activePlan,
                     history: allWorkouts,
                     activeWorkout: activeWorkout,
-                    onDeleteWorkout: deleteWorkout,
+                    onDeleteWorkout: { workoutPendingDelete = $0 },
                     onOpenWorkout: { workout in
                         workoutToOpen = workout
                     }
@@ -78,6 +79,25 @@ struct WorkoutListView: View {
             // attach `.animation(_:value:)` here or the whole list re-animates.
             WorkoutListOverlays(showingCreateWorkout: $showingCreateWorkout)
                 .environment(\.modelContext, modelContext)
+        }
+        .alert(
+            "Delete Workout?",
+            isPresented: Binding(
+                get: { workoutPendingDelete != nil },
+                set: { if !$0 { workoutPendingDelete = nil } }
+            )
+        ) {
+            Button("Cancel", role: .cancel) {
+                workoutPendingDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let workout = workoutPendingDelete {
+                    deleteWorkout(workout)
+                }
+                workoutPendingDelete = nil
+            }
+        } message: {
+            Text("\(workoutPendingDelete?.name ?? "This workout") will move to Recently Deleted.")
         }
     }
 

@@ -150,10 +150,9 @@ struct NutritionDashboardView: View {
                         foodEntriesList
                     }
                 }
-                .padding(.top, 18)
+                .padding(.top, 4)
                 .padding(.bottom, 120)
             }
-            .scrollClipDisabled()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppBackground())
@@ -453,4 +452,73 @@ private struct AddFoodMenu<Label: View>: View {
             label()
         }
     }
+}
+
+// MARK: - Preview
+
+private struct NutritionDashboardPreview: View {
+    private let container: ModelContainer
+
+    init(withEntries: Bool) {
+        let container = try! ModelContainer(
+            for: User.self, Workout.self, NutritionEntry.self, BodyWeightEntry.self, WaterEntry.self,
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+        )
+        if withEntries {
+            let context = container.mainContext
+            context.insert(
+                NutritionEntry(
+                    foodName: "Greek yogurt",
+                    servingSize: "150 g",
+                    quantity: 1,
+                    calories: 130,
+                    protein: 15,
+                    carbohydrates: 8,
+                    fat: 4,
+                    mealType: .breakfast
+                )
+            )
+            context.insert(
+                NutritionEntry(
+                    foodName: "Chicken salad",
+                    servingSize: "1 bowl",
+                    quantity: 1,
+                    calories: 420,
+                    protein: 35,
+                    carbohydrates: 18,
+                    fat: 22,
+                    mealType: .lunch
+                )
+            )
+        }
+        self.container = container
+    }
+
+    var body: some View {
+        NavigationStack {
+            NutritionDashboardView()
+        }
+        .modelContainer(container)
+        .environmentObject(SubscriptionService())
+    }
+}
+
+#Preview("Empty") {
+    NutritionDashboardPreview(withEntries: false)
+        .preferredColorScheme(.light)
+}
+
+#Preview("Empty Dark") {
+    NutritionDashboardPreview(withEntries: false)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("With entries") {
+    NutritionDashboardPreview(withEntries: true)
+        .preferredColorScheme(.light)
+}
+
+#Preview("With entries Dark") {
+    NutritionDashboardPreview(withEntries: true)
+        .preferredColorScheme(.dark)
 }

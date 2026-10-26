@@ -45,9 +45,8 @@ struct SetRowView: View {
     var body: some View {
         HStack(spacing: 0) {
             Text("\(setNumber)")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(setNumberColor)
+                .font(.system(size: 15, weight: .heavy, design: .rounded))
+                .foregroundColor(AppPalette.muted)
                 .frame(width: SetRowLayout.leadingColumnWidth, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -55,14 +54,14 @@ struct SetRowView: View {
 
                 if let targetLabel = planTargetLabel, shouldShowTargetLabel {
                     Text(targetLabel)
-                        .font(.caption2)
-                        .foregroundColor(.textTertiary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                 }
 
                 if let notes = set.notes, !notes.isEmpty {
                     Text(notes)
-                        .font(.caption)
-                        .foregroundColor(.textTertiary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
                         .lineLimit(1)
                 }
             }
@@ -74,8 +73,8 @@ struct SetRowView: View {
                     onEdit()
                 } label: {
                     Image(systemName: "square.and.pencil")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color.brand)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(AppPalette.ink)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Edit set \(setNumber)")
@@ -87,7 +86,7 @@ struct SetRowView: View {
                 }) {
                     Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22, weight: .medium))
-                        .foregroundColor(set.isCompleted ? .green : .textTertiary)
+                        .foregroundColor(set.isCompleted ? AppPalette.live : AppPalette.muted)
                         .scaleEffect(set.isCompleted ? 1.1 : 1.0)
                         .animation(.easeInOut(duration: 0.2), value: set.isCompleted)
                 }
@@ -96,12 +95,13 @@ struct SetRowView: View {
         }
         .padding(.horizontal, SetRowLayout.rowHorizontalPadding)
         .padding(.vertical, 12)
-        .background(rowBackground)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(rowBackground)
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(rowBorderColor, lineWidth: 1)
-                .opacity(rowBorderOpacity)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(rowBorderColor, lineWidth: 1)
         )
         .offset(x: dragOffset)
         .background(
@@ -188,20 +188,18 @@ struct SetRowView: View {
                     .frame(width: SetRowLayout.multiplierColumnWidth, height: 1)
             } else {
                 Text(userUnitSystem.formatWeight(set.weight))
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 15, weight: .heavy))
                     .foregroundColor(actualMetricsColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text("×")
-                    .font(.subheadline)
-                    .foregroundColor(.textSecondary)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppPalette.muted)
                     .frame(width: SetRowLayout.multiplierColumnWidth, alignment: .center)
             }
 
             Text("\(set.reps)")
-                .font(.subheadline)
-                .fontWeight(.medium)
+                .font(.system(size: 15, weight: .heavy))
                 .foregroundColor(actualMetricsColor)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -210,18 +208,16 @@ struct SetRowView: View {
     private var cardioMetricsView: some View {
         HStack(spacing: 0) {
             Text(set.formattedDuration)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.textPrimary)
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(AppPalette.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Color.clear
                 .frame(width: SetRowLayout.multiplierColumnWidth, height: 1)
 
             Text(set.distance > 0 ? userUnitSystem.formatDistanceWithUnit(set.distance) : "—")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(set.distance > 0 ? .textPrimary : .textTertiary)
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(set.distance > 0 ? AppPalette.ink : AppPalette.muted)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
@@ -229,9 +225,8 @@ struct SetRowView: View {
     private var recoveryMetricsView: some View {
         HStack(spacing: 0) {
             Text(set.formattedDuration)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(isPlanSet ? actualMetricsColor : .textPrimary)
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(isPlanSet ? actualMetricsColor : AppPalette.ink)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Color.clear
@@ -239,9 +234,8 @@ struct SetRowView: View {
 
             if let intensity = set.intensityLevel {
                 Text("\(intensity)/10")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.textPrimary)
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundColor(AppPalette.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 Color.clear
@@ -328,16 +322,12 @@ struct SetRowView: View {
     }
 
     private var actualMetricsColor: Color {
-        guard isPlanSet, set.isCompleted else { return .textPrimary }
+        guard isPlanSet, set.isCompleted else { return AppPalette.ink }
         switch targetPerformance {
-        case .met: return .textPrimary
-        case .below: return .orange
-        case .neutral: return .textPrimary
+        case .met: return AppPalette.ink
+        case .below: return AppPalette.carbs
+        case .neutral: return AppPalette.ink
         }
-    }
-
-    private var setNumberColor: Color {
-        .textSecondary
     }
 
     private var isCompletedWithSuccessStyle: Bool {
@@ -354,26 +344,22 @@ struct SetRowView: View {
 
     private var rowBackground: Color {
         if isCompletedWithWarningStyle {
-            return Color.orange.opacity(0.05)
+            return AppPalette.tint(AppPalette.carbs)
         }
         if isCompletedWithSuccessStyle {
-            return Color.green.opacity(0.05)
+            return AppPalette.tint(AppPalette.live)
         }
-        return Color.surfaceWhite
+        return AppPalette.optionFill
     }
 
     private var rowBorderColor: Color {
         if isCompletedWithWarningStyle {
-            return Color.orange.opacity(0.3)
+            return AppPalette.carbs.opacity(0.35)
         }
         if isCompletedWithSuccessStyle {
-            return Color.green.opacity(0.3)
+            return AppPalette.live.opacity(0.35)
         }
-        return Color.border
-    }
-
-    private var rowBorderOpacity: Double {
-        isCompletedWithSuccessStyle || isCompletedWithWarningStyle ? 1.0 : 0.2
+        return AppPalette.line
     }
 }
 
@@ -423,5 +409,5 @@ struct SetRowView: View {
         )
     }
     .padding()
-    .background(Color.backgroundSecondary)
+    .background(AppBackground())
 }

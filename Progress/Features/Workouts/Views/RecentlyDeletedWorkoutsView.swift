@@ -26,9 +26,8 @@ struct RecentlyDeletedWorkoutsView: View {
     
     var body: some View {
         ZStack {
-            AdaptiveGradientBackground()
-                .ignoresSafeArea()
-            
+            AppBackground()
+
             VStack(spacing: 0) {
                 header
                 
@@ -67,68 +66,42 @@ struct RecentlyDeletedWorkoutsView: View {
     // MARK: - Header
     
     private var header: some View {
-        HStack {
-            Button(action: {
-                HapticFeedback.workoutButtonTap()
-                onDismiss()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.blue)
-                    
-                    Text("History")
-                        .font(.headline)
-                        .foregroundColor(.blue)
+        HStack(alignment: .center, spacing: 10) {
+            CircleIconButton(
+                systemName: "chevron.left",
+                style: .plain,
+                size: 40,
+                accessibilityLabel: "History",
+                action: {
+                    HapticFeedback.workoutButtonTap()
+                    onDismiss()
                 }
-            }
-            
-            Spacer()
-            
+            )
+
             Text("Recently Deleted")
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundColor(.textPrimary)
-            
-            Spacer()
-            
-            // Balance the back button width
-            HStack(spacing: 8) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .medium))
-                Text("History")
-                    .font(.headline)
-            }
-            .opacity(0)
+                .font(.appScreenTitle)
+                .tracking(-0.5)
+                .foregroundColor(AppPalette.ink)
+                .lineLimit(2)
+                .layoutPriority(1)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 20)
         .padding(.top, 16)
-        .padding(.bottom, 8)
+        .padding(.bottom, 18)
     }
     
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Spacer()
-            
-            Image(systemName: "trash.slash")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
-            
-            Text("No Recently Deleted Workouts")
-                .font(.title3)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
-            
-            Text("Deleted workouts stay here for \(Workout.softDeleteRetentionDays) days so you can restore them.")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-            
-            Spacer()
-        }
-        .padding(.horizontal, 40)
+        ContentUnavailableView(
+            "No Recently Deleted Workouts",
+            systemImage: "trash.slash",
+            description: Text("Deleted workouts stay here for \(Workout.softDeleteRetentionDays) days so you can restore them.")
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     // MARK: - List
@@ -136,11 +109,11 @@ struct RecentlyDeletedWorkoutsView: View {
     private var deletedList: some View {
         VStack(spacing: 0) {
             Text("Workouts stay here for \(Workout.softDeleteRetentionDays) days, then are permanently deleted.")
-                .font(.footnote)
-                .foregroundColor(.secondary)
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 12)
             
             List {
                 ForEach(deletedWorkouts, id: \.id) { workout in
@@ -150,14 +123,14 @@ struct RecentlyDeletedWorkoutsView: View {
                     )
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 24, bottom: 6, trailing: 24))
+                        .listRowInsets(EdgeInsets(top: 6, leading: 20, bottom: 6, trailing: 20))
                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                             Button {
                                 restore(workout)
                             } label: {
                                 Label("Restore", systemImage: "arrow.uturn.backward")
                             }
-                            .tint(.blue)
+                            .tint(Color.brand)
                         }
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button(role: .destructive) {
@@ -248,43 +221,30 @@ private struct RecentlyDeletedWorkoutRow: View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(workout.name)
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                    .font(.appCardTitle)
+                    .foregroundColor(AppPalette.ink)
                     .multilineTextAlignment(.leading)
-                
+                    .fixedSize(horizontal: false, vertical: true)
+
                 Text("Deleted \(deletedDateText)")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                HStack(spacing: 12) {
+                    .font(.appSubtitle)
+                    .foregroundColor(AppPalette.muted)
+
+                HStack(spacing: 8) {
                     Text(workout.status.displayName)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.blue)
-                    
+                    Text("·")
                     Text(retentionText)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
+                .font(.appSubtitle)
+                .foregroundColor(AppPalette.muted)
             }
             
             Spacer()
             
-            Button(action: onRestore) {
-                Text("Restore")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.blue.opacity(0.12))
-                    .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
+            Button("Restore", action: onRestore)
+                .buttonStyle(AppPillButtonStyle(.outline, .compact))
         }
-        .padding(16)
-        .whiteCardStyleWithBorder(cornerRadius: 12, padding: 0)
+        .appCard(cornerRadius: 22, padding: 14)
     }
 }
 
