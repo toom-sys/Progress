@@ -44,9 +44,12 @@ struct WorkoutGoalsSettingsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
         }
-        .background(Color.backgroundGradient.ignoresSafeArea())
+        .background(AppBackground())
         .navigationTitle("Workout & Activity Goals")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if currentUser != nil {
@@ -96,23 +99,23 @@ struct WorkoutGoalsSettingsView: View {
         VStack(spacing: 16) {
             Image(systemName: "figure.run.circle.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.accent)
+                .foregroundColor(Color.brand)
                 .accessibilityLabel("Workout goals icon")
             
             VStack(spacing: 8) {
                 Text("Set Your Goals")
-                    .font(.titleMedium)
+                    .font(.appCardTitle)
                     .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
                 
                 Text("Configure your weekly workout targets and daily step goals to stay motivated and track your progress")
                     .font(.body)
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.muted)
                     .multilineTextAlignment(.center)
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Goals header section")
     }
@@ -125,20 +128,20 @@ struct WorkoutGoalsSettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Activity Goals")
-                        .font(.titleMedium)
+                        .font(.appCardTitle)
                         .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                     
                     Text("Set targets for workouts, daily steps and water intake")
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 Spacer()
                 
                 if !isEditing {
                     Image(systemName: "target")
                         .font(.title2)
-                        .foregroundColor(.accent)
+                        .foregroundColor(Color.brand)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -157,7 +160,7 @@ struct WorkoutGoalsSettingsView: View {
                                     Text("\(editedWeeklyWorkoutGoal) workout\(editedWeeklyWorkoutGoal == 1 ? "" : "s")/week")
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.textPrimary)
+                                        .foregroundColor(AppPalette.ink)
                                 }
                                 .accessibilityLabel("Weekly workout goal")
                                 .accessibilityValue("\(editedWeeklyWorkoutGoal) workouts per week")
@@ -165,20 +168,20 @@ struct WorkoutGoalsSettingsView: View {
                                 
                                 Text("Range: 1-10 workouts per week")
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(AppPalette.muted)
                             }
                         } else {
                             Text("\(user.weeklyWorkoutGoal) workout\(user.weeklyWorkoutGoal == 1 ? "" : "s")/week")
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Weekly workout goal: \(user.weeklyWorkoutGoal) workouts per week")
                         }
                     }
                 )
                 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
                 
                 // Daily Step Goal
                 goalRow(
@@ -192,7 +195,7 @@ struct WorkoutGoalsSettingsView: View {
                                     Text("\(formatSteps(editedDailyStepGoal)) steps/day")
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.textPrimary)
+                                        .foregroundColor(AppPalette.ink)
                                 }
                                 .accessibilityLabel("Daily step goal")
                                 .accessibilityValue("\(formatSteps(editedDailyStepGoal)) steps per day")
@@ -200,20 +203,20 @@ struct WorkoutGoalsSettingsView: View {
                                 
                                 Text("Range: 1,000-50,000 steps (increments of 1,000)")
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(AppPalette.muted)
                             }
                         } else {
                             Text("\(formatSteps(user.dailyStepGoal)) steps/day")
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Daily step goal: \(formatSteps(user.dailyStepGoal)) steps per day")
                         }
                     }
                 )
 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
 
                 // Daily Water Goal
                 goalRow(
@@ -227,7 +230,7 @@ struct WorkoutGoalsSettingsView: View {
                                     Text("\(formatWater(editedDailyWaterGoal))/day")
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.textPrimary)
+                                        .foregroundColor(AppPalette.ink)
                                 }
                                 .accessibilityLabel("Daily water goal")
                                 .accessibilityValue("\(formatWater(editedDailyWaterGoal)) per day")
@@ -235,13 +238,13 @@ struct WorkoutGoalsSettingsView: View {
 
                                 Text("Range: 0.5 L – 5 L (increments of 250 mL)")
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(AppPalette.muted)
                             }
                         } else {
                             Text("\(formatWater(user.dailyWaterGoal))/day")
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Daily water goal: \(formatWater(user.dailyWaterGoal)) per day")
                         }
                     }
@@ -252,22 +255,22 @@ struct WorkoutGoalsSettingsView: View {
             if !isEditing {
                 VStack(spacing: 12) {
                     Divider()
-                        .background(Color.border)
+                        .background(AppPalette.line)
                     
                     HStack(spacing: 12) {
                         Image(systemName: "lightbulb.fill")
-                            .foregroundColor(.accent)
+                            .foregroundColor(Color.brand)
                             .font(.title3)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Goal Recommendations")
                                 .font(.label)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                             
                             Text("• Beginners: 3-4 workouts/week, 8,000 steps/day, 2 L water\n• Intermediate: 4-5 workouts/week, 10,000 steps/day, 2.5 L water\n• Advanced: 5-6 workouts/week, 12,000+ steps/day, 3+ L water")
                                 .font(.caption)
-                                .foregroundColor(.textSecondary)
+                                .foregroundColor(AppPalette.muted)
                         }
                         
                         Spacer()
@@ -282,17 +285,9 @@ struct WorkoutGoalsSettingsView: View {
                     Button(action: {
                         showingSaveConfirmation = true
                     }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text("Save Changes")
-                        }
-                        .font(.buttonPrimary)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(Color.primary)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        Label("Save Changes", systemImage: "checkmark.circle.fill")
                     }
+                    .buttonStyle(AppPillButtonStyle(.ink, .large))
                     .accessibilityLabel("Save workout and activity goal changes")
                     .accessibilityHint("Save all changes to your goals")
                 }
@@ -300,7 +295,7 @@ struct WorkoutGoalsSettingsView: View {
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Activity goals details")
     }
@@ -312,14 +307,14 @@ struct WorkoutGoalsSettingsView: View {
         VStack(spacing: 16) {
             Image(systemName: "figure.run.circle.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
             
             Text("Setting up your profile...")
-                .font(.titleMedium)
+                .font(.appCardTitle)
                 .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .foregroundColor(AppPalette.ink)
         }
-        .whiteCardStyle()
+        .appCard()
     }
     
     // MARK: - Helper Views
@@ -335,9 +330,10 @@ struct WorkoutGoalsSettingsView: View {
             HStack(alignment: .top, spacing: 16) {
                 // Icon
                 Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundColor(.accent)
-                    .frame(width: 24, height: 24)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppPalette.ink)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(AppPalette.optionFill))
                     .accessibilityHidden(true)
                 
                 // Title and Subtitle
@@ -345,11 +341,11 @@ struct WorkoutGoalsSettingsView: View {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                     
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

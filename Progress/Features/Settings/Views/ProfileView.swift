@@ -69,9 +69,12 @@ struct ProfileView: View {
                 .padding(.horizontal, 20)
                 .padding(.bottom, 32)
             }
-            .background(Color.backgroundGradient.ignoresSafeArea())
+            .background(AppBackground())
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .tint(AppPalette.ink)
             .navigationBarBackButtonHidden(isEditing)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -136,7 +139,7 @@ struct ProfileView: View {
             // Profile Picture
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 72))
-                .foregroundColor(.primary)
+                .foregroundColor(AppPalette.ink)
                 .accessibilityLabel("Profile picture")
                 .accessibilityHint("User avatar")
             
@@ -145,7 +148,7 @@ struct ProfileView: View {
                 if isEditing {
                     VStack(alignment: .leading, spacing: 8) {
                         TextField("Full Name", text: $editedName)
-                            .font(.titleLarge)
+                            .font(.appSectionTitle)
                             .fontWeight(.bold)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .onSubmit {
@@ -174,20 +177,20 @@ struct ProfileView: View {
                     }
                 } else {
                     Text(user.name)
-                        .font(.titleLarge)
+                        .font(.appSectionTitle)
                         .fontWeight(.bold)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                         .accessibilityLabel("Name: \(user.name)")
                 }
                 
                 Text(user.email)
                     .font(.subheadline)
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.muted)
                     .accessibilityLabel("Email: \(user.email)")
             }
         }
         .padding(.vertical, 16)
-        .whiteCardStyle()
+        .appCard()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Profile header")
     }
@@ -201,20 +204,20 @@ struct ProfileView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Fitness Goal")
-                        .font(.titleMedium)
+                        .font(.appCardTitle)
                         .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                     
                     Text("Your primary fitness objective")
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 Spacer()
                 
                 if !isEditing {
                     Image(systemName: "target")
                         .font(.title2)
-                        .foregroundColor(.accent)
+                        .foregroundColor(Color.brand)
                 }
             }
             .accessibilityElement(children: .combine)
@@ -225,7 +228,7 @@ struct ProfileView: View {
                 VStack(spacing: 16) {
                     Text("Select your primary fitness goal:")
                         .font(.body)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -239,7 +242,7 @@ struct ProfileView: View {
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Fitness goals management")
     }
@@ -248,33 +251,28 @@ struct ProfileView: View {
     private func goalDisplayCard(goal: FitnessGoal) -> some View {
         HStack(spacing: 16) {
             Image(systemName: goalIcon(for: goal))
-                .font(.title2)
-                .foregroundColor(.accent)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(Color.brand)
                 .frame(width: 36, height: 36)
-                .background(Color.accent.opacity(0.1))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(Circle().fill(AppPalette.accentSoft))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(goal.displayName)
-                    .font(.titleSmall)
+                    .font(.appCardTitle)
                     .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
 
                 Text(goal.description)
                     .font(.caption)
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.muted)
                     .multilineTextAlignment(.leading)
             }
 
             Spacer()
         }
-        .padding(16)
-        .background(Color.accent.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.accent.opacity(0.2), lineWidth: 1)
-        )
+        .padding(14)
+        .background(AppPalette.optionFill)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Current fitness goal: \(goal.displayName). \(goal.description)")
     }
@@ -287,29 +285,29 @@ struct ProfileView: View {
                         VStack(spacing: 12) {
                 Image(systemName: goalIcon(for: goal))
                     .font(.title2)
-                    .foregroundColor(isSelected ? .white : .accent)
+                    .foregroundColor(isSelected ? AppPalette.onInk : Color.brand)
                             
                             VStack(spacing: 4) {
                     Text(goal.displayName)
                         .font(.label)
                         .fontWeight(.semibold)
-                        .foregroundColor(isSelected ? .white : .textPrimary)
+                        .foregroundColor(isSelected ? AppPalette.onInk : AppPalette.ink)
                         .multilineTextAlignment(.center)
                     
                     Text(goal.description)
                         .font(.caption)
-                        .foregroundColor(isSelected ? .white.opacity(0.9) : .textSecondary)
+                        .foregroundColor(isSelected ? AppPalette.onInk.opacity(0.75) : AppPalette.muted)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                 }
             }
             .padding(16)
             .frame(maxWidth: .infinity, minHeight: 120)
-            .background(isSelected ? Color.accent : Color.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .background(isSelected ? AppPalette.ink : AppPalette.optionFill)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.accent : Color.border, lineWidth: isSelected ? 2 : 1)
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(isSelected ? AppPalette.ink : AppPalette.line, lineWidth: 1)
             )
             .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.easeInOut(duration: 0.2), value: isSelected)
@@ -343,13 +341,13 @@ struct ProfileView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Profile Details")
-                        .font(.titleMedium)
+                        .font(.appCardTitle)
                         .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                     
                     Text("Personal information and preferences")
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 Spacer()
             }
@@ -369,7 +367,7 @@ struct ProfileView: View {
                                     Text("\(editedAge) yrs")
                                         .font(.body)
                                         .fontWeight(.medium)
-                                        .foregroundColor(.textPrimary)
+                                        .foregroundColor(AppPalette.ink)
                                         .monospacedDigit()
 
                                     Stepper("", value: $editedAge, in: 18...100)
@@ -398,14 +396,14 @@ struct ProfileView: View {
                             Text("\(user.age) years")
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Age: \(user.age) years")
                         }
                     }
                 )
                 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
 
                 // Biological Sex
                 enhancedProfileRow(
@@ -425,14 +423,14 @@ struct ProfileView: View {
                             Text(user.biologicalSex.displayName)
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Biological sex: \(user.biologicalSex.displayName)")
                         }
                     }
                 )
 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
 
                 // Height
                 enhancedProfileRow(
@@ -445,7 +443,7 @@ struct ProfileView: View {
                                 Text(editedUnits.formatHeight(editedHeightCm))
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.textPrimary)
+                                    .foregroundColor(AppPalette.ink)
                                     .monospacedDigit()
                                 Stepper("Height", value: $editedHeightCm, in: 120...220, step: 1)
                                     .labelsHidden()
@@ -456,14 +454,14 @@ struct ProfileView: View {
                             Text(user.preferredUnits.formatHeight(user.heightCm))
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Height: \(user.preferredUnits.formatHeight(user.heightCm))")
                         }
                     }
                 )
 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
 
                 // Weight
                 enhancedProfileRow(
@@ -476,7 +474,7 @@ struct ProfileView: View {
                                 Text(editedUnits.formatWeightWithUnit(editedWeightKg, precision: 0))
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.textPrimary)
+                                    .foregroundColor(AppPalette.ink)
                                     .monospacedDigit()
                                 Stepper("Weight", value: $editedWeightKg, in: 30...250, step: 0.5)
                                     .labelsHidden()
@@ -487,14 +485,14 @@ struct ProfileView: View {
                             Text(user.preferredUnits.formatWeightWithUnit(user.weightKg, precision: 0))
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Weight: \(user.preferredUnits.formatWeightWithUnit(user.weightKg, precision: 0))")
                         }
                     }
                 )
 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
 
                 // Activity Level
                 enhancedProfileRow(
@@ -515,10 +513,10 @@ struct ProfileView: View {
                                 Text(user.activityLevel.displayName)
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.textPrimary)
+                                    .foregroundColor(AppPalette.ink)
                                 Text(user.activityLevel.description)
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(AppPalette.muted)
                                     .multilineTextAlignment(.trailing)
                             }
                             .accessibilityElement(children: .combine)
@@ -528,7 +526,7 @@ struct ProfileView: View {
                 )
 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
                 
                 // Fitness Level
                 enhancedProfileRow(
@@ -545,7 +543,7 @@ struct ProfileView: View {
                                                 .font(.body)
                                             Text(level.description)
                                                 .font(.caption)
-                                                .foregroundColor(.textSecondary)
+                                                .foregroundColor(AppPalette.muted)
                                         }
                                         .tag(level)
                                     }
@@ -559,10 +557,10 @@ struct ProfileView: View {
                                 Text(user.fitnessLevel.displayName)
                                     .font(.body)
                                     .fontWeight(.medium)
-                                    .foregroundColor(.textPrimary)
+                                    .foregroundColor(AppPalette.ink)
                                 Text(user.fitnessLevel.description)
                                     .font(.caption)
-                                    .foregroundColor(.textSecondary)
+                                    .foregroundColor(AppPalette.muted)
                             }
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Fitness level: \(user.fitnessLevel.displayName). \(user.fitnessLevel.description)")
@@ -571,7 +569,7 @@ struct ProfileView: View {
                 )
                 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
                 
                 // Unit Preferences
                 enhancedProfileRow(
@@ -595,14 +593,14 @@ struct ProfileView: View {
                             Text(user.preferredUnits.displayName)
                                 .font(.body)
                                 .fontWeight(.medium)
-                                .foregroundColor(.textPrimary)
+                                .foregroundColor(AppPalette.ink)
                                 .accessibilityLabel("Units: \(user.preferredUnits.displayName)")
                         }
                     }
                 )
                 
                 Divider()
-                    .background(Color.border.opacity(0.5))
+                    .background(AppPalette.line)
                 
                 enhancedProfileRow(
                     icon: "star.circle",
@@ -612,7 +610,7 @@ struct ProfileView: View {
                         Text(subscriptionService.isSubscribed ? (subscriptionService.activePlan?.title ?? "Subscribed") : "Not subscribed")
                             .font(.body)
                             .fontWeight(.medium)
-                            .foregroundColor(subscriptionService.isSubscribed ? .accent : .textSecondary)
+                            .foregroundColor(subscriptionService.isSubscribed ? Color.brand : AppPalette.muted)
                             .accessibilityLabel(
                                 subscriptionService.isSubscribed
                                     ? "Subscription: \(subscriptionService.activePlan?.title ?? "active")"
@@ -637,7 +635,7 @@ struct ProfileView: View {
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Profile details")
     }
@@ -649,9 +647,9 @@ struct ProfileView: View {
         VStack(spacing: 16) {
             HStack {
                 Text("Data Management")
-                    .font(.titleMedium)
+                    .font(.appCardTitle)
                     .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
                 Spacer()
             }
 
@@ -661,54 +659,54 @@ struct ProfileView: View {
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "trash.fill")
-                        .foregroundColor(.red)
+                        .foregroundColor(AppPalette.protein)
                     Text("Clear All Data")
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.red)
+                        .foregroundColor(AppPalette.protein)
                     Spacer()
                 }
                 .padding(16)
-                .background(Color.red.opacity(0.06))
+                .background(AppPalette.protein.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                        .stroke(AppPalette.protein.opacity(0.25), lineWidth: 1)
                 )
             }
             .buttonStyle(PlainButtonStyle())
 
             Text("Clears all workouts, nutrition entries, and resets your profile. Cannot be undone.")
                 .font(.caption)
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
                 .multilineTextAlignment(.leading)
 
             DeleteAccountButton(usesPlainStyle: true) {
                 HStack(spacing: 12) {
                     Image(systemName: "person.crop.circle.badge.minus")
-                        .foregroundColor(.red)
+                        .foregroundColor(AppPalette.protein)
                     Text("Delete Account")
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.red)
+                        .foregroundColor(AppPalette.protein)
                     Spacer()
                 }
                 .padding(16)
-                .background(Color.red.opacity(0.06))
+                .background(AppPalette.protein.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.red.opacity(0.2), lineWidth: 1)
+                        .stroke(AppPalette.protein.opacity(0.25), lineWidth: 1)
                 )
             }
 
             Text("Deletes your account and the data saved in Progress on this device. Cannot be undone.")
                 .font(.caption)
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
                 .multilineTextAlignment(.leading)
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
     }
 
     private func clearAllData() {
@@ -740,14 +738,14 @@ struct ProfileView: View {
         VStack(spacing: 16) {
             Image(systemName: "person.circle.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
             
             Text("Setting up your profile...")
-                .font(.titleMedium)
+                .font(.appCardTitle)
                 .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .foregroundColor(AppPalette.ink)
         }
-        .whiteCardStyle()
+        .appCard()
     }
     
     // MARK: - Helper Views
@@ -762,9 +760,10 @@ struct ProfileView: View {
         HStack(alignment: .top, spacing: 16) {
             // Icon
             Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(.accent)
-                .frame(width: 24, height: 24)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(AppPalette.ink)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(AppPalette.optionFill))
                 .accessibilityHidden(true)
             
             // Title and Subtitle
@@ -772,11 +771,11 @@ struct ProfileView: View {
                 Text(title)
                     .font(.body)
                     .fontWeight(.medium)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
                 
                 Text(subtitle)
                     .font(.caption)
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             

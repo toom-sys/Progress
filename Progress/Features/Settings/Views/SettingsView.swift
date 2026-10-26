@@ -2,152 +2,135 @@
 //  SettingsView.swift
 //  Progress
 //
-//  Created by Progress Team
-//
 
 import SwiftUI
-import SwiftData
 import RevenueCatUI
 
 // MARK: - Settings View
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
     @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var subscriptionService: SubscriptionService
-    @Query private var users: [User]
     @State private var showingPaywall = false
-    #if DEBUG
-    @State private var showingOnboardingResetConfirmation = false
-    #endif
 
-    private var currentUser: User? { users.first }
-    
     var body: some View {
         NavigationStack {
-            List {
-                Section {
-                    NavigationLink(destination: ProfileView()) {
-                        Label("Profile", systemImage: "person.circle")
-                    }
-                    
-                    Button(action: {
-                        HapticFeedback.workoutButtonTap()
-                        showingPaywall = true
-                    }) {
-                        HStack {
-                            Label("Subscription", systemImage: "bolt.circle")
-                                .foregroundColor(.textPrimary)
-                            
-                            Spacer()
-                            
-                            Text(subscriptionService.membershipLabel)
-                                .font(.caption)
-                                .foregroundColor(subscriptionService.isSubscribed ? .primary : .textTertiary)
-                        }
-                    }
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    header
 
-                    if subscriptionService.isSubscribed {
-                        NavigationLink {
-                            CustomerCenterView()
-                                .onCustomerCenterRestoreCompleted { customerInfo in
-                                    subscriptionService.apply(customerInfo)
-                                }
+                    settingsGroup("Account") {
+                        settingsLink(title: "Profile", systemImage: "person.circle") {
+                            ProfileView()
+                        }
+                        settingsDivider
+                        Button {
+                            HapticFeedback.workoutButtonTap()
+                            showingPaywall = true
                         } label: {
-                            Label("Manage Subscription", systemImage: "creditcard")
+                            settingsRow(
+                                title: "Subscription",
+                                systemImage: "bolt.circle",
+                                detail: subscriptionService.membershipLabel,
+                                detailColor: subscriptionService.isSubscribed ? AppPalette.liveText : AppPalette.muted,
+                                showsChevron: false
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        if subscriptionService.isSubscribed {
+                            settingsDivider
+                            settingsLink(title: "Manage Subscription", systemImage: "creditcard") {
+                                CustomerCenterView()
+                                    .onCustomerCenterRestoreCompleted { customerInfo in
+                                        subscriptionService.apply(customerInfo)
+                                    }
+                            }
+                        }
+                        settingsDivider
+                        Button {
+                            HapticFeedback.workoutButtonTap()
+                            subscriptionService.redeemAnnualCode()
+                        } label: {
+                            settingsRow(title: "Redeem annual code", systemImage: "gift", showsChevron: false)
+                        }
+                        .buttonStyle(.plain)
+                        if let error = subscriptionService.purchaseError {
+                            Text(error)
+                                .font(.appSubtitle)
+                                .foregroundStyle(AppPalette.protein)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.horizontal, 14)
+                                .padding(.bottom, 12)
                         }
                     }
 
-                    Button(action: {
-                        HapticFeedback.workoutButtonTap()
-                        subscriptionService.redeemAnnualCode()
-                    }) {
-                        Label("Redeem annual code", systemImage: "gift")
-                            .foregroundColor(.textPrimary)
+                    settingsGroup("Preferences") {
+                        settingsLink(title: "Workout & Activity Goals", systemImage: "figure.run") {
+                            WorkoutGoalsSettingsView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Nutrition Goals", systemImage: "fork.knife") {
+                            NutritionGoalsSettingsView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Training Plan", systemImage: "list.bullet.clipboard") {
+                            TrainingPlanSettingsView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Units & Preferences", systemImage: "ruler") {
+                            UnitsSettingsView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Notifications", systemImage: "bell") {
+                            NotificationsSettingsView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Export Data", systemImage: "square.and.arrow.up") {
+                            DataExportView()
+                        }
                     }
 
-                    if let error = subscriptionService.purchaseError {
-                        Text(error)
-                            .font(.caption)
-                            .foregroundColor(.red)
-                    }
-                }
-                
-                Section {
-                    NavigationLink(destination: WorkoutGoalsSettingsView()) {
-                        Label("Workout & Activity Goals", systemImage: "figure.run.circle")
+                    settingsGroup("About") {
+                        settingsLink(title: "Privacy Policy", systemImage: "hand.raised") {
+                            PrivacyPolicyView()
+                        }
+                        settingsDivider
+                        settingsLink(title: "Terms of Service", systemImage: "doc.text") {
+                            TermsOfServiceView()
+                        }
                     }
 
-                    NavigationLink(destination: NutritionGoalsSettingsView()) {
-                        Label("Nutrition Goals", systemImage: "fork.knife.circle")
-                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        DeleteAccountButton(usesPlainStyle: true) {
+                            settingsRow(
+                                title: "Delete Account",
+                                systemImage: "person.crop.circle.badge.minus",
+                                tint: AppPalette.protein,
+                                showsChevron: false
+                            )
+                        }
+                        .appCard(cornerRadius: 22, padding: 0)
 
-                    NavigationLink(destination: TrainingPlanSettingsView()) {
-                        Label("Training Plan", systemImage: "list.bullet.clipboard")
-                    }
-                    
-                    NavigationLink(destination: UnitsSettingsView()) {
-                        Label("Units & Preferences", systemImage: "ruler")
-                    }
-                    
-                    NavigationLink(destination: NotificationsSettingsView()) {
-                        Label("Notifications", systemImage: "bell")
-                    }
-                    
-                    NavigationLink(destination: DataExportView()) {
-                        Label("Export Data", systemImage: "square.and.arrow.up")
+                        Text(
+                            "Permanently deletes the account created for this install and the profile, "
+                            + "workouts, nutrition, water, and weight history saved in Progress. "
+                            + "An App Store subscription is not cancelled."
+                        )
+                        .font(.appSubtitle)
+                        .foregroundStyle(AppPalette.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 4)
                     }
                 }
-                
-                // Debug Section (only in debug builds)
-                #if DEBUG
-                Section("Debug") {
-                    Toggle(isOn: onboardingCompletedBinding) {
-                        Label("Onboarding Completed", systemImage: "flag.checkered")
-                    }
-
-                    NavigationLink(destination: OpenAITestView()) {
-                        Label("OpenAI Test", systemImage: "brain.head.profile")
-                    }
-                }
-                #endif
-                
-                Section {
-                    NavigationLink(destination: PrivacyPolicyView()) {
-                        Label("Privacy Policy", systemImage: "hand.raised")
-                    }
-                    
-                    NavigationLink(destination: TermsOfServiceView()) {
-                        Label("Terms of Service", systemImage: "doc.text")
-                    }
-                }
-
-                Section {
-                    DeleteAccountButton(usesPlainStyle: true) {
-                        Label("Delete Account", systemImage: "person.crop.circle.badge.minus")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                } footer: {
-                    Text(
-                        "Permanently deletes the account created for this install and the profile, "
-                        + "workouts, nutrition, water, and weight history saved in Progress. "
-                        + "An App Store subscription is not cancelled."
-                    )
-                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 32)
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        HapticFeedback.workoutButtonTap()
-                        dismiss()
-                    }
-                    .foregroundColor(.primary)
-                }
-            }
+            .background(AppBackground())
+            .toolbar(.hidden, for: .navigationBar)
         }
+        .presentationDragIndicator(.visible)
+        .presentationBackground { AppBackground() }
         .sheet(isPresented: $showingPaywall) {
             PaywallView()
         }
@@ -155,44 +138,136 @@ struct SettingsView: View {
             guard phase == .active else { return }
             Task { await subscriptionService.checkSubscriptionStatus() }
         }
-        #if DEBUG
-        .alert("Reset Onboarding?", isPresented: $showingOnboardingResetConfirmation) {
-            Button("Cancel", role: .cancel) {}
-            Button("Reset", role: .destructive) {
-                resetOnboarding()
-            }
-        } message: {
-            Text("You'll go through the setup flow again from the start.")
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 10) {
+            Text("Settings")
+                .font(.appScreenTitle)
+                .tracking(-0.5)
+                .foregroundStyle(AppPalette.ink)
+                .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+
+            CircleIconButton(
+                systemName: "xmark",
+                style: .plain,
+                size: 40,
+                accessibilityLabel: "Close",
+                action: {
+                    HapticFeedback.workoutButtonTap()
+                    dismiss()
+                }
+            )
         }
-        #endif
+        .padding(.top, 8)
     }
 
-    #if DEBUG
-    private var onboardingCompletedBinding: Binding<Bool> {
-        Binding(
-            get: { currentUser?.hasCompletedOnboarding ?? false },
-            set: { isCompleted in
-                guard !isCompleted, currentUser?.hasCompletedOnboarding == true else { return }
-                showingOnboardingResetConfirmation = true
+    private var settingsDivider: some View {
+        Rectangle()
+            .fill(AppPalette.line)
+            .frame(height: 1)
+            .padding(.leading, 62)
+    }
+
+    private func settingsGroup<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 13, weight: .heavy))
+                .tracking(0.4)
+                .foregroundStyle(AppPalette.muted)
+                .padding(.leading, 4)
+                .accessibilityAddTraits(.isHeader)
+
+            VStack(spacing: 0) {
+                content()
             }
-        )
-    }
-
-    private func resetOnboarding() {
-        guard let user = currentUser else { return }
-
-        user.hasCompletedOnboarding = false
-        user.updatedAt = Date()
-        OnboardingProgressStore.resetSavedProgress()
-
-        do {
-            try modelContext.save()
-            HapticFeedback.workoutButtonTap()
-            dismiss()
-        } catch {
-            print("❌ Failed to reset onboarding: \(error.localizedDescription)")
+            .appCard(cornerRadius: 22, padding: 0)
         }
     }
-    #endif
+
+    private func settingsLink<Destination: View>(
+        title: String,
+        systemImage: String,
+        @ViewBuilder destination: () -> Destination
+    ) -> some View {
+        NavigationLink(destination: destination) {
+            settingsRow(title: title, systemImage: systemImage)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func settingsRow(
+        title: String,
+        systemImage: String,
+        detail: String? = nil,
+        detailColor: Color = AppPalette.muted,
+        tint: Color = AppPalette.ink,
+        showsChevron: Bool = true
+    ) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundStyle(tint)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(AppPalette.optionFill))
+                .accessibilityHidden(true)
+
+            Text(title)
+                .font(.appCardTitle)
+                .foregroundStyle(tint)
+                .multilineTextAlignment(.leading)
+
+            Spacer(minLength: 8)
+
+            if let detail {
+                Text(detail)
+                    .font(.appSubtitle)
+                    .foregroundStyle(detailColor)
+                    .lineLimit(1)
+            }
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(AppPalette.muted.opacity(0.7))
+                    .accessibilityHidden(true)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
 }
 
+struct SettingsPlaceholder: View {
+    let title: String
+    let systemImage: String
+    let message: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppPalette.ink)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(AppPalette.optionFill))
+
+            Text(message)
+                .font(.system(size: 15))
+                .foregroundStyle(AppPalette.muted)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .appCard()
+        .padding(.horizontal, 20)
+        .padding(.top, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(AppBackground())
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+    }
+}

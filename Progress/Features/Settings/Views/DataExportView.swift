@@ -31,9 +31,12 @@ struct DataExportView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 24)
         }
-        .background(Color.backgroundGradient.ignoresSafeArea())
+        .background(AppBackground())
         .navigationTitle("Export Data")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
         .sheet(item: $exportFile) { file in
             ShareSheetView(items: [file.url])
                 .presentationDetents([.medium, .large])
@@ -51,16 +54,14 @@ struct DataExportView: View {
     private var header: some View {
         VStack(spacing: 12) {
             Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 36, weight: .semibold))
-                .foregroundColor(.primary)
-                .frame(width: 72, height: 72)
-                .background(Color.primary.opacity(0.12))
-                .clipShape(Circle())
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(AppPalette.ink)
+                .frame(width: 56, height: 56)
+                .background(Circle().fill(AppPalette.optionFill))
 
             Text("Take a copy of your data")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .font(.appSectionTitle)
+                .foregroundColor(AppPalette.ink)
                 .multilineTextAlignment(.center)
 
             Text(
@@ -68,19 +69,20 @@ struct DataExportView: View {
                 + "Save it to Files, or send it with AirDrop or Mail."
             )
                 .font(.body)
-                .foregroundColor(.textSecondary)
+                .foregroundColor(AppPalette.muted)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
+        .appCard()
     }
 
     private var contentsCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Included")
-                .font(.titleMedium)
+                .font(.appCardTitle)
                 .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .foregroundColor(AppPalette.ink)
 
             countRow("Workouts", count: workouts.count)
             countRow("Exercises", count: exercises.count)
@@ -92,10 +94,10 @@ struct DataExportView: View {
 
             Text("Recently deleted workouts are included. Food photos stay on this device and are left out of the file.")
                 .font(.caption)
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .whiteCardStyle()
+        .appCard()
     }
 
     private var exportButton: some View {
@@ -105,22 +107,15 @@ struct DataExportView: View {
             HStack(spacing: 8) {
                 if isExporting {
                     ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .progressViewStyle(CircularProgressViewStyle(tint: AppPalette.onInk))
                     Text("Preparing export…")
                 } else {
                     Image(systemName: "square.and.arrow.up")
                     Text("Export JSON File")
                 }
             }
-            .font(.buttonPrimary)
-            .fontWeight(.semibold)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
-            .foregroundColor(.white)
-            .background(Color.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(AppPillButtonStyle(.ink, .large))
         .disabled(isExporting)
         .accessibilityHint("Creates a JSON file and opens the share sheet")
     }
@@ -129,11 +124,11 @@ struct DataExportView: View {
         HStack {
             Text(title)
                 .font(.body)
-                .foregroundColor(.textPrimary)
+                .foregroundColor(AppPalette.ink)
             Spacer()
             Text("\(count)")
                 .font(.body)
-                .foregroundColor(.textSecondary)
+                .foregroundColor(AppPalette.muted)
                 .monospacedDigit()
         }
         .accessibilityElement(children: .combine)

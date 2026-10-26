@@ -46,9 +46,12 @@ struct NutritionGoalsSettingsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
         }
-        .background(Color.backgroundGradient.ignoresSafeArea())
+        .background(AppBackground())
         .navigationTitle("Nutrition Goals")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 if currentUser != nil {
@@ -95,27 +98,27 @@ struct NutritionGoalsSettingsView: View {
         VStack(spacing: 16) {
             Image(systemName: "fork.knife.circle.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.accent)
+                .foregroundColor(Color.brand)
                 .accessibilityHidden(true)
 
             VStack(spacing: 8) {
                 Text("Daily Nutrition Targets")
-                    .font(.titleMedium)
+                    .font(.appCardTitle)
                     .fontWeight(.semibold)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
 
                 Text(user.usesCustomNutritionGoals
                      ? "You’re using custom goals you set yourself."
                      : "These targets are calculated from your profile and update automatically when your details change.")
                     .font(.body)
-                    .foregroundColor(.textSecondary)
+                    .foregroundColor(AppPalette.muted)
                     .multilineTextAlignment(.center)
 
                 statusBadge(isCustom: user.usesCustomNutritionGoals)
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
     }
 
     @ViewBuilder
@@ -127,10 +130,10 @@ struct NutritionGoalsSettingsView: View {
                 .font(.caption)
                 .fontWeight(.semibold)
         }
-        .foregroundColor(.accent)
+        .foregroundColor(Color.brand)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.accent.opacity(0.1))
+        .background(AppPalette.accentSoft)
         .clipShape(Capsule())
     }
 
@@ -142,19 +145,19 @@ struct NutritionGoalsSettingsView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Daily Goals")
-                        .font(.titleMedium)
+                        .font(.appCardTitle)
                         .fontWeight(.semibold)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
 
                     Text("Calorie and macronutrient targets per day")
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 Spacer()
                 if !isEditing {
                     Image(systemName: "target")
                         .font(.title2)
-                        .foregroundColor(.accent)
+                        .foregroundColor(Color.brand)
                 }
             }
 
@@ -170,7 +173,7 @@ struct NutritionGoalsSettingsView: View {
                     step: 50
                 )
 
-                Divider().background(Color.border.opacity(0.5))
+                Divider().background(AppPalette.line)
 
                 goalRow(
                     icon: "fish.fill",
@@ -183,7 +186,7 @@ struct NutritionGoalsSettingsView: View {
                     step: 5
                 )
 
-                Divider().background(Color.border.opacity(0.5))
+                Divider().background(AppPalette.line)
 
                 goalRow(
                     icon: "leaf.fill",
@@ -196,7 +199,7 @@ struct NutritionGoalsSettingsView: View {
                     step: 5
                 )
 
-                Divider().background(Color.border.opacity(0.5))
+                Divider().background(AppPalette.line)
 
                 goalRow(
                     icon: "drop.fill",
@@ -214,22 +217,14 @@ struct NutritionGoalsSettingsView: View {
 
             if isEditing {
                 Button(action: { showingSaveConfirmation = true }) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Save Changes")
-                    }
-                    .font(.buttonPrimary)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 16)
-                    .background(Color.primary)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    Label("Save Changes", systemImage: "checkmark.circle.fill")
                 }
+                .buttonStyle(AppPillButtonStyle(.ink, .large))
                 .padding(.top, 8)
             }
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
     }
 
     // MARK: - Macro Breakdown
@@ -246,18 +241,18 @@ struct NutritionGoalsSettingsView: View {
         let macroCals = max(1, proteinCals + carbCals + fatCals)
 
         return VStack(spacing: 12) {
-            Divider().background(Color.border)
+            Divider().background(AppPalette.line)
 
             HStack(spacing: 0) {
-                macroPercent(label: "Protein", value: proteinCals / macroCals, color: .blue)
-                macroPercent(label: "Carbs", value: carbCals / macroCals, color: .green)
-                macroPercent(label: "Fat", value: fatCals / macroCals, color: .orange)
+                macroPercent(label: "Protein", value: proteinCals / macroCals, color: AppPalette.protein)
+                macroPercent(label: "Carbs", value: carbCals / macroCals, color: AppPalette.carbs)
+                macroPercent(label: "Fat", value: fatCals / macroCals, color: AppPalette.fat)
             }
 
             if abs(macroCals - calories) > 100 {
                 Text("Macros total ≈ \(Int(macroCals)) kcal vs \(Int(calories)) kcal target")
                     .font(.caption2)
-                    .foregroundColor(.textTertiary)
+                    .foregroundColor(AppPalette.muted)
             }
         }
         .padding(.top, 4)
@@ -270,7 +265,7 @@ struct NutritionGoalsSettingsView: View {
                 .foregroundColor(color)
             Text(label)
                 .font(.caption)
-                .foregroundColor(.textSecondary)
+                .foregroundColor(AppPalette.muted)
         }
         .frame(maxWidth: .infinity)
     }
@@ -281,36 +276,18 @@ struct NutritionGoalsSettingsView: View {
     private func recalculateSection(user: User) -> some View {
         VStack(spacing: 12) {
             Button(action: { showingRecalculateConfirmation = true }) {
-                HStack(spacing: 12) {
-                    Image(systemName: "wand.and.stars")
-                    Text("Recalculate from profile")
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.textTertiary)
-                }
-                .font(.body)
-                .fontWeight(.medium)
-                .foregroundColor(.accent)
-                .padding(16)
-                .frame(maxWidth: .infinity)
-                .background(Color.accent.opacity(0.06))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.accent.opacity(0.2), lineWidth: 1)
-                )
+                Label("Recalculate from profile", systemImage: "wand.and.stars")
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(AppPillButtonStyle(.outline, .large))
 
             Text("Uses the Mifflin-St Jeor formula with your age, height, weight, activity level and fitness goal. Update those in Profile for the most accurate targets.")
                 .font(.caption)
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(.vertical, 24)
-        .whiteCardStyle()
+        .appCard()
     }
 
     // MARK: - No User Section
@@ -319,13 +296,13 @@ struct NutritionGoalsSettingsView: View {
         VStack(spacing: 16) {
             Image(systemName: "fork.knife.circle.fill")
                 .font(.system(size: 60))
-                .foregroundColor(.textTertiary)
+                .foregroundColor(AppPalette.muted)
             Text("Setting up your profile...")
-                .font(.titleMedium)
+                .font(.appCardTitle)
                 .fontWeight(.semibold)
-                .foregroundColor(.textPrimary)
+                .foregroundColor(AppPalette.ink)
         }
-        .whiteCardStyle()
+        .appCard()
     }
 
     // MARK: - Helper Views
@@ -344,19 +321,20 @@ struct NutritionGoalsSettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 16) {
                 Image(systemName: icon)
-                    .font(.title3)
-                    .foregroundColor(.accent)
-                    .frame(width: 24, height: 24)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(AppPalette.ink)
+                    .frame(width: 36, height: 36)
+                    .background(Circle().fill(AppPalette.optionFill))
                     .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                     Text(subtitle)
                         .font(.caption)
-                        .foregroundColor(.textSecondary)
+                        .foregroundColor(AppPalette.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -366,7 +344,7 @@ struct NutritionGoalsSettingsView: View {
                     Text(editValue)
                         .font(.body)
                         .fontWeight(.medium)
-                        .foregroundColor(.textPrimary)
+                        .foregroundColor(AppPalette.ink)
                         .monospacedDigit()
                 }
                 .accessibilityLabel(title)
@@ -375,7 +353,7 @@ struct NutritionGoalsSettingsView: View {
                 Text(displayValue)
                     .font(.body)
                     .fontWeight(.medium)
-                    .foregroundColor(.textPrimary)
+                    .foregroundColor(AppPalette.ink)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                     .accessibilityLabel("\(title): \(displayValue)")
             }

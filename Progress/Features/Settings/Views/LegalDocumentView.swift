@@ -40,12 +40,12 @@ struct LegalDocumentView: View {
             VStack(alignment: .leading, spacing: 28) {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Last updated \(lastUpdated)")
-                        .font(.caption)
-                        .foregroundColor(.textTertiary)
+                        .font(.appSubtitle)
+                        .foregroundColor(AppPalette.muted)
 
                     Text(intro)
-                        .font(.body)
-                        .foregroundColor(.textSecondary)
+                        .font(.system(size: 16))
+                        .foregroundColor(AppPalette.muted)
                         .lineSpacing(4)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -53,13 +53,13 @@ struct LegalDocumentView: View {
                 ForEach(sections) { section in
                     VStack(alignment: .leading, spacing: 10) {
                         Text(section.title)
-                            .font(.titleSmall)
-                            .foregroundColor(.textPrimary)
+                            .font(.appCardTitle)
+                            .foregroundColor(AppPalette.ink)
 
                         ForEach(Array(section.paragraphs.enumerated()), id: \.offset) { _, paragraph in
                             Text(paragraph)
-                                .font(.body)
-                                .foregroundColor(.textSecondary)
+                                .font(.system(size: 16))
+                                .foregroundColor(AppPalette.muted)
                                 .lineSpacing(4)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
@@ -68,17 +68,17 @@ struct LegalDocumentView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Contact")
-                        .font(.titleSmall)
-                        .foregroundColor(.textPrimary)
+                        .font(.appCardTitle)
+                        .foregroundColor(AppPalette.ink)
 
                     Text("Questions about these terms or your information:")
-                        .font(.body)
-                        .foregroundColor(.textSecondary)
+                        .font(.system(size: 16))
+                        .foregroundColor(AppPalette.muted)
 
                     Link(destination: URL(string: "mailto:Tom.progressapp.support@gmail.com")!) {
                         Text("Tom.progressapp.support@gmail.com")
-                            .font(.body)
-                            .foregroundColor(.primary)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color.brand)
                     }
                 }
             }
@@ -86,6 +86,6 @@ struct LegalDocumentView: View {
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color.background)
+        .background(AppBackground())
     }
 }

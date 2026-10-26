@@ -15,7 +15,10 @@ struct TermsOfServiceView: View {
             sections: Self.sections
         )
         .navigationTitle("Terms of Service")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
     }
 
     private static let sections: [LegalSection] = [

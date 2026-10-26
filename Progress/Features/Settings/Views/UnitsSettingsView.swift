@@ -2,17 +2,15 @@
 //  UnitsSettingsView.swift
 //  Progress
 //
-//  Created by Progress Team
-//
 
 import SwiftUI
 
-// MARK: - Units Settings View
-
 struct UnitsSettingsView: View {
     var body: some View {
-        Text("Units Settings Coming Soon")
-            .navigationTitle("Units")
-            .navigationBarTitleDisplayMode(.large)
+        SettingsPlaceholder(
+            title: "Units",
+            systemImage: "ruler",
+            message: "Unit preferences are coming soon. Your current choice is saved on your profile."
+        )
     }
 }

@@ -36,9 +36,12 @@ struct TrainingPlanSettingsView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
         }
-        .background(Color.backgroundGradient.ignoresSafeArea())
+        .background(AppBackground())
         .navigationTitle("Training Plan")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
         .sheet(isPresented: $showingSetupFlow) {
             if let user = currentUser {
                 TrainingPlanSetupFlowView(user: user, onPlanCreated: handlePlanCreated)
@@ -68,33 +71,30 @@ struct TrainingPlanSettingsView: View {
         VStack(spacing: 24) {
             VStack(spacing: 12) {
                 Image(systemName: "list.bullet.clipboard")
-                    .font(.system(size: 48))
-                    .foregroundColor(Color.brand)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(AppPalette.ink)
+                    .frame(width: 56, height: 56)
+                    .background(Circle().fill(AppPalette.optionFill))
 
                 Text("No active plan")
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.appSectionTitle)
+                    .foregroundStyle(AppPalette.ink)
 
                 Text("Build repeating workouts with Session 1 targets for your first block. We'll progress through Sessions 2–4, then deload on Session 5.")
-                    .font(.body)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 15))
+                    .foregroundStyle(AppPalette.muted)
                     .multilineTextAlignment(.center)
             }
-            .padding(.top, 40)
+            .padding(.vertical, 8)
+            .appCard()
 
             Button {
                 HapticFeedback.workoutButtonTap()
                 showingSetupFlow = true
             } label: {
                 Text("Start a training plan")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(Color.brand)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
+            .buttonStyle(AppPillButtonStyle(.ink, .large))
         }
     }
 
@@ -102,49 +102,46 @@ struct TrainingPlanSettingsView: View {
 
     private func activePlanContent(_ plan: TrainingPlan) -> some View {
         VStack(spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(plan.name)
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(.appSectionTitle)
+                    .foregroundStyle(AppPalette.ink)
 
                 Text(plan.splitType.displayName)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.appSubtitle)
+                    .foregroundStyle(AppPalette.muted)
 
                 Text("\(plan.workouts.count) repeating workouts")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .font(.appSubtitle)
+                    .foregroundStyle(AppPalette.muted)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .appCard()
 
             VStack(alignment: .leading, spacing: 12) {
-                Text("Workouts")
-                    .font(.headline)
-                    .fontWeight(.semibold)
+                Text("WORKOUTS")
+                    .font(.system(size: 13, weight: .heavy))
+                    .tracking(0.4)
+                    .foregroundStyle(AppPalette.muted)
 
                 ForEach(sortedWorkouts(in: plan), id: \.id) { workout in
                     ActivePlanWorkoutRow(workout: workout)
                 }
             }
-            .padding(20)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .appCard()
 
             Button(role: .destructive) {
                 showingDisableConfirmation = true
             } label: {
                 Text("Disable plan")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.red)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundStyle(AppPalette.protein)
                     .frame(maxWidth: .infinity)
                     .frame(height: 50)
-                    .background(Color.red.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .background(Capsule().fill(AppPalette.protein.opacity(0.1)))
             }
+            .buttonStyle(.plain)
         }
         .padding(.top, 8)
     }
@@ -186,25 +183,23 @@ private struct ActivePlanWorkoutRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(workout.name)
-                .font(.headline)
-                .fontWeight(.semibold)
+                .font(.appCardTitle)
+                .foregroundStyle(AppPalette.ink)
+                .fixedSize(horizontal: false, vertical: true)
 
             Text("Session \(sessionIndex) of 5 · Block \(blockNumber)")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(.appSubtitle)
+                .foregroundStyle(AppPalette.muted)
 
             Text(phaseName)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(Color.brand)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color.brand)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.brand.opacity(0.12))
+                .background(AppPalette.accentSoft)
                 .clipShape(Capsule())
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .appGroupRow()
     }
 }

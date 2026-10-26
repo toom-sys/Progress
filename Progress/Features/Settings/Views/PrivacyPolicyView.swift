@@ -15,7 +15,10 @@ struct PrivacyPolicyView: View {
             sections: Self.sections
         )
         .navigationTitle("Privacy Policy")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .tint(AppPalette.ink)
     }
 
     private static let sections: [LegalSection] = [
