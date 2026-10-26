@@ -91,4 +91,5 @@ struct SubscriptionGateView: View {
 
 #Preview {
     SubscriptionGateView()
+        .environmentObject(SubscriptionService())
 }

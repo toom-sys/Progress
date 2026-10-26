@@ -58,7 +58,6 @@ struct OnboardingView: View {
     @State private var planWorkouts: [GeneratedWorkout] = []
     @State private var hasSavedTrainingPlan = false
     @State private var welcomeHeroVisible = false
-    @State private var presentedLegalDocument: LegalDocument?
 
     @AppStorage("onboarding_current_step") private var savedStep: String = "welcome"
     @AppStorage("onboarding_age") private var savedAge: String = ""
@@ -85,10 +84,12 @@ struct OnboardingView: View {
                     currentStepView
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
-                    // Forward navigation only
-                    navigationButtons
-                        .padding(.horizontal, 24)
-                        .padding(.bottom, 34)
+                    // The subscription step owns its purchase button.
+                    if currentStep != .subscription {
+                        navigationButtons
+                            .padding(.horizontal, 24)
+                            .padding(.bottom, 34)
+                    }
                 }
             }
             .navigationBarHidden(true)
@@ -134,18 +135,6 @@ struct OnboardingView: View {
         }
         .onChange(of: selectedWorkoutCount) { _, _ in
             resetPlanState()
-        }
-        .sheet(item: $presentedLegalDocument) { document in
-            NavigationStack {
-                document.destination
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button("Close") {
-                                presentedLegalDocument = nil
-                            }
-                        }
-                    }
-            }
         }
     }
 
@@ -307,7 +296,11 @@ struct OnboardingView: View {
                 planWorkouts: $planWorkouts
             )
         case .subscription:
-            subscriptionStepView
+            PaywallView(
+                isEmbedded: true,
+                onPurchased: advancePastSubscription,
+                onSkip: advancePastSubscription
+            )
         case .completion:
             completionView
         }
@@ -1070,181 +1063,11 @@ struct OnboardingView: View {
         .padding(.horizontal, 24)
     }
     
-    // MARK: - Subscription Step View
-
-    private var subscriptionStepView: some View {
-        ScrollView {
-            VStack(spacing: 22) {
-                // Pro badge + headline
-                VStack(spacing: 14) {
-                    Text("ONE MEMBERSHIP")
-                        .font(.system(size: 11, weight: .heavy))
-                        .tracking(0.5)
-                        .foregroundColor(OnboardingPalette.onInk)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(OnboardingPalette.ink))
-                        .padding(.top, 20)
-
-                    (Text("Start free.\nKeep the ")
-                        .foregroundColor(OnboardingPalette.ink)
-                     + Text("momentum")
-                        .foregroundColor(Color.brand)
-                     + Text(".")
-                        .foregroundColor(OnboardingPalette.ink))
-                        .font(.system(size: 29, weight: .heavy, design: .rounded))
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(1)
-                        .accessibilityAddTraits(.isHeader)
-                }
-                .frame(maxWidth: .infinity)
-
-                Text("Yearly, monthly, or weekly. Same access on each.")
-                    .font(.system(size: 13.5, weight: .semibold))
-                    .foregroundColor(OnboardingPalette.muted)
-                    .multilineTextAlignment(.center)
-
-                VStack(spacing: 12) {
-                    ForEach(SubscriptionService.Plan.allCases) { plan in
-                        if let offering = subscriptionService.offerings[plan] {
-                            onboardingPlanCard(offering)
-                        }
-                    }
-                }
-                .padding(.top, 4)
-
-                Button("Redeem an annual code") {
-                    subscriptionService.redeemAnnualCode()
-                }
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(OnboardingPalette.ink)
-
-                // Feature list
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("WHAT YOU GET")
-                        .font(.system(size: 11.5, weight: .heavy))
-                        .tracking(0.4)
-                        .foregroundColor(OnboardingPalette.muted)
-                        .padding(.bottom, 8)
-
-                    ForEach(SubscriptionService.ServiceTier.pro.features, id: \.self) { feature in
-                        HStack(spacing: 12) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 13, weight: .heavy))
-                                .foregroundColor(Color.brand)
-                            Text(feature)
-                                .font(.system(size: 13.5, weight: .semibold))
-                                .foregroundColor(OnboardingPalette.ink)
-                            Spacer()
-                        }
-                        .padding(.vertical, 9)
-                        .overlay(Rectangle().fill(OnboardingPalette.line).frame(height: 1), alignment: .top)
-                    }
-                }
-
-                if let error = subscriptionService.purchaseError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundColor(.red)
-                        .multilineTextAlignment(.center)
-                }
-
-                Button("Maybe later") {
-                    trackForwardNavigation(from: .subscription)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        currentStep = .completion
-                    }
-                }
-                .font(.system(size: 13, weight: .bold))
-                .foregroundColor(OnboardingPalette.muted)
-
-                Text("Your subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Cancel anytime in Settings → Subscriptions.")
-                    .font(.system(size: 11.5))
-                    .foregroundColor(OnboardingPalette.muted)
-                    .multilineTextAlignment(.center)
-
-                HStack(spacing: 20) {
-                    Button("Terms of Service") {
-                        presentedLegalDocument = .terms
-                    }
-                    Button("Privacy Policy") {
-                        presentedLegalDocument = .privacy
-                    }
-                }
-                .font(.system(size: 11.5, weight: .semibold))
-                .foregroundColor(OnboardingPalette.ink)
-
-                Spacer(minLength: 20)
-            }
-            .padding(.horizontal, 24)
+    private func advancePastSubscription() {
+        trackForwardNavigation(from: .subscription)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            currentStep = .completion
         }
-    }
-
-    private func onboardingPlanCard(_ offering: SubscriptionService.SubscriptionOffering) -> some View {
-        let isSelected = subscriptionService.selectedPlan == offering.plan
-
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                subscriptionService.selectedPlan = offering.plan
-            }
-        } label: {
-            HStack(spacing: 14) {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(isSelected ? Color.brand : OnboardingPalette.muted)
-
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 7) {
-                        Text(offering.plan.title)
-                            .font(.system(size: 15.5, weight: .heavy))
-                            .foregroundColor(OnboardingPalette.ink)
-
-                        if offering.plan == .annual {
-                            Text("BEST VALUE")
-                                .font(.system(size: 9.5, weight: .heavy))
-                                .tracking(0.4)
-                                .foregroundColor(OnboardingPalette.onInk)
-                                .padding(.horizontal, 7)
-                                .padding(.vertical, 3)
-                                .background(Capsule().fill(Color.brand))
-                        }
-                    }
-
-                    Text(offering.plan.detailLine(pricePerMonth: offering.pricePerMonth))
-                        .font(.system(size: 11.5))
-                        .foregroundColor(OnboardingPalette.muted)
-
-                    if offering.hasTrial {
-                        Text("\(offering.trialDays)-day free trial")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundColor(Color.brand)
-                    }
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(offering.price)
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
-                        .foregroundColor(OnboardingPalette.ink)
-                    Text(offering.plan.billingPeriodText)
-                        .font(.system(size: 11))
-                        .foregroundColor(OnboardingPalette.muted)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(OnboardingPalette.surface)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .strokeBorder(isSelected ? OnboardingPalette.ink : OnboardingPalette.line,
-                                  lineWidth: isSelected ? 2 : 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Completion View
@@ -1610,22 +1433,7 @@ struct OnboardingView: View {
         case .planPreview:
             savePlanAndContinue()
         case .subscription:
-            Task {
-                if subscriptionService.isSubscribed {
-                    trackForwardNavigation(from: fromStep)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        currentStep = .completion
-                    }
-                    return
-                }
-                await subscriptionService.purchase()
-                if subscriptionService.isSubscribed {
-                    trackForwardNavigation(from: fromStep)
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        currentStep = .completion
-                    }
-                }
-            }
+            break
         case .completion:
             break
         }
